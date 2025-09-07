@@ -1,42 +1,40 @@
 // src/lib/services/project.service.ts
 import apiClient from "../axios";
 import {
-  Projects,
-  Columns,
-  CreateTask,
+  Project,
   APIGet,
   APISingleGet,
   APIPost,
   APIPut,
   APIError,
   APIPatch,
-} from "@/src/types";
+} from "@/types";
 
 class ProjectService {
   private client = apiClient;
 
-  async getProjects(): Promise<APIGet<Projects>> {
+  async getProjects(): Promise<APIGet<Project>> {
     return this.client
       .get("/project")
-      .then((response) => response.data as APIGet<Projects>)
+      .then((response) => response.data as APIGet<Project>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to fetch projects");
       });
   }
 
-  async getProjectById(projectId: string): Promise<APISingleGet<Projects>> {
+  async getProjectById(projectId: string): Promise<APISingleGet<Project>> {
     return this.client
       .get(`/project/${projectId}`)
-      .then((response) => response.data as APISingleGet<Projects>)
+      .then((response) => response.data as APISingleGet<Project>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to fetch project");
       });
   }
 
-  async postProjects(project: Partial<Projects>): Promise<APIPost<Projects>> {
+  async createProject(project: Partial<Project>): Promise<APIPost<Project>> {
     return this.client
       .post("/project", project)
-      .then((response) => response.data as APIPost<Projects>)
+      .then((response) => response.data as APIPost<Project>)
       .catch((error) => {
         throw (
           (error?.response?.data as APIError) ||
@@ -45,14 +43,6 @@ class ProjectService {
       });
   }
 
-  async insertTaskByProjectId(projectId: string, task: CreateTask): Promise<APIPatch<Columns>> {
-    return this.client
-      .patch(`/project/${projectId}`, task)
-      .then((response) => response.data as APIPatch<Columns>)
-      .catch((error) => {
-        throw error?.response?.data || new Error("Failed to fetch project");
-      });
-  }
 }
 
 export const projectServices = new ProjectService();

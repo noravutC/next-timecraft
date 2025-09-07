@@ -12,9 +12,9 @@ export const MergBar = ({ children }: { children: React.ReactNode }) => {
         <>
             {session && (
                 <div className="h-full w-full flex flex-col overflow-hidden">
-                    <div className="h-14 bg-white border-b-3 border-[#eeeff2] w-full flex items-center justify-center shrink-0 z-10">
+                    {/* <div className="h-14 bg-white border-b-3 border-[#eeeff2] w-full flex items-center justify-center shrink-0 z-10">
                         <Topbar />
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-1 overflow-hidden">
                         <Sidebar

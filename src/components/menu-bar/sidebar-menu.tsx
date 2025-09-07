@@ -1,0 +1,52 @@
+'use client';
+import React from "react";
+import { ScrollArea } from "../ui/scroll-area";
+import { Button } from "../ui/button";
+import { PanelLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface SidebarMenuProps {
+    // Define any props if needed in the future
+    children: React.ReactNode;
+    isPanelOpen: boolean;
+    handlePanelControl: (value: boolean) => void;
+}
+export const SidebarMenu = ({ children, isPanelOpen, handlePanelControl }: SidebarMenuProps) => {
+    return (
+        <div
+            className={
+                cn("max-w-[250px] min-w-[40px] max-h-[calc(100vh-7vh)] min-h-[calc(100vh-7vh)]",
+                    "flex flex-col overflow-hidden border-r shadow-sm duration-300 ease-in-out",
+                    `${isPanelOpen ? "w-full" : "w-[50px] flex justify-center"}`
+                )
+            }>
+            <div className={cn(`w-full min-h-[60px] max-h-[60px] flex items-center ${isPanelOpen ? "px-2" : "justify-center px-2"}`)}>
+                <div className={`w-full`}>
+                    <div className="col-span-10 flex h-full items-center justify-end">
+                        <Button
+                            variant={'ghost'}
+                            className="p-2"
+                            size={null}
+                            onClick={() => handlePanelControl(!isPanelOpen)}
+                        >
+                            <PanelLeft size={13} />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <ScrollArea className="max-h-[calc(93vh-120px)] h-[calc(93vh-120px)] border-y">
+                <div className={`flex flex-col gap-2 p-4 h-max duration-100 ease-in-out ${isPanelOpen ? "opacity-100" : "opacity-0"}`}>
+                    {children}
+                </div>
+            </ScrollArea>
+            <div className="w-full min-h-[60px] flex items-center justify-between">
+                {/* <div></div>
+                <div>
+                    <Button size={null} variant={'ghost'} className="p-1 cursor-pointer">
+                        Log out
+                    </Button>
+                </div> */}
+            </div>
+        </div>
+    )
+}

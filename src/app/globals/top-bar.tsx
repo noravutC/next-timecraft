@@ -4,9 +4,8 @@ import React, { useEffect, useState } from "react";
 // components
 import { Button } from "@/components/ui/button";
 import { DropdownMenuDemo } from "./topbar-components/menu-option";
-import timecraftLogo from "@/public/timecraft-logo.svg";
+import timecraftLogo from "@/../public/timecraft-logo.svg";
 import { ChevronDown } from "lucide-react";
-
 
 export const Topbar = () => {
 

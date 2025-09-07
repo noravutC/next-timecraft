@@ -2,13 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 // hooks
-import { useProjectStore } from "@/src/hooks/useProjects";
+import { useProjectStore } from "@/hooks/useProjects.hook";
 // components
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Briefcase, List, ClipboardList } from "lucide-react";
 import { CollapsButton, type CollapsButtonMenu } from "./sidebar-components/button-collaps";
 // types
-import { Projects } from "@/src/types";
+import { Project } from "@/types";
 
 interface SidebarProps {
     childrenHeader?: React.ReactNode;
@@ -39,8 +39,8 @@ export const Sidebar = ({
                 const projectsMenu: CollapsButtonMenu = {
                     mainLabel: "Projects",
                     mainIcon: <ClipboardList size={10} strokeWidth={2} />,
-                    menuOptions: projects.map((project: Projects) => ({
-                        label: project.project_name,
+                    menuOptions: projects.map((project: Project) => ({
+                        label: project.name,
                         icon: <div className="w-6 h-6 border rounded" />,
                         link: `/project/${project._id}`,
                         view: true,

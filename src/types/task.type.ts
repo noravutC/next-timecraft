@@ -1,27 +1,16 @@
 // types/task.type.ts
-
 export interface Task {
-  task_id: string;
-  task_title: string;
-  start_date: Date;
-  end_date: Date;
-  time_spent: TimeSpent[];
-  create_by: string;
-  assign_to: string;
-}
-
-export interface CreateTask {
-  columnId: string;
-  task_title: string;
-  start_date: Date;
-  end_date: Date;
-  time_spent: TimeSpent[];
-  create_by: string;
-  assign_to: string;
-}
-
-export interface TimeSpent {
-  spent: string;
-  create_at: Date;
-  update_at: Date;
+  _id: string;             // ObjectId
+  projectId: string;       // อ้างถึง Project
+  columnId: string;        // อ้างถึง Column
+  title: string;
+  description?: string;
+  assignees: string[];     // array ของ userId
+  priority?: "low" | "medium" | "high";
+  dueDate?: Date;
+  tags?: string[];
+  order: number;           // ใช้จัดเรียงภายใน column
+  archived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

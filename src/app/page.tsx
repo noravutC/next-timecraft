@@ -3,33 +3,35 @@
 import React, { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
 
 export default function RootPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (session) {
-      router.push("/home");
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/login");
+      return;
     }
-  }, [session, router]);
 
-  return (
-    <>
-      {session ? (
-        <div className="w-full h-full flex items-center justify-center">
-          Loading...
-        </div>
-      ) : (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        <Button onClick={() => signIn("google")} >
-          Sign in with Google
-        </Button>
-      </div>  
-      )}
-    </>
-  );
+    async function checkOrg() {
+      try {
+        const res = await fetch("/api/organization/check");
+        const data = await res.json();
+
+        if (!data.hasOrg) {
+          router.push("/organization/create");
+        } else {
+          router.push("/project");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    checkOrg();
+  }, [session, status, router]);
+
+  return <div className="w-full h-full flex items-center justify-center">Loading...</div>
 }

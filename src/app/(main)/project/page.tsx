@@ -3,16 +3,26 @@
 
 import React, { useState, useEffect } from "react";
 // hooks
-import { useProjectStore } from '@/src/hooks/useProjects';
+import { useProjectStore } from '@/hooks/useProjects.hook';
 // components
-import { MainDataTanle } from "@/components/data-table/main-data-table";
+import { CreateProjectForm } from "./components/create-project-form";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ProjectCard } from "./components/project-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Filter, FolderPlus, Grid, List, Plus } from "lucide-react";
 // types
-import { projectColumn } from "./project-columns";
-import { type Projects } from "@/src/types";
+import { type Project } from "@/types";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { PreviewCard } from "./components/preview-card";
 
 export default function Projects() {
   const { fetchProjects, getProjectById } = useProjectStore();
-  const [projects, setProjects] = useState<Projects[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('grid');
+  const [isNewProject, setIsNewProject] = useState<boolean>(false);
+
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -22,12 +32,76 @@ export default function Projects() {
 
     loadProjects();
   }, []);
-  
+
   return (
     <>
-      <div className="max-w-full h-full overflow-x-hidden overflow-y-auto">
-        <MainDataTanle data={projects} columns={projectColumn} />
-      </div>
+      {!isNewProject && (
+        <div className="max-w-full w-full h-full max-h-[87vh] overflow-x-hidden flex flex-col">
+          <div className="w-full max-h-[7vh] h-full flex items-center justify-between px-2 duration-300">
+            {/* Header Area */}
+            <span className="text-gray-800 text-[2rem] font-[700]">Projects</span>
+            <Button
+              className="cursor-pointer select-none"
+              variant={'ghost'}
+              onClick={() => setIsNewProject(true)}
+            >
+              <Plus size={13} />
+              New Project
+            </Button>
+          </div>
+          <div className="h-[10vh] flex justify-between items-center">
+            <div className="flex-1 flex items-center justify-start pr-4 pl-1">
+              <Input
+                placeholder="Search project..."
+                className="focus-visible:border-none focus-visible:ring-2"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 items-center justify-end">
+              <Button className="cursor-pointer select-none" variant={'outline'}>
+                <Filter size={13} />
+                Filter
+              </Button>
+              <div className="flex items-center max-w-max w-full max-h-[36px] h-[36px]  text-gray-700 border rounded">
+                <div className={cn("max-w-fit h-full px-2 flex items-center justify-center", displayMode === 'grid' ? "bg-gray-100 rounded-l" : "")} onClick={() => setDisplayMode('grid')}>
+                  <Grid className="size-5" />
+                </div>
+                <div className={cn("max-w-fit h-full px-2 flex items-center justify-center", displayMode === 'list' ? "bg-gray-100 rounded-r" : "")} onClick={() => setDisplayMode('list')}>
+                  <List className="size-5" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <ScrollArea className="h-[70vh] min-w-full py-4">
+            {displayMode === 'grid' && (
+              <div className="flex flex-wrap gap-4">
+                {(projects ?? []).map((project) => (
+                  <React.Fragment key={project._id}>
+                    <ProjectCard projectId={project._id} />
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      )}
+      {isNewProject && (
+        <div className="max-w-full w-full h-full max-h-[87vh] overflow-x-hidden flex flex-col">
+          <div className="max-h-[7vh] h-full w-full flex items-center justify-start">
+            <Button
+              variant={'ghost'}
+              onClick={() => setIsNewProject(false)}
+              className="cursor-pointer select-none ml-2 text-gray-500 text-sm font-[500]"
+            >
+              <ArrowLeft size={13} />
+              Back to projects
+            </Button>
+          </div>
+          <div className="max-h-[80vh] h-[80vh] w-full">
+            <CreateProjectForm />
+          </div>
+        </div>
+      )}
     </>
   )
 }

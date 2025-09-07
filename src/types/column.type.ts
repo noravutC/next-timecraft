@@ -1,9 +1,11 @@
 // types/columns.type.ts
-import { Task }from "./task.type";
-import { ObjectId } from "mongodb";
-
-export interface Columns {
-    column_id: ObjectId;
-    column_name: string;
-    tasks: Task[];
+export interface Column {
+  _id: string;             // ObjectId
+  projectId: string;       // อ้างถึง Project
+  name: string;
+  color?: string;
+  wipLimit: number;        // work-in-progress limit
+  order: number;           // ใช้จัดเรียง
+  createdAt: Date;
+  updatedAt: Date;
 }
