@@ -6,7 +6,6 @@ const MembershipSchema = new Schema(
     userId: { type: Types.ObjectId, ref: "User", required: true },
     organizationId: { type: Types.ObjectId, ref: "Organization", required: true },
 
-    // role ของ user ใน org นี้
     role: {
       type: String,
       enum: ["owner", "admin", "member", "guest"],

@@ -5,11 +5,24 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { Tasks } from "@/model/task";
 import { type Task } from "@/types/task.type";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 
 export async function GET(
   request: Request,
   { params }: { params: { columnId: string } }
 ) {
+  const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Not  authenticated",
+          data: [],
+        },
+        { status: 401 }
+      );
+    }
   try {
     const { columnId } = await params;
 

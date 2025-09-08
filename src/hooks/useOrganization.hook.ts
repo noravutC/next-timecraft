@@ -1,4 +1,4 @@
-// src/hooks/useColumns.hook.ts
+// src/hooks/useOrganization.hook.ts
 import { create } from "zustand";
 import { Organizations } from "@/types";
 import { organizationServices } from "@/lib/services/organization.service";
@@ -14,7 +14,7 @@ interface OrganizationStore {
   // set
   setOrganization: (orgId: string, orgData: Organizations) => void;
   setOrganizations: (organizations: Organizations[]) => void;
-  clearTasks: () => void;
+  clearOrganizations: () => void;
 
   // get
   getOrganizationById: (
@@ -62,8 +62,6 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
   },
 
   clearOrganizations: () => set({ organizations: {} }),
-
-  clearTasks: () => set({ organizations: {} }),
 
   getOrganizationById: (orgId: string | null | undefined) => {
     return get().organizations[orgId ?? ""];

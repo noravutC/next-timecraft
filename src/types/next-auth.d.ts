@@ -5,6 +5,7 @@ declare module "next-auth" {
     user: {
       id: string;
       systemRole: string;
+      canCreateOrg: boolean = false; 
     } & DefaultSession["user"]; // เอา name, email, image มาด้วย
   }
 

@@ -4,11 +4,28 @@
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { Organization } from "@/model/group-user/organization";
+import { Membership } from "@/model/group-user/member-ship";
 import { type Organizations} from "@/types";
-import { ProjectSchema } from "@/model/validate/project";
-import mongoose from "mongoose";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
+import {
+  OrganizationSchema,
+  MembershipType, 
+  MembershipSchema
+} from "@/model/validate";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Not  authenticated",
+          data: [],
+        },
+        { status: 401 }
+      );
+    }
   try {
     await connectDB();
 
@@ -36,35 +53,47 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Not  authenticated",
+        data: [],
+      },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const parsed = ProjectSchema.parse(body);
-    const normalized = {
-      ...parsed,
-      ownerId: new mongoose.Types.ObjectId(parsed.ownerId),
-      members:
-        parsed.members?.map((m) => ({
-          ...m,
-          userId: new mongoose.Types.ObjectId(m.userId),
-        })) || [],
-    };
+    const normalized = OrganizationSchema.parse(body);
     await connectDB();
     const organizationData = new Organization(normalized);
     await organizationData.save();
+
+    const currentOrg = (organizationData as  Organizations) ?? null
+    const normalizedMemberShip:MembershipType = {
+      userId: currentOrg.createdBy,
+      role: "owner",
+      organizationId: currentOrg._id,
+    }
+    const memberShipData = new Membership(normalizedMemberShip)
+    await memberShipData.save();
     return NextResponse.json(
       {
         success: true,
-        message: "Create Project success",
-        created: organizationData as Organizations,
+        message: "Create organization success",
+        created: currentOrg,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error create project:", error);
+    console.error("Error create organization:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to create project",
+        message: "Failed to create organization",
         data: [],
         error: error,
       },

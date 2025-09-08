@@ -4,11 +4,24 @@ import { connectDB } from "@/lib/mongodb";
 import {  NextResponse } from "next/server";
 import { Projects } from "@/model/project";
 import { type Project  } from "@/types";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 
 export async function GET(
   request: Request,
   { params }: { params: { projectId: string } }
 ) {
+  const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Not  authenticated",
+          data: [],
+        },
+        { status: 401 }
+      );
+    }
   try {
     const { projectId } = await params;
 

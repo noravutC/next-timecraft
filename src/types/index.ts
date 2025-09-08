@@ -4,3 +4,4 @@ export * from "./task.type";
 export * from "./user.type";
 export * from "./global/api.type";
 export * from "./organization.type";
+export * from "./member-ship.type";

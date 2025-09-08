@@ -6,8 +6,21 @@ import { Projects } from "@/model/project";
 import { type Project } from "@/types";
 import { ProjectSchema } from "@/model/validate/project";
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Not  authenticated",
+        data: [],
+      },
+      { status: 401 }
+    );
+  }
   try {
     await connectDB();
 
@@ -35,6 +48,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Not  authenticated",
+        data: [],
+      },
+      { status: 401 }
+    );
+  }
   try {
     const body = await request.json();
     const parsed = ProjectSchema.parse(body);

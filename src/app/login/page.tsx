@@ -1,16 +1,122 @@
+// 'use client';
+
+// import { useEffect } from "react";
+// import { signIn, useSession } from "next-auth/react";
+// import { useRouter } from "next/navigation";
+// // components
+// import { Button } from "@/components/ui/button";
+
+// export default function Login() {
+//   const { data: session, status } = useSession();
+//   const router = useRouter();
+
+//   if (status === "loading") {
+//     return (
+//       <div className="flex flex-col items-center justify-center min-h-screen">
+//         Loading...
+//       </div>
+//     )
+//   }
+
+//   useEffect(() => {
+
+//     async function checkOrg() {
+//       try {
+//         const res = await fetch("/api/organization/check");
+//         const data = await res.json();
+
+//         if (!data.hasOrg) {
+//           router.push("/organization/create");
+//         } else {
+//           router.push("/project");
+//         }
+//       } catch (err) {
+//         console.error(err);
+//       }
+//     }
+
+//     checkOrg();
+//   }, [session, status, router]);
+  
+//   return (
+//     <div className="flex flex-col items-center justify-center min-h-screen">
+//       <h1 className="text-2xl font-bold mb-4">Login</h1>
+//       <Button onClick={() => signIn("google")} >
+//         Sign in with Google
+//       </Button>
+//     </div>
+//   );
+
+// }
+
+// 'use client';
+
+// import { signIn, useSession } from "next-auth/react";
+// import { useRouter } from "next/navigation";
+// // components
+// import { Button } from "@/components/ui/button";
+
+// export default function Login() {
+//   const { data: session, status } = useSession();
+//   const router = useRouter();
+
+//   if (status === "loading") {
+//     return (
+//       <div className="flex flex-col items-center justify-center min-h-screen">
+//         Loading...
+//       </div>
+//     )
+//   }
+//   if (session) {
+//     router.push('/organization/create');
+//   }
+//   return (
+//     <div className="flex flex-col items-center justify-center min-h-screen">
+//       <h1 className="text-2xl font-bold mb-4">Login</h1>
+//       <Button onClick={() => signIn("google")} >
+//         Sign in with Google
+//       </Button>
+//     </div>
+//   );
+
+// }
+
 'use client';
 
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+// components
 import { Button } from "@/components/ui/button";
-import { signIn } from "next-auth/react";
 
 export default function Login() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      if(session?.user?.canCreateOrg) {
+        router.push('/organization/create');
+      }else {
+        router.push('/project');
+      }
+    }
+  }, [session, router]);
+
+  if (status === "loading") {
     return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    )
+  }
+
+  return (
     <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        <Button onClick={() => signIn("google")} >
-          Sign in with Google
-        </Button>
-      </div> 
-    );
-      
+      <h1 className="text-2xl font-bold mb-4">Login</h1>
+      <Button onClick={() => signIn("google")}>
+        Sign in with Google
+      </Button>
+    </div>
+  );
 }

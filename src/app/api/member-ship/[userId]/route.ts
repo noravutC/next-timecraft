@@ -1,16 +1,16 @@
-// app/api/column/look-up/project/[projectId]/route.ts
+// app/api/member-ship/[userId]/route.ts
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { Columns } from "@/model/column";
-import { type Column } from "@/types/column.type";
+import { Membership } from "@/model/group-user/member-ship";
+import { type Membership as MembershipProps  } from "@/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
+import { Types } from "mongoose";
 
 export async function GET(
   request: Request,
-  { params }: { params: { projectId: string } }
+  { params }: { params: { userId: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -24,35 +24,34 @@ export async function GET(
     );
   }
   try {
-    const { projectId } = await params;
+    const { userId } = await params;
 
-    if (!projectId) {
+    if (!userId) {
       return NextResponse.json(
         {
           success: false,
-          message: "Project ID is required for get columns",
+          message: "User ID is required",
         },
         { status: 400 }
       );
     }
     await connectDB();
-    const response: Column[] = await Columns.find({
-      projectId: new ObjectId(projectId),
-    });
+    const userObjectId = new Types.ObjectId(userId); // แปลงเป็น ObjectId
+    const membership: MembershipProps[] = await Membership.find({ userId: userObjectId });
     return NextResponse.json(
       {
         success: true,
-        message: "Success to get columns by project id!",
-        data: response,
+        message: "Success to get membership data by user id!",
+        data: membership,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error fetching columns by projectId:", error);
+    console.log("Error fetching membership by ID:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch columns by projectId",
+        message: "Failed to fetch membership by ID",
         error: error,
       },
       { status: 500 }

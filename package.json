@@ -49,6 +49,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/lodash": "^4.17.16",
     "@types/mongoose": "^5.11.97",
+    "@types/next-auth": "^3.15.0",
     "@types/node": "^20",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
