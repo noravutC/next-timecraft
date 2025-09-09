@@ -16,20 +16,20 @@ import { type Project } from "@/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PreviewCard } from "./components/preview-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Projects() {
-  const { fetchProjects, getProjectById } = useProjectStore();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { fetchProjects, projects, status } = useProjectStore();
+  // const [projects, setProjects] = useState<Project[]>([]);
   const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('grid');
   const [isNewProject, setIsNewProject] = useState<boolean>(false);
 
-
+  const currentProjects = Object.values(projects);
   useEffect(() => {
     const loadProjects = async () => {
-      const response = await fetchProjects();
-      setProjects(response);
+      await fetchProjects();
+      // setProjects(response);
     };
-
     loadProjects();
   }, []);
 
@@ -72,15 +72,23 @@ export default function Projects() {
               </div>
             </div>
           </div>
-          <ScrollArea className="h-[70vh] min-w-full py-4">
+          <ScrollArea className="h-[70vh] min-w-full py-4 pr-4">
             {displayMode === 'grid' && (
-              <div className="flex flex-wrap gap-4">
-                {(projects ?? []).map((project) => (
-                  <React.Fragment key={project._id}>
-                    <ProjectCard projectId={project._id} />
-                  </React.Fragment>
-                ))}
-              </div>
+              <>
+                {status !== "none" ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <Skeleton className="w-full h-[250px]" />
+                    <Skeleton className="w-full h-[250px]" />
+                    <Skeleton className="w-full h-[250px]" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4">
+                    {(currentProjects ?? []).map((project) => (
+                      <ProjectCard key={project._id} projectId={project._id} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </ScrollArea>
         </div>

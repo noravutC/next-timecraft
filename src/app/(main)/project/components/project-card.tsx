@@ -37,7 +37,7 @@ export const ProjectCard = ({
 
     return (
         <div
-            className="relative border p-4 rounded-lg shadow-md flex flex-col justify-between  gap-2 max-w-[400px] min-w-[350px] w-full max-h-[250px] h-[250px]"
+            className="relative border p-4 rounded-lg shadow-md flex flex-col justify-between  gap-2 w-full max-h-[250px] h-[250px]"
             onClick={() => router.push(`/project/${projectId}`)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

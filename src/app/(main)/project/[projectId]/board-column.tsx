@@ -4,6 +4,7 @@ import { Column } from "@/types";
 import React, { useEffect, useMemo } from "react";
 import { TaskCard } from "./task-card";
 import { useTaskStore } from "@/hooks/useTasks.hook";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BoardColumnProps {
   column: Column;
@@ -36,7 +37,12 @@ export const BoardColumn = ({
       <ScrollArea className="max-h-[calc(70vh-60px)] h-full w-full overflow-hidden" >
         {/* Task */}
         {status !== "none" ? (
-          <div>Loading...</div>
+          <div className="p-4 flex flex-col gap-4">
+            <Skeleton className="h-[100px] w-full" />  
+            <Skeleton className="h-[100px] w-full" />  
+            <Skeleton className="h-[100px] w-full" />  
+            <Skeleton className="h-[100px] w-full" />  
+          </div>
         ) : (
           <div className="p-4 flex flex-col gap-4">
 

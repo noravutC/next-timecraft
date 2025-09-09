@@ -37,7 +37,7 @@
 
 //     checkOrg();
 //   }, [session, status, router]);
-  
+
 //   return (
 //     <div className="flex flex-col items-center justify-center min-h-screen">
 //       <h1 className="text-2xl font-bold mb-4">Login</h1>
@@ -88,6 +88,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 // components
 import { Button } from "@/components/ui/button";
+import { LoaderPage } from "@/components/Loader-page";
 
 export default function Login() {
   const { data: session, status } = useSession();
@@ -95,9 +96,9 @@ export default function Login() {
 
   useEffect(() => {
     if (session) {
-      if(session?.user?.canCreateOrg) {
+      if (session?.user?.canCreateOrg) {
         router.push('/organization/create');
-      }else {
+      } else {
         router.push('/project');
       }
     }
@@ -106,17 +107,32 @@ export default function Login() {
   if (status === "loading") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        Loading...
+        <LoaderPage />
+      </div>
+    )
+  } else if (status === 'unauthenticated') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Login</h1>
+        <Button onClick={() => signIn("google")}>
+          Sign in with Google
+        </Button>
+      </div>
+    );
+  } else {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <LoaderPage />
       </div>
     )
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
-      <Button onClick={() => signIn("google")}>
-        Sign in with Google
-      </Button>
-    </div>
-  );
+  // return (
+  // <div className="flex flex-col items-center justify-center min-h-screen">
+  //   <h1 className="text-2xl font-bold mb-4">Login</h1>
+  //   <Button onClick={() => signIn("google")}>
+  //     Sign in with Google
+  //   </Button>
+  // </div>
+  // );
 }

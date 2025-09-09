@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { LoaderPage } from "@/components/Loader-page";
 
 export default function RootPage() {
   const { data: session, status } = useSession();
@@ -15,7 +16,12 @@ export default function RootPage() {
       return;
     }
 
-  } , [session, status, router]);
+  }, [session, status, router]);
 
-  return <div className="w-full h-full flex items-center justify-center">Loading...</div>
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <LoaderPage />
+    </div>
+  )
+  // return <div className="w-full h-full flex items-center justify-center">Loading...</div>
 }
