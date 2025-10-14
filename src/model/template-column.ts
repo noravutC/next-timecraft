@@ -17,6 +17,6 @@ const TemplateColumnSchema = new Schema(
   { timestamps: true }
 );
 
-export const TemplateColumn =
+export const TemplateColumnModel =
   models.TemplateColumn ||
   model("TemplateColumn", TemplateColumnSchema, "templateColumns");

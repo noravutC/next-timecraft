@@ -1,11 +1,12 @@
 // src/hooks/useProjects.ts
 import { create } from "zustand";
-import { Project } from "@/types";
+import { Project, TemplateColumn } from "@/types";
 import { projectServices } from "@/lib/services/projects.service";
 import { LoaderStatus } from "./hook.type";
 
 interface ProjectStore {
   projects: Record<string, Project>;
+  projectIdActivate?: string | null | undefined;
 
   status: LoaderStatus;
   setStatus: (status: LoaderStatus) => void;
@@ -13,6 +14,7 @@ interface ProjectStore {
   // set
   setProject: (projectId: string, projectData: Project) => void;
   setProjects: (projects: Project[]) => void;
+  setActivateProject: (projectId: string | undefined | null) => void;
   clearProjects: () => void;
 
   // get
@@ -23,15 +25,17 @@ interface ProjectStore {
   fetchProjectById: (projectId: string) => void;
   // actions
   createProject: (data: Partial<Project>) => void;
+  applyBoardIntoProject: (projectId: string, template: TemplateColumn) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   projects: {},
   status: "none",
+  projectIdActivate: null,
 
   setStatus: (status) => set({ status }),
 
-  setProject: (projectId, projectData) => {
+  setProject: (projectId: string, projectData: Project) => {
     if (projectId !== projectData._id) {
       console.warn(`Project ID mismatch: ${projectId} !== ${projectData._id}`);
     }
@@ -43,7 +47,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }));
   },
 
-  setProjects: (projects) => {
+  setProjects: (projects: Project[]) => {
     const mapped = projects.reduce((acc, project) => {
       acc[project._id] = project;
       return acc;
@@ -55,6 +59,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       },
     }));
   },
+  setActivateProject: (projectId: string | undefined | null) =>
+    set({ projectIdActivate: projectId }),
 
   clearProjects: () => set({ projects: {} }),
 
@@ -74,7 +80,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       return projects;
     } catch (error) {
-      console.error("Failed to fetch projects:", error);
+      console.log("Failed to fetch projects:", error);
       throw error;
     } finally {
       set({ status: "none" });
@@ -92,12 +98,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         return project;
       }
     } catch (error) {
-      console.error("Failed to fetch project by ID:", error);
+      console.log("Failed to fetch project by ID:", error);
       throw error;
     } finally {
       set({ status: "none" });
     }
   },
+
+  // actions
   createProject: async (data: Partial<Project>) => {
     try {
       set({ status: "creating" });
@@ -109,7 +117,33 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         return project;
       }
     } catch (error) {
-      console.error("Failed to create project:", error);
+      console.log("Failed to create project:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+
+  applyBoardIntoProject: async (
+    projectId: string,
+    template: TemplateColumn
+  ) => {
+    try {
+      set({ status: "updating" });
+      const response =
+        await projectServices.applyTemplateColumnsToProject(
+          projectId,
+          template
+        );
+      const updatedProject = response?.updated;
+
+      if (updatedProject) {
+        get().setProject(updatedProject._id, updatedProject);
+      }
+
+      return updatedProject;
+    } catch (error) {
+      console.log("Failed to apply board into project:", error);
       throw error;
     } finally {
       set({ status: "none" });

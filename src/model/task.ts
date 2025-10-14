@@ -65,4 +65,4 @@ const TasksSchema = new Schema(
 );
 
 
-export const Tasks = models.Tasks || model("Tasks", TasksSchema, "tasks");
+export const TasksModel = models.Tasks || model("Tasks", TasksSchema, "tasks");

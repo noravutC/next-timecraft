@@ -20,7 +20,7 @@ export default function RootPage() {
 
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <LoaderPage />
+      <LoaderPage ballSize={4} />
     </div>
   )
   // return <div className="w-full h-full flex items-center justify-center">Loading...</div>

@@ -1,13 +1,13 @@
 // // models/Project.ts
 
-import { Schema, model, models, SchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const MemberSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     role: {
       type: String,
-      enum: ["admin", "editor", "viewer"],
+      enum: ["owner", "admin", "editor", "viewer"],
       default: "viewer",
     },
     joinedAt: { type: Date, default: Date.now },
@@ -27,5 +27,5 @@ const ProjectsSchema = new Schema(
   { timestamps: true }
 );
 
-export const Projects =
+export const ProjectsModel =
   models.Projects || model("Projects", ProjectsSchema, "projects");

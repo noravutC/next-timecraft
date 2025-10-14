@@ -31,7 +31,7 @@
 //           router.push("/project");
 //         }
 //       } catch (err) {
-//         console.error(err);
+//         console.log(err);
 //       }
 //     }
 
@@ -107,7 +107,7 @@ export default function Login() {
   if (status === "loading") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoaderPage />
+        <LoaderPage ballSize={4} />
       </div>
     )
   } else if (status === 'unauthenticated') {
@@ -122,7 +122,7 @@ export default function Login() {
   } else {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoaderPage />
+        <LoaderPage ballSize={4} />
       </div>
     )
   }

@@ -80,7 +80,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
       return tasks;
     } catch (error) {
-      console.error("Failed to fetch projects:", error);
+      console.log("Failed to fetch projects:", error);
       throw error;
     } finally {
       set({ status: "none" });

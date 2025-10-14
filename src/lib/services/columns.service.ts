@@ -21,6 +21,15 @@ class ColumnService {
         throw error?.response?.data || new Error("Failed to fetch columns by projectId");
       });
   }
+
+  async createColumn(projectId: string, columnData: Partial<Column>): Promise<APIPost<Column>> {
+    return this.client
+      .post(`/column/`, { projectId, ...columnData })
+      .then((response) => response.data as APIPost<Column>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to create column by projectId");
+      });
+  }
   
 }
 

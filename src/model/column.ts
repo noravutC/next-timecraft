@@ -15,5 +15,5 @@ const ColumnsSchema = new Schema(
   { timestamps: true }
 );
 
-export const Columns =
+export const ColumnsModel =
   models.Columns || model("Columns", ColumnsSchema, "columns");

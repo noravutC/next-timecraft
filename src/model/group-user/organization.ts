@@ -10,6 +10,6 @@ const OrganizationSchema = new Schema(
   { timestamps: true }
 );
 
-export const Organization =
+export const OrganizationsModel =
   models.Organization ||
   model("Organization", OrganizationSchema, "organizations");

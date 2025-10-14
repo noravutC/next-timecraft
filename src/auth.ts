@@ -2,8 +2,8 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { connectDB } from "@/lib/mongodb";
-import { User } from "@/model/group-user/user";
-import { Membership } from "@/model/group-user/member-ship";
+import { UsersModel } from "@/model/group-user/user";
+import { MembershipModel } from "@/model/group-user/member-ship";
 import { AuthOptions } from "next-auth";
 
 export interface TimeCraftJWT extends Record<string, unknown> {
@@ -28,9 +28,9 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       await connectDB();
-      let dbUser = await User.findOne({ email: user.email });
+      let dbUser = await UsersModel.findOne({ email: user.email });
       if (!dbUser) {
-        dbUser = await User.create({
+        dbUser = await UsersModel.create({
           fullName: user.name,
           email: user.email,
           avatar: user.image,
@@ -43,9 +43,9 @@ export const authOptions: AuthOptions = {
     },
     async jwt({ token, user }) {
       if (user?.email) {
-        const dbUser = await User.findOne({ email: user.email });
+        const dbUser = await UsersModel.findOne({ email: user.email });
         if (dbUser) {
-          const hasOrg = await Membership.exists({
+          const hasOrg = await MembershipModel.exists({
             userId: dbUser._id,
             role: "owner",
           });

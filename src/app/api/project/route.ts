@@ -2,7 +2,7 @@
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-import { Projects } from "@/model/project";
+import { ProjectsModel } from "@/model/project";
 import { type Project } from "@/types";
 import { ProjectSchema } from "@/model/validate/project";
 import mongoose from "mongoose";
@@ -24,21 +24,21 @@ export async function GET() {
   try {
     await connectDB();
 
-    const response: Project[] = await Projects.find();
+    const response: Project[] = await ProjectsModel.find();
     return NextResponse.json(
       {
         success: true,
-        message: "Success",
+        message: "Get projects success",
         data: response,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching projects:", error);
+    console.log("Error get projects:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch projects",
+        message: "Failed to get projects",
         data: [],
         error: error,
       },
@@ -61,6 +61,12 @@ export async function POST(request: Request) {
   }
   try {
     const body = await request.json();
+    if (body.members?.length > 0) {
+      body.members = body.members.map((m: any) => ({
+        ...m,
+        joinedAt: new Date(m.joinedAt),
+      }));
+    }
     const parsed = ProjectSchema.parse(body);
     const normalized = {
       ...parsed,
@@ -72,7 +78,7 @@ export async function POST(request: Request) {
         })) || [],
     };
     await connectDB();
-    const project = new Projects(normalized);
+    const project = new ProjectsModel(normalized);
     await project.save();
     return NextResponse.json(
       {
@@ -83,7 +89,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error create project:", error);
+    console.log("Error create project:", error);
     return NextResponse.json(
       {
         success: false,

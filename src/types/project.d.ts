@@ -14,6 +14,6 @@ export interface Project {
 
 export interface Member {
   userId: string; // ObjectId
-  role: "admin" | "editor" | "viewer";
+  role: "owner" | "admin" | "editor" | "viewer";
   joinedAt: Date;
 }

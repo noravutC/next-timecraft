@@ -3,8 +3,8 @@
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import { Tasks } from "@/model/task";
-import { type Task } from "@/types/task.type";
+import { TasksModel } from "@/model/task";
+import { type Task } from "@/types/task";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 
@@ -36,24 +36,24 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: Task[] = await Tasks.find({
+    const response: Task[] = await TasksModel.find({
       columnId: new ObjectId(columnId),
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Success to get tasks by column id!",
+        message: "Get tasks by column id success",
         data: response,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error fetching tasks by columnId:", error);
+    console.log("Error get tasks by columnId:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch tasks by columnId",
+        message: "Failed to get tasks by columnId",
         error: error,
       },
       { status: 500 }

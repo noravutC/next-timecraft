@@ -6,7 +6,7 @@ export const ProjectSchema = z.object({
   ownerId: z.string().min(1),
   members: z.array(z.object({
     userId: z.string(),
-    role: z.enum(["admin", "editor", "viewer"]).optional(),
+    role: z.enum(["owner", "admin", "editor", "viewer"]).optional(),
     joinedAt: z.date().optional(),
   })).optional(),
   tags: z.array(z.string()).optional(),

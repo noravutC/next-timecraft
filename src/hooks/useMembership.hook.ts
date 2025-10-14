@@ -82,7 +82,7 @@ export const useMembershipStore = create<MembershipStore>((set, get) => ({
 
       return memberShips;
     } catch (error) {
-      console.error("Failed to fetch memberShips:", error);
+      console.log("Failed to fetch memberShips:", error);
       throw error;
     } finally {
       set({ status: "none" });
@@ -99,7 +99,7 @@ export const useMembershipStore = create<MembershipStore>((set, get) => ({
         toast.success(`Success created membership success.`)
         return response.created;
     } catch (error) {
-      console.error("Failed to created membership with user Id:", error);
+      console.log("Failed to created membership with user Id:", error);
       toast.error('Something wrong cannot create membership.')
       throw error;
     } finally {

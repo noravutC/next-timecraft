@@ -2,7 +2,7 @@
 
 import { connectDB } from "@/lib/mongodb";
 import {  NextResponse } from "next/server";
-import { Projects } from "@/model/project";
+import { ProjectsModel } from "@/model/project";
 import { type Project  } from "@/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
@@ -35,21 +35,21 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: (Project | undefined | null) = await Projects.findById(projectId);
+    const response: (Project | undefined | null) = await ProjectsModel.findById(projectId);
     return NextResponse.json(
       {
         success: true,
-        message: "Success to get project data by ID!",
+        message: "Get project by ID success",
         data: response,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error fetching project by ID:", error);
+    console.log("Error get project by ID:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch project by ID",
+        message: "Failed to get project by ID",
         error: error,
       },
       { status: 500 }

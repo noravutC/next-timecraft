@@ -8,6 +8,7 @@ import {
   APIPut,
   APIError,
   APIPatch,
+  TemplateColumn,
 } from "@/types";
 
 class ProjectService {
@@ -39,6 +40,20 @@ class ProjectService {
         throw (
           (error?.response?.data as APIError) ||
           new Error("Failed to create project")
+        );
+      });
+  }
+
+  async applyTemplateColumnsToProject(
+    projectId: string,
+    template: TemplateColumn
+  ): Promise<APIPut<Project>> {
+    return this.client
+      .put(`/project/apply-to-project/`, { projectId, template })
+      .then((response) => response.data as APIPut<Project>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to apply template column.")
         );
       });
   }

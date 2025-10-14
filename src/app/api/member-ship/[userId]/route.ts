@@ -2,7 +2,7 @@
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-import { Membership } from "@/model/group-user/member-ship";
+import { MembershipModel } from "@/model/group-user/member-ship";
 import { type Membership as MembershipProps  } from "@/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
@@ -37,21 +37,21 @@ export async function GET(
     }
     await connectDB();
     const userObjectId = new Types.ObjectId(userId); // แปลงเป็น ObjectId
-    const membership: MembershipProps[] = await Membership.find({ userId: userObjectId });
+    const membership: MembershipProps[] = await MembershipModel.find({ userId: userObjectId });
     return NextResponse.json(
       {
         success: true,
-        message: "Success to get membership data by user id!",
+        message: "Get membership by user id success",
         data: membership,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error fetching membership by ID:", error);
+    console.log("Error get membership by ID:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch membership by ID",
+        message: "Failed to get membership by ID",
         error: error,
       },
       { status: 500 }

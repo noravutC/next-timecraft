@@ -79,7 +79,7 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
 
       return organizations;
     } catch (error) {
-      console.error("Failed to fetch organizations:", error);
+      console.log("Failed to fetch organizations:", error);
       throw error;
     } finally {
       set({ status: "none" });
@@ -96,7 +96,7 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
         toast.success(`Success created organization name is ${response.created?.name}`)
         return response.created;
     } catch (error) {
-      console.error("Failed to created organizations with user Id:", error);
+      console.log("Failed to created organizations with user Id:", error);
       toast.error('Something wrong cannot create organization.')
       throw error;
     } finally {

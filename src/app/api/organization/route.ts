@@ -3,8 +3,8 @@
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-import { Organization } from "@/model/group-user/organization";
-import { Membership } from "@/model/group-user/member-ship";
+import { OrganizationsModel } from "@/model/group-user/organization";
+import { MembershipModel } from "@/model/group-user/member-ship";
 import { type Organizations} from "@/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
@@ -29,7 +29,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const response: Organizations[] = await Organization.find();
+    const response: Organizations[] = await OrganizationsModel.find();
     return NextResponse.json(
       {
         success: true,
@@ -39,7 +39,7 @@ export async function GET() {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching organizations:", error);
+    console.log("Error fetching organizations:", error);
     return NextResponse.json(
       {
         success: false,
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const normalized = OrganizationSchema.parse(body);
     await connectDB();
-    const organizationData = new Organization(normalized);
+    const organizationData = new OrganizationsModel(normalized);
     await organizationData.save();
 
     const currentOrg = (organizationData as  Organizations) ?? null
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       role: "owner",
       organizationId: currentOrg._id,
     }
-    const memberShipData = new Membership(normalizedMemberShip)
+    const memberShipData = new MembershipModel(normalizedMemberShip)
     await memberShipData.save();
     return NextResponse.json(
       {
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error create organization:", error);
+    console.log("Error create organization:", error);
     return NextResponse.json(
       {
         success: false,

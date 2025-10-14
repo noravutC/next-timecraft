@@ -17,6 +17,6 @@ const MembershipSchema = new Schema(
 
 MembershipSchema.index({ userId: 1, organizationId: 1 }, { unique: true });
 
-export const Membership =
+export const MembershipModel =
   models.Membership || model("Membership", MembershipSchema, "memberships");
 

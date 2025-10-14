@@ -25,7 +25,7 @@ export default function ProjectDetailPage() {
         <>
             {loader ? (
                 <div className="w-full h-full flex items-center justify-center">
-                    <LoaderPage />
+                    <LoaderPage ballSize={4} />
                 </div>
             ) : (
                 <>

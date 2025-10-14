@@ -20,7 +20,11 @@ interface ColumnStore {
   getColumnsByProjectId: (projectId: string | null | undefined) => Column[];
 
   // fetch
-  fetchColumnsByProjectId: (projectId: string | null | undefined) => Promise<Column[]>;
+  fetchColumnsByProjectId: (
+    projectId: string | null | undefined
+  ) => Promise<Column[]>;
+  // actions
+  createColumn: (projectId: string, columnData: Partial<Column>) => Promise<Column | null>;
 }
 
 export const useColumnStore = create<ColumnStore>((set, get) => ({
@@ -59,7 +63,7 @@ export const useColumnStore = create<ColumnStore>((set, get) => ({
   getColumnById: (columnId: string) => {
     return get().columns[columnId];
   },
-  
+
   getColumnsByProjectId: (projectId: string | null | undefined) => {
     const allStateColumns = get().columns;
     const filteredColumns = Object.values(allStateColumns).filter(
@@ -71,7 +75,9 @@ export const useColumnStore = create<ColumnStore>((set, get) => ({
   fetchColumnsByProjectId: async (projectId: string | null | undefined) => {
     try {
       set({ status: "fetching" });
-      const response = await columnServices.getColumnsByProjectId(projectId ?? "");
+      const response = await columnServices.getColumnsByProjectId(
+        projectId ?? ""
+      );
       const columns = response?.data || [];
 
       if (columns.length > 0) {
@@ -80,7 +86,29 @@ export const useColumnStore = create<ColumnStore>((set, get) => ({
 
       return columns;
     } catch (error) {
-      console.error("Failed to fetch projects:", error);
+      console.log("Failed to fetch column by project id:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+
+  createColumn: async (projectId: string, columnData: Partial<Column>) => {
+    try {
+      set({ status: "creating" });
+      const response = await columnServices.createColumn(
+        projectId ?? "",
+        columnData,
+      );
+      const column = response?.created;
+
+      if (column) {
+        get().setColumn(column._id, column);
+      }
+
+      return column;
+    } catch (error) {
+      console.log("Failed to create column:", error);
       throw error;
     } finally {
       set({ status: "none" });

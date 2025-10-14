@@ -3,8 +3,8 @@
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import { Columns } from "@/model/column";
-import { type Column } from "@/types/column.type";
+import { ColumnsModel } from "@/model/column";
+import { type Column } from "@/types/column";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 
@@ -36,23 +36,23 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: Column[] = await Columns.find({
+    const response: Column[] = await ColumnsModel.find({
       projectId: new ObjectId(projectId),
     });
     return NextResponse.json(
       {
         success: true,
-        message: "Success to get columns by project id!",
+        message: "Get columns by project id success",
         data: response,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error fetching columns by projectId:", error);
+    console.log("Error get columns by projectId:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch columns by projectId",
+        message: "Failed to get columns by projectId",
         error: error,
       },
       { status: 500 }
