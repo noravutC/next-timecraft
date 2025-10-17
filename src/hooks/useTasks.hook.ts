@@ -20,7 +20,11 @@ interface TaskStore {
   getTaskByColumnId: (columnId: string | null | undefined) => Task[];
 
   // fetch
-  fetchTasksByColumnId: (columnId: string | null | undefined) => Promise<Task[]>;
+  fetchTasksByColumnId: (
+    columnId: string | null | undefined
+  ) => Promise<Task[]>;
+  // actions
+  createTask: (data: Partial<Task>) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -59,11 +63,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   getTaskById: (taskId: string | null | undefined) => {
     return get().tasks[taskId ?? ""];
   },
-  
+
   getTaskByColumnId: (columnId: string | null | undefined) => {
     const allStateColumns = get().tasks;
     const filteredColumns = Object.values(allStateColumns).filter(
-      (col) => col.columnId === (columnId ?? '')
+      (col) => col.columnId === (columnId ?? "")
     );
     return filteredColumns;
   },
@@ -81,6 +85,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       return tasks;
     } catch (error) {
       console.log("Failed to fetch projects:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+
+  createTask: async (data: Partial<Task>) => {
+    try {
+      set({ status: "creating" });
+      const response = await taskServices.createTask(data);
+      const createdTask = response?.created;
+
+      if (createdTask) {
+        get().setTask(createdTask._id, createdTask);
+      }
+    } catch (error) {
+      console.log("Failed to create task:", error);
       throw error;
     } finally {
       set({ status: "none" });

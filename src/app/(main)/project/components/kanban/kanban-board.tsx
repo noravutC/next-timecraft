@@ -119,7 +119,7 @@ export const KanbanBoard = ({
                     <HorizontalMouseWheelScrollArea
                         className="max-w-[80vw] w-full max-h-[60vh] h-[60vh] pr-4"
                     >
-                        <div className="flex min-w-full h-[60vh] items-end gap-4 p-4">
+                        <div className="flex min-w-full h-[60vh] items-end gap-8 p-4 pb-6">
                             {status !== "none" ? (
                                 <div className='max-w-[80vw] w-full h-[60vh] flex justify-center items-center'>
                                     <LoaderPage ballSize={3} />
