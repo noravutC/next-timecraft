@@ -24,7 +24,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const response: Column[] = await ColumnsModel.find();
+    const response = await ColumnsModel.find().lean<Column[]>().exec();
     return NextResponse.json(
       {
         success: true,

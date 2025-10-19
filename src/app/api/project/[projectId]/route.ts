@@ -35,7 +35,7 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: (Project | undefined | null) = await ProjectsModel.findById(projectId);
+    const response = await ProjectsModel.findById(projectId).lean() as Project | null;
     return NextResponse.json(
       {
         success: true,

@@ -24,7 +24,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const response: Project[] = await ProjectsModel.find();
+    const response = await ProjectsModel.find().lean<Project[]>().exec();
     return NextResponse.json(
       {
         success: true,

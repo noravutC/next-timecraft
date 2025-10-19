@@ -22,7 +22,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const response: TemplateColumn[] = await TemplateColumnModel.find();
+    const response = await TemplateColumnModel.find().lean<TemplateColumn[]>().exec();
     return NextResponse.json(
       {
         success: true,

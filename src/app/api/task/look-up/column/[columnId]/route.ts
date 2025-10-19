@@ -36,9 +36,9 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: Task[] = await TasksModel.find({
+    const response  = await TasksModel.find({
       columnId: new ObjectId(columnId),
-    });
+    }).lean<Task>().exec();
 
     return NextResponse.json(
       {

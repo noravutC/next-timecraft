@@ -23,7 +23,8 @@ export const ColumnBar = ({
     const onMoveTaskToColumn = (destinationColumnId: string) => {
         moveTaskToColumn(taskId, destinationColumnId);
     }
-
+    const orderColActive = columns[taskAtColumnId]?.order;
+    const colorColActive = columns[taskAtColumnId]?.color;
     return (
         <div className="w-full h-3 grid grid-cols-6 rounded-full bg-gray-100 overflow-hidden">
             {tempColumns.map((col, index) => {
@@ -35,10 +36,10 @@ export const ColumnBar = ({
                             <div
                                 className={cn(
                                     "h-full w-full transition-colors duration-200",
-                                    !isLast && "border-r border-gray-200"
+                                    !isLast && "border-r-2 border-gray-200"
                                 )}
                                 style={{
-                                    backgroundColor: isActive ? col.color : "transparent",
+                                    backgroundColor: (isActive || col.order <= orderColActive) ? colorColActive : "transparent",
                                 }}
                             />
                         </TooltipTrigger>

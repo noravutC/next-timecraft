@@ -34,7 +34,7 @@ export async function PUT(request: Request) {
 
     await connectDB();
     // ✅ ตรวจว่ามี project นี้ไหมก่อน
-    const project = await ProjectsModel.findById(projectId);
+    const project = await ProjectsModel.findById(projectId).lean();
     if (!project) {
       return NextResponse.json(
         { success: false, message: "Project not found" },

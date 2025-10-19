@@ -36,9 +36,9 @@ export async function GET(
       );
     }
     await connectDB();
-    const response: UserType[] = await UsersModel.find({
+    const response = await UsersModel.find({
       _id: new ObjectId(userId),
-    });
+    }).lean<UserType[]>().exec();
     return NextResponse.json(
       {
         success: true,

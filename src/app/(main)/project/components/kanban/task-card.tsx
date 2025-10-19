@@ -47,7 +47,7 @@ export function TaskCard({ task }: TaskCardProps) {
         </div>
       </div>
       <ColumnBar
-      taskId={task._id}
+        taskId={task._id}
         taskAtColumnId={task.columnId}
       />
 

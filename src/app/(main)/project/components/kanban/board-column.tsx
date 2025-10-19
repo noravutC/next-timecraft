@@ -52,7 +52,7 @@ export const BoardColumn = ({
             }}
           />
           <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start">
-            <div>{tasks.length}/{column.wipLimit}</div>
+            <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
             {/* Unit */}
             <div>task</div>
           </Badge>
