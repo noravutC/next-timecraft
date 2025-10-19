@@ -22,6 +22,7 @@ export const PreviewTaskForm = ({
         setTaskName(undefined);
         handleOpenTaskForm();
     };
+
     return (
         <div className="h-fit w-full border rounded-md p-4 hover:shadow-md transition-shadow duration-200 flex flex-col gap-6">
             <div className="grid grid-cols-5 w-full">

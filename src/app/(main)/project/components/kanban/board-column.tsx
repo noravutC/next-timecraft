@@ -21,7 +21,9 @@ export const BoardColumn = ({
   const [openTaskForm, setOpenTaskForm] = useState(false);
   const [mouseEnterColumn, setMouseEnterColumn] = useState(false);
 
-  const tasks = getTaskByColumnId(column?._id);
+  const tasks = useMemo(() => {
+    return getTaskByColumnId(column?._id);
+  }, [status]);
 
   const handleOpenTaskForm = () => {
     setOpenTaskForm(!openTaskForm);
@@ -74,7 +76,10 @@ export const BoardColumn = ({
             )}
             {tasks.length > 0 && tasks.map((task) => {
               return (
-                <TaskCard key={task._id} task={task} />
+                <TaskCard
+                  key={task._id}
+                  task={task}
+                />
               );
             })}
           </div>

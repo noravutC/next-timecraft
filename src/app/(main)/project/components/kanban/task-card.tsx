@@ -16,7 +16,8 @@ import { Task } from "@/types";
 // utils
 import { formatDateToString } from "@/helper/utils";
 import { useState } from "react";
-// import { TaskModal } from "./components/task-modal";
+import { useColumnStore } from "@/hooks";
+import { ColumnBar } from "./ui-customize/column-bar";
 
 export interface TaskCardProps {
   task: Task;
@@ -45,6 +46,11 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </div>
+      <ColumnBar
+      taskId={task._id}
+        taskAtColumnId={task.columnId}
+      />
+
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-start gap-2">
           <Badge variant={'outline'} className="rounded-full text-xs">

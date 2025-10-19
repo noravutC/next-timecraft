@@ -3,11 +3,8 @@ import apiClient from "../axios";
 import {
   Task,
   APIGet,
-  // APISingleGet,
   APIPost,
-  // APIPut,
-  // APIError,
-  // APIPatch,
+  APIPatch,
 } from "@/types";
 
 class TaskService {
@@ -31,6 +28,20 @@ class TaskService {
       .then((response) => response.data as APIPost<Task>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to create task");
+      });
+  }
+
+  async moveTaskToColumn(
+    taskId: string,
+    destinationColumnId: string
+  ): Promise<APIPatch<Task>> {
+    return this.client
+      .patch(`/task/${taskId}/move/`, { columnId: destinationColumnId })
+      .then((response) => response.data as APIPatch<Task>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to move task to column")
+        );
       });
   }
 }

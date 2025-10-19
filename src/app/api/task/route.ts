@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Create Project success",
+        message: "Create project success",
         created: newTask,
       },
       { status: 201 }

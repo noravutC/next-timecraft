@@ -23,7 +23,7 @@ export interface APIPut<T> {
 }
 
 export interface APIPatch<T> {
-    updated : T;
+    updated : T | null;
     message: string;
     status: number;
 }
