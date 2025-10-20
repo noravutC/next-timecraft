@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { TasksModel } from "@/model/task";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
+import { ObjectId } from "mongodb";
 
 export async function PATCH(
   request: Request,
@@ -39,7 +40,7 @@ export async function PATCH(
     await connectDB();
     const moveTask = await TasksModel.findByIdAndUpdate(
       taskId,
-      { columnId: body.columnId },
+      { columnId: new ObjectId(body.columnId) },
       { new: true }
     );
 
