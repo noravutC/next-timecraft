@@ -17,24 +17,29 @@ interface BoardColumnProps {
 export const BoardColumn = ({
   column,
 }: BoardColumnProps) => {
-  const { fetchTasksByColumnId, getTaskByColumnId, status } = useTaskStore();
+  const { fetchTasksByColumnId, getTaskByColumnId, status, tasks: pureTasks } = useTaskStore();
   const [openTaskForm, setOpenTaskForm] = useState(false);
   const [mouseEnterColumn, setMouseEnterColumn] = useState(false);
 
   const tasks = useMemo(() => {
-    return getTaskByColumnId(column?._id);
-  }, [status]);
+    if (status === "none") {
+      const all = getTaskByColumnId(column?._id);
+      return all;
+    } else {
+      return [];
+    }
+  }, [column._id, status, pureTasks]);
+
 
   const handleOpenTaskForm = () => {
     setOpenTaskForm(!openTaskForm);
   }
 
   useEffect(() => {
-    if (column) {
+    if (column._id) {
       fetchTasksByColumnId(column._id);
     }
-  }, [column]);
-
+  }, [column._id]);
   return (
     <div
       className="rounded-md h-[55vh] min-w-[250px] max-w-[250px] w-full border overflow-hidden flex flex-col"

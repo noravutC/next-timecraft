@@ -26,7 +26,10 @@ interface TaskStore {
   ) => Promise<Task[]>;
   // actions
   createTask: (data: Partial<Task>) => Promise<void>;
-  moveTaskToColumn: (taskId: string, destinationColumnId: string) => Promise<void>;
+  moveTaskToColumn: (
+    taskId: string,
+    destinationColumnId: string
+  ) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -58,11 +61,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }));
   },
 
-  setTasks: (tasks) => {
-    const mapped = tasks.reduce((acc, column) => {
-      acc[column._id] = column;
+  setTasks: (pureTasks: Task[]) => {
+    const mapped = pureTasks.reduce((acc, task) => {
+      acc[task._id] = task;
       return acc;
     }, {} as Record<string, Task>);
+
     set((state) => ({
       tasks: {
         ...state.tasks,
@@ -90,10 +94,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ status: "fetching" });
       const response = await taskServices.getTasksByColumnId(columnId ?? "");
       const tasks = response?.data || [];
-
-      if (tasks.length > 0) {
-        get().setTasks(tasks);
-      }
+      // console.log("Fetched tasks for column (client store):", columnId, tasks);
+      get().setTasks(tasks);
+      // if (tasks.length > 0) {
+      //   get().setTasks(tasks);
+      // }
 
       return tasks;
     } catch (error) {
@@ -135,7 +140,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       //   columnId: destinationColumnId,
       // };
 
-      const response = await taskServices.moveTaskToColumn(taskId, destinationColumnId);
+      const response = await taskServices.moveTaskToColumn(
+        taskId,
+        destinationColumnId
+      );
       const updatedTask = response?.updated;
 
       if (updatedTask) {
