@@ -26,7 +26,7 @@ export const ColumnBar = ({
     const orderColActive = columns[taskAtColumnId]?.order;
     const colorColActive = columns[taskAtColumnId]?.color;
     return (
-        <div className="w-full h-3 grid grid-cols-6 rounded-full bg-gray-100 overflow-hidden">
+        <div className="w-full min-h-[13px] max-h-[13px] grid grid-cols-6 rounded-full bg-gray-100 overflow-hidden border border-gray-300">
             {tempColumns.map((col, index) => {
                 const isActive = taskAtColumnId === col._id;
                 const isLast = index === lengthColumns - 1;
@@ -36,7 +36,7 @@ export const ColumnBar = ({
                             <div
                                 className={cn(
                                     "h-full w-full transition-colors duration-200",
-                                    !isLast && "border-r-2 border-gray-200"
+                                    !isLast && "border-r border-gray-300"
                                 )}
                                 style={{
                                     backgroundColor: (isActive || col.order <= orderColActive) ? colorColActive : "transparent",

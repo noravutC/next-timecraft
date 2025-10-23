@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // icons
-import { Calendar, EllipsisVertical } from "lucide-react";
+import { Calendar, EllipsisVertical, User } from "lucide-react";
 // types
 import { Task } from "@/types";
 // utils
@@ -18,6 +18,7 @@ import { formatDateToString } from "@/helper/utils";
 import { useState } from "react";
 import { useColumnStore } from "@/hooks";
 import { ColumnBar } from "./ui-customize/column-bar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export interface TaskCardProps {
   task: Task;
@@ -46,6 +47,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </DropdownMenu>
         </div>
       </div>
+
       <ColumnBar
         taskId={task._id}
         taskAtColumnId={task.columnId}
@@ -53,22 +55,33 @@ export function TaskCard({ task }: TaskCardProps) {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-start gap-2">
-          <Badge variant={'outline'} className="rounded-full text-xs">
-            status
-          </Badge>
-          <div className="text-xs flex gap-2 text-gray-500">
+          <div className="flex items-center gap-2">
             <Calendar size={13} />
-            {task.dueDate ? formatDateToString(task.dueDate) : 'No due date'}
+            <p className="text-xs text-gray-500">{task.dueDate ? formatDateToString(task.dueDate) : '-'}</p>
           </div>
         </div>
         <div>
           <Avatar className="w-6 h-6 select-none">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
+            {task.assignees.length > 0 ? (
+              <>
+              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+              <AvatarFallback>CN</AvatarFallback>
+              </>
+            ) : (
+              <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-semibold">Unassigned</p>
+                </TooltipContent>
+              </Tooltip>
+              </>
+            )}
           </Avatar>
         </div>
       </div>
-      {/* <TaskModal taskId={task._id} taskTitle={task.title} open={open} onOpenChange={setOpen} /> */}
     </div>
   );
 }
