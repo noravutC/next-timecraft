@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { taskId: string } }
+  context: { params: { taskId: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -23,7 +23,7 @@ export async function PATCH(
     );
   }
   try {
-    const { taskId } = await params;
+    const { taskId } = await context.params
     const body = await request.json();
     console.log("Request body:", body);
 

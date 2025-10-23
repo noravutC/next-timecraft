@@ -43,7 +43,7 @@ export const KanbanBoard = ({
         order: number | null;
     }>(resetColumnState);
 
-    const columnInProject = Object.values(columns);
+    const columnInProject = Object.values(columns).sort((a, b) => a.order - b.order);
 
     const lastOrderColumn = useMemo(() => {
         return columnInProject.reduce((max, col) => col.order > max ? col.order : max, 0);
