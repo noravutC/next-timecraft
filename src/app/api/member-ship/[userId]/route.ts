@@ -10,7 +10,7 @@ import { Types } from "mongoose";
 
 export async function GET(
   request: Request,
-  context: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -24,7 +24,7 @@ export async function GET(
     );
   }
   try {
-    const { userId } = await context.params
+    const { userId } = await params;
 
     if (!userId) {
       return NextResponse.json(
