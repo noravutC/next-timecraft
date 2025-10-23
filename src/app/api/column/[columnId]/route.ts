@@ -1,1 +1,0 @@
-// app/api/column/columnId/route.ts
