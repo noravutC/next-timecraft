@@ -21,11 +21,8 @@ export default function RootPage() {
       </div>
     )
   } else if (status === 'unauthenticated') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-      </div>
-    );
+    router.push("/login");
+    return;
   } else {
     return (
       <div className="w-full h-full flex items-center justify-center">
