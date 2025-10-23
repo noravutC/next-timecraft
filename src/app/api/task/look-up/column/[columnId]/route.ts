@@ -10,7 +10,7 @@ import { authOptions } from "@/auth";
 
 export async function GET(
   request: Request,
-  context: { params: { columnId: string } }
+  { params }: { params: Promise<{ columnId: string }> }
 ) {
   const session = await getServerSession(authOptions);
     if (!session) {
@@ -24,7 +24,7 @@ export async function GET(
       );
     }
   try {
-    const { columnId } = await context.params
+    const { columnId } = await params;
 
     if (!columnId) {
       return NextResponse.json(
