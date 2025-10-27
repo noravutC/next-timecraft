@@ -16,9 +16,12 @@ import { Task } from "@/types";
 // utils
 import { formatDateToString } from "@/helper/utils";
 import { useState } from "react";
-import { useColumnStore } from "@/hooks";
+import { useBoardStore } from "@/hooks";
 import { ColumnBar } from "./ui-customize/column-bar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Dialog } from "@/components/ui/dialog";
+import { TaskModal } from "./ui-customize/task-modal";
+import { PreviewMembers } from "./tab-task/preview-members";
 
 export interface TaskCardProps {
   task: Task;
@@ -35,20 +38,20 @@ export function TaskCard({ task }: TaskCardProps) {
         <div className="col-span-1 flex justify-end items-start">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="p-1" size={null}>
+              <Button type="button" variant="ghost" className="p-1 cursor-pointer" size={null}>
                 <EllipsisVertical size={10} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">Open tasks</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
       <ColumnBar
+        // Bar indicating task's column position
         taskId={task._id}
         taskAtColumnId={task.columnId}
       />
@@ -60,28 +63,25 @@ export function TaskCard({ task }: TaskCardProps) {
             <p className="text-xs text-gray-500">{task.dueDate ? formatDateToString(task.dueDate) : '-'}</p>
           </div>
         </div>
-        <div>
-          <Avatar className="w-6 h-6 select-none">
-            {task.assignees.length > 0 ? (
+        <div className="h-fit">
+          <PreviewMembers assinees={task.assignees} />
+          {task.assignees.length === 0 && (
+            <Avatar className="w-6 h-6 select-none">
               <>
-              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-              <AvatarFallback>CN</AvatarFallback>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-semibold">Unassigned</p>
+                  </TooltipContent>
+                </Tooltip>
               </>
-            ) : (
-              <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-semibold">Unassigned</p>
-                </TooltipContent>
-              </Tooltip>
-              </>
-            )}
-          </Avatar>
+            </Avatar>
+          )}
         </div>
       </div>
+      <TaskModal task={task} open={open} onOpenChange={setOpen} />
     </div>
   );
 }

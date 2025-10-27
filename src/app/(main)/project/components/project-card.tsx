@@ -52,12 +52,11 @@ export const ProjectCard = ({
                         {project?.name}
                     </span>
                     {isHovered && (
-                        <Button variant="ghost" className="absolute right-4 p-1 cursor-pointer" size={'sm'}>
+                        <Button type="button" variant="ghost" className="absolute right-4 p-1 cursor-pointer" size={'sm'}>
                             <EllipsisVertical className="rotate-90" size={10} />
                         </Button>
                     )}
                 </div>
-                {/* <span className="text-sm text-muted-foreground line-clamp-2 text-gray-500 pr-4 max-h-[40px] h-[40px]">{project?.description}</span> */}
                 <div className="flex gap-4 flex-wrap items-center h-fit">
                     {(project?.tags ?? []).map((tag) => (
                         <Badge key={tag} className="flex gap-1 items-center justify-start" variant={'outline'}>

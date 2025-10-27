@@ -1,19 +1,18 @@
 // src/hooks/useProjects.ts
 import { create } from "zustand";
-import { Project, TemplateColumn } from "@/types";
+import { Project, TemplateColumn, ProjectCache } from "@/types";
 import { projectServices } from "@/lib/services/projects.service";
 import { LoaderStatus } from "./hook.type";
 
 interface ProjectStore {
-  projects: Record<string, Project>;
+  lastFetched: number;
+  projects: Record<string, ProjectCache>;
   projectIdActivate?: string | null | undefined;
 
   status: LoaderStatus;
   setStatus: (status: LoaderStatus) => void;
 
   // set
-  setProject: (projectId: string, projectData: Project) => void;
-  setProjects: (projects: Project[]) => void;
   setActivateProject: (projectId: string | undefined | null) => void;
   clearProjects: () => void;
 
@@ -21,7 +20,7 @@ interface ProjectStore {
   getProjectById: (projectId: string) => Project | undefined;
 
   // fetch
-  fetchProjects: () => Promise<Project[]>;
+  fetchProjects: (isBackground?: boolean) => Promise<Project[]>;
   fetchProjectById: (projectId: string) => void;
   // actions
   createProject: (data: Partial<Project>) => void;
@@ -29,36 +28,12 @@ interface ProjectStore {
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
+  lastFetched: 0,
   projects: {},
   status: "none",
   projectIdActivate: null,
 
   setStatus: (status) => set({ status }),
-
-  setProject: (projectId: string, projectData: Project) => {
-    if (projectId !== projectData._id) {
-      console.warn(`Project ID mismatch: ${projectId} !== ${projectData._id}`);
-    }
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        [projectId]: projectData,
-      },
-    }));
-  },
-
-  setProjects: (projects: Project[]) => {
-    const mapped = projects.reduce((acc, project) => {
-      acc[project._id] = project;
-      return acc;
-    }, {} as Record<string, Project>);
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        ...mapped,
-      },
-    }));
-  },
   setActivateProject: (projectId: string | undefined | null) =>
     set({ projectIdActivate: projectId }),
 
@@ -68,17 +43,39 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return get().projects[projectId];
   },
 
-  fetchProjects: async () => {
+  fetchProjects: async (isBackground = false) => {
+    const { lastFetched, projects } = get();
+    const now = Date.now();
+    const cacheDuration = 2 * 60 * 1000; //2 minute
+
+    if (Object.keys(projects).length > 0 && now - lastFetched < cacheDuration) {
+      console.log("Using cached projects data.");
+      return Object.values(projects) as Project[];
+    }
+
     try {
-      set({ status: "fetching" });
-      const response = await projectServices.getProjects();
-      const projects = response?.data || [];
-
-      if (projects.length > 0) {
-        get().setProjects(projects);
+      if (!isBackground) {
+        set({ status: "fetching" });
       }
+      const response = await projectServices.getProjects();
+      const fetchedProjects = response?.data || [];
+      const projectIdActivate = get().projectIdActivate;
 
-      return projects;
+      const mappedProjects = fetchedProjects.reduce((acc, project) => {
+        acc[project._id] = {...project, timestamp: now } as ProjectCache;
+        return acc;
+      }, {} as Record<string, ProjectCache>);
+
+      set(() => ({
+        projects: mappedProjects,
+        lastFetched: now,
+        projectIdActivate:
+          projectIdActivate && mappedProjects[projectIdActivate]
+            ? projectIdActivate
+            : fetchedProjects[0]?._id || null,
+      }));
+
+      return fetchedProjects;
     } catch (error) {
       console.log("Failed to fetch projects:", error);
       throw error;
@@ -88,13 +85,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   fetchProjectById: async (projectId: string) => {
+    const { projects } = get();
+    const now = Date.now();
+    const cacheDuration = 2 * 60 * 1000;
+    const projectCache = projects[projectId];
+    if (projectCache && now - projectCache.timestamp < cacheDuration) {
+      console.log('Use project cache');
+      return;
+    }
     try {
       set({ status: "fetching" });
       const response = await projectServices.getProjectById(projectId);
       const project = response.data;
 
       if (project) {
-        get().setProject(project._id, project); // ✅ ใช้ method กลาง
+        // get().setProject(project._id, project); // ✅ ใช้ method กลาง
         return project;
       }
     } catch (error) {
@@ -113,7 +118,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const project = response.created;
 
       if (project) {
-        get().setProject(project._id, project);
+        // get().setProject(project._id, project);
         return project;
       }
     } catch (error) {
@@ -130,15 +135,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   ) => {
     try {
       set({ status: "updating" });
-      const response =
-        await projectServices.applyTemplateColumnsToProject(
-          projectId,
-          template
-        );
+      const response = await projectServices.applyTemplateColumnsToProject(
+        projectId,
+        template
+      );
       const updatedProject = response?.updated;
 
       if (updatedProject) {
-        get().setProject(updatedProject._id, updatedProject);
+        // get().setProject(updatedProject._id, updatedProject);
       }
 
       return updatedProject;

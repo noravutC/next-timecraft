@@ -43,7 +43,16 @@ export const PreviewTaskForm = ({
                             handleOpenTaskForm();
                         }}
                     />
+                    <div className='w-full flex justify-end'>
+                        <span className='p-1 bg-gray-100 rounded-xs flex items-center text-xs font-semibold text-gray-700'>
+                            Enter 
+                            <p className='text-md ml-1'>⏎</p>
+                        </span>
+                    </div>
                 </div>
+                {/* <span className='text-sm font-semibold text-gray-700 flex items-center justify-start'>
+                    Enter ⏎
+                </span> */}
             </div>
         </div>
     )

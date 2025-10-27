@@ -1,19 +1,18 @@
-// src/hooks/useColumns.hook.ts
+// src/hooks/useBoard.hook.ts
 import { create } from "zustand";
-import { Task } from "@/types";
+import { Task, TaskCache } from "@/types";
 import { taskServices } from "@/lib/services/tasks.service";
 import { LoaderStatus } from "./hook.type";
 
-interface TaskStore {
-  tasks: Record<string, Task>;
+export interface TaskStore {
+  tasks: Record<string, TaskCache>;
 
   status: LoaderStatus;
   setStatus: (status: LoaderStatus) => void;
 
   // set
-  setUpdatedTask: (taskId: string, updatedTask: Partial<Task>) => void;
-  setTask: (taskId: string, taskData: Task) => void;
-  setTasks: (tasks: Task[]) => void;
+  setUpdatedTask: (taskId: string, updatedTask: Partial<TaskCache>) => void;
+  setTasks: (alreadyTasks: Record<string, TaskCache>) => void;
   clearTasks: () => void;
 
   // get
@@ -26,6 +25,7 @@ interface TaskStore {
   ) => Promise<Task[]>;
   // actions
   createTask: (data: Partial<Task>) => Promise<void>;
+  updateTask: (taskId: string, data: Partial<Task>) => Promise<void>;
   moveTaskToColumn: (
     taskId: string,
     destinationColumnId: string
@@ -49,28 +49,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }));
   },
 
-  setTask: (taskId, taskData) => {
-    if (taskId !== taskData._id) {
-      console.warn(`Task ID mismatch: ${taskId} !== ${taskData._id}`);
-    }
+  setTasks: (alreadyTasks: Record<string, TaskCache>) => {
     set((state) => ({
       tasks: {
         ...state.tasks,
-        [taskId]: taskData,
-      },
-    }));
-  },
-
-  setTasks: (pureTasks: Task[]) => {
-    const mapped = pureTasks.reduce((acc, task) => {
-      acc[task._id] = task;
-      return acc;
-    }, {} as Record<string, Task>);
-
-    set((state) => ({
-      tasks: {
-        ...state.tasks,
-        ...mapped,
+        ...alreadyTasks,
       },
     }));
   },
@@ -94,11 +77,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ status: "fetching" });
       const response = await taskServices.getTasksByColumnId(columnId ?? "");
       const tasks = response?.data || [];
-      // console.log("Fetched tasks for column (client store):", columnId, tasks);
-      get().setTasks(tasks);
-      // if (tasks.length > 0) {
-      //   get().setTasks(tasks);
-      // }
 
       return tasks;
     } catch (error) {
@@ -116,10 +94,37 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const createdTask = response?.created;
 
       if (createdTask) {
-        get().setTask(createdTask._id, createdTask);
+        set((state) => ({
+          tasks: {
+            ...state.tasks,
+            [createdTask._id]: { ...createdTask, timestamp: Date.now() }
+          }
+        }))
       }
     } catch (error) {
       console.log("Failed to create task:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+
+  updateTask: async (taskId: string, data: Partial<Task>) => {
+    try {
+      set({ status: "updating" });
+      const response = await taskServices.updateOneTask(taskId, data);
+      const updatedTask = response?.updated;
+
+      if (updatedTask) {
+        set((state) => ({
+          tasks: {
+            ...state.tasks,
+            [updatedTask._id]: { ...updatedTask, timestamp: Date.now() }
+          }
+        }))
+      }
+    } catch (error) {
+      console.log("Failed to update task:", error);
       throw error;
     } finally {
       set({ status: "none" });
@@ -135,11 +140,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         throw new Error("Task not found");
       }
 
-      // const updatedData = {
-      //   ...task,
-      //   columnId: destinationColumnId,
-      // };
-
       const response = await taskServices.moveTaskToColumn(
         taskId,
         destinationColumnId
@@ -147,7 +147,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const updatedTask = response?.updated;
 
       if (updatedTask) {
-        console.log("updatedTask: ", updatedTask);
         get().setUpdatedTask(updatedTask._id, updatedTask);
       } else {
         console.log("No updated task returned from the service");

@@ -4,7 +4,7 @@ import { TemplateColumn } from "@/types";
 import { templateColumnsServices } from "@/lib/services/template-columns.service";
 import { LoaderStatus } from "./hook.type";
 
-interface TemplateColumnStore {
+interface TemplateBoardStore {
   templateColumns: Record<string, TemplateColumn>;
 
   status: LoaderStatus;
@@ -24,7 +24,7 @@ interface TemplateColumnStore {
   // actions
 }
 
-export const useTemplateColumnsStore = create<TemplateColumnStore>(
+export const useTemplateColumnsStore = create<TemplateBoardStore>(
   (set, get) => ({
     templateColumns: {},
     status: "none",

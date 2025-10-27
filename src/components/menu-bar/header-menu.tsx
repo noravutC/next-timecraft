@@ -1,6 +1,6 @@
 'use client';
 import React from "react";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 // components
 import {
     DropdownMenu,
@@ -16,13 +16,12 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Button } from "../ui/button";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useCurrentUserContext } from "@/context/current-user-context";
 
 export const HeaderMenu = () => {
-    const { data: session } = useSession();
-    // console.log('session: ', session);
+    const { currentUser } = useCurrentUserContext();
     return (
         <div className="w-full flex justify-between items-center h-[7vh] p-4">
             <div></div>
@@ -30,21 +29,32 @@ export const HeaderMenu = () => {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Avatar className="cursor-pointer">
-                            <AvatarImage src={session?.user.image ?? ''} alt={session?.user.name ?? ''} />
-                            <AvatarFallback className="text-xs font-semibold">
-                                {session?.user.name
-                                    ?.split(' ')
-                                    .map(word => word[0])
-                                    .join('')
-                                    .toUpperCase()
-                                }
-                            </AvatarFallback>
+                            {currentUser ? (
+                                <>
+                                    <AvatarImage src={currentUser.avatar} alt={currentUser.fullName ?? ''} />
+                                    <AvatarFallback className="text-xs font-semibold">
+                                        {currentUser.fullName
+                                            ?.split(' ')
+                                            .map(word => word[0])
+                                            .join('')
+                                            .toUpperCase()
+                                        }
+                                    </AvatarFallback>
+                                </>
+                            ) : (
+                                <>
+                                    <AvatarFallback className="text-xs font-semibold">
+                                        UNK
+                                    </AvatarFallback>
+                                </>
+                            )}
+
                         </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-40" align="end">
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuItem
-                        className="cursor-pointer"
+                            className="cursor-pointer"
                             onClick={() => signOut({ callbackUrl: "/" })}
                         >
                             Log out

@@ -1,16 +1,20 @@
 // types/task.type.ts
 export interface Task {
-  _id: string;             // ObjectId
-  projectId: string;       // อ้างถึง Project
-  columnId: string;        // อ้างถึง Column
+  _id: string;
+  projectId: string;
+  columnId: string;
   title: string;
   description?: string;
-  assignees: string[];     // array ของ userId
+  assignees: string[];
   priority?: "low" | "medium" | "high";
   dueDate?: Date;
   tags?: string[];
-  order: number;           // ใช้จัดเรียงภายใน column
+  order: number;
   archived: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface TaskCache extends Task {
+  timestamp: number;
 }

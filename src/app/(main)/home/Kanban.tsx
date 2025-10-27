@@ -162,7 +162,7 @@ export function KanbanBoard() {
               <p className="text-sm text-muted-foreground mb-1">Project</p>
               <h1 className="text-2xl font-bold text-foreground">Kanban Board</h1>
             </div>
-            <Button onClick={() => setCreateColumnOpen(true)}>
+            <Button type="button" onClick={() => setCreateColumnOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Column
             </Button>
