@@ -114,6 +114,25 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.scrollbar-thin-y::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin-y::-webkit-scrollbar-thumb,
+.scrollbar-thin-x::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 10px;
+}
+
+.scrollbar-thin-y::-webkit-scrollbar-track,
+.scrollbar-thin-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

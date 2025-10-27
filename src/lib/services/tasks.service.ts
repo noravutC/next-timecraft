@@ -31,6 +31,15 @@ class TaskService {
       });
   }
 
+  async updateOneTask(taskId: string, data: Partial<Task>): Promise<APIPatch<Task>> {
+    return this.client
+      .patch(`/task/${taskId}`, data)
+      .then((response) => response.data as APIPatch<Task>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to update task");
+      });
+  }
+
   async moveTaskToColumn(
     taskId: string,
     destinationColumnId: string

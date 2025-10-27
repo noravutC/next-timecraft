@@ -1,5 +1,5 @@
 import React from "react";
-import { useColumnStore, useTaskStore } from "@/hooks";
+import { useBoardStore, useTaskStore } from "@/hooks";
 import {
     Tooltip,
     TooltipContent,
@@ -15,7 +15,7 @@ export const ColumnBar = ({
     taskId,
     taskAtColumnId,
 }: ColumnBarProps) => {
-    const { columns } = useColumnStore();
+    const { columns } = useBoardStore();
     const { moveTaskToColumn } = useTaskStore();
     const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
     const lengthColumns = tempColumns.length;

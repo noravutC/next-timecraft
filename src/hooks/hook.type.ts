@@ -1,1 +1,1 @@
-export type LoaderStatus = "none" | "fetching" | "creating" | "updating" | "deleting";
+export type LoaderStatus = "none" | "fetching" | "creating" | "updating" | "deleting" | "error";

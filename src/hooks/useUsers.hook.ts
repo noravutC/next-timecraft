@@ -1,18 +1,19 @@
 // src/hooks/useUsers.hook.ts
 import { create } from "zustand";
-import { User } from "@/types";
+import { User, UserCache } from "@/types";
 import { userServices } from "@/lib/services/user.service";
 import { LoaderStatus } from "./hook.type";
+import { toast } from "sonner";
 
 interface UserStore {
-  users: Record<string, User>;
+  users: Record<string, UserCache>;
 
   status: LoaderStatus;
   setStatus: (status: LoaderStatus) => void;
 
   // set
-  setUser: (userId: string, userData: User) => void;
-  setUsers: (users: User[]) => void;
+  setUser: (userId: string, userData: UserCache) => void;
+  setUsers: (users: Record<string, UserCache>) => void;
   clearUsers: () => void;
 
   // get
@@ -20,8 +21,8 @@ interface UserStore {
   getUsersByIds: (userIds: string[]) => User[];
 
   // fetch
-  fetchUsersById: (userId: string | null | undefined) => Promise<User[]>;
-  fetchUsersByIds: (userIds: string[]) => Promise<User[]>;
+  fetchUsersById: (userId: string | null | undefined) => Promise<void>;
+  fetchUsersByIds: (userIds: string[]) => Promise<void>;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -43,14 +44,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   setUsers: (users) => {
-    const mapped = users.reduce((acc, column) => {
-      acc[column._id] = column;
-      return acc;
-    }, {} as Record<string, User>);
     set((state) => ({
       users: {
         ...state.users,
-        ...mapped,
+        ...users,
       },
     }));
   },
@@ -76,10 +73,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
       const users = response?.data || [];
 
       if (users.length > 0) {
-        get().setUsers(users);
+        // get().setUsers(users);
       }
 
-      return users;
+      // return users;
     } catch (error) {
       console.log("Failed to fetch users:", error);
       throw error;
@@ -89,16 +86,41 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   fetchUsersByIds: async (userIds: string[]) => {
+    const { users, setUsers } = get();
+    const now = Date.now();
+    const cacheDuration = 5 * 60 * 1000; // 5 minute
+    const needFetchUserIds: string[] = [];
+    userIds.forEach((id) => {
+      const currentUserValue = users[id];
+
+      if (currentUserValue && currentUserValue.timestamp - now > cacheDuration) {
+        needFetchUserIds.push(id);
+      }
+
+      if(!currentUserValue) needFetchUserIds.push(id);
+    })
+
+    // No actions because have user in cache or userIds is empty
+    if(needFetchUserIds.length === 0) return;
+
     try {
       set({ status: "fetching" });
       const response = await userServices.getUserByIds(userIds ?? "");
       const users = response?.data || [];
-      console.log('FETCHED USERS BY IDS:', users);
-      if (users.length > 0) {
-        get().setUsers(users);
-      }
+      // Not found users
+      if (users.length === 0) return;
 
-      return users;
+      const usersCache: Record<string, UserCache> = {};
+      users.forEach((u) => {
+        if(u._id) {
+          usersCache[u._id] = {
+            ...u,
+            timestamp: now,
+          } as UserCache;
+        }
+      })
+      setUsers(usersCache);
+      // return users;
     } catch (error) {
       console.log("Failed to fetch users:", error);
       throw error;

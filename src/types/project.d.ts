@@ -17,3 +17,7 @@ export interface Member {
   role: "owner" | "admin" | "editor" | "viewer";
   joinedAt: Date;
 }
+
+export interface ProjectCache extends Project {
+  timestamp: number;
+}

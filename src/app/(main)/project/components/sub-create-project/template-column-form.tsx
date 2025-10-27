@@ -16,15 +16,16 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { TemplateColumn } from "@/types/template-column";
 import { useProjectStore } from "@/hooks";
+import { useProjectTab } from "../../context/project-tab-context";
 
 interface TemplateColumnFormProps {
     projectId: string | null | undefined;
-    selectTab: (tab: string) => void;
+    // selectTab: (tab: string) => void;
 }
 
 export const TemplateColumnForm = ({
     projectId,
-    selectTab,
+    // selectTab,
 }: TemplateColumnFormProps) => {
     const disableSelect = (!!!projectId);
     const {
@@ -32,6 +33,7 @@ export const TemplateColumnForm = ({
         templateColumns,
         status,
     } = useTemplateColumnsStore();
+    const { setTabValue } = useProjectTab();
     const { applyBoardIntoProject: applyBoardIntoProjectStore } = useProjectStore();
 
     const columnsKeys = Object.keys(templateColumns);
@@ -42,7 +44,7 @@ export const TemplateColumnForm = ({
     const applyBoardIntoProject = async (template: TemplateColumn) => {
         if (!projectId) return;
         await applyBoardIntoProjectStore(projectId, template);
-        selectTab("Kanban");
+        setTabValue("Board");
     }
 
     useEffect(() => {
