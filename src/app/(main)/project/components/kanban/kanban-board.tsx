@@ -49,7 +49,7 @@ export const KanbanBoard = ({
                     <LoaderPage ballSize={3} />
                 </div>) : (
                 <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
-                    <div className='w-full flex gap-4 h-full p-4'>
+                    <div className='w-full min-w-max flex gap-4 h-full p-4'>
                         {columnInProject.map((col) => (
                             <BoardColumn
                                 key={col._id}

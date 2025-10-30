@@ -6,12 +6,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Task } from "@/types";
-// import { Button } from "@/components/ui/button";
-// import { X } from "lucide-react";
-import { useBoardStore } from "@/hooks";
-import { useCurrentUserContext } from "@/context/current-user-context";
-import { AssigneesAvatar } from "./assignees-avatar";
+import { useBoardStore, useUserStore } from "@/hooks";
 import { TabContent } from "../tab-task/tab-content";
+import { PreviewMembers } from "../tab-task/preview-members";
 
 interface TaskModalProps extends React.ComponentPropsWithRef<typeof Dialog> {
     task: Task;
@@ -22,7 +19,7 @@ export const TaskModal = ({
     ...props
 }: TaskModalProps) => {
     const { getColumnById } = useBoardStore();
-    const { currentUser } = useCurrentUserContext();
+    // const { currentUser } = useCurrentUserContext();
     const columnValue = getColumnById(task.columnId);
     return (
         <Dialog {...props}>
@@ -65,13 +62,10 @@ export const TaskModal = ({
                         >
                             <p className="text-gray-700 font-bold text-xl">{task.title}</p>
                             <TabContent taskId={task._id} assignees={task.assignees} />
-                            {/* <div className="flex flex-col gap-2 mt-4">
-                                <p className="text-sm text-gray-600 font-semibold">Team members</p>
-                                <AssigneesAvatar userIds={task.assignees} />
-                            </div> */}
-                            {/* <div className=""></div> */}
+                            <PreviewMembers assinees={task.assignees} size="size-8" />
                         </div>
                         <div className="min-w-[300px] overflow-y-auto scrollbar-thin-y overflow-x-hidden">
+                            
                             {/* <div className="h-[2000px]"></div> */}
                         </div>
                     </div>

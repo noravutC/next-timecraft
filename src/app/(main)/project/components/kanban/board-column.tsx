@@ -68,25 +68,9 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
         )}
       </div>
     );
-
-    // แสดง Loading Skeleton สำหรับการโหลดเพิ่มเติม
-    // const loadingMore = column.isLoadingTasks && column.taskPage > 0 && (
-    //   <div className="p-2 flex flex-col gap-2">
-    //     <Skeleton className="h-[80px] w-full" />
-    //     <Skeleton className="h-[80px] w-full" />
-    //   </div>
-    // );
-
-    // รวมเนื้อหา
     return (
       <>
         {content}
-        {/* {loadingMore} */}
-        {/* {!column.hasMoreTasks && column.totalTasks > 0 && (
-          <div className="p-2 text-center text-xs text-gray-500">
-            End of tasks ({column.totalTasks} total)
-          </div>
-        )} */}
       </>
     )
   }
@@ -105,7 +89,6 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
               background: column.color ?? ``,
             }}
           />
-          {/* Badge แสดง Total Tasks ที่ถูกต้อง */}
           <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start">
             <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
             {/* Unit */}
@@ -118,7 +101,6 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
         onScroll={handleScroll}
       >
         {
-        // (column.taskPage === 0 || column.isLoadingTasks) && 
         isFetch ? (
           <div className="p-2 flex flex-col gap-2">
             <Skeleton className="h-[100px] w-full" />

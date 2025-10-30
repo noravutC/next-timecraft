@@ -1,3 +1,4 @@
+import React from "react";
 import { User } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "./avatar"
 import { Skeleton } from "./skeleton";
@@ -8,7 +9,7 @@ interface AvatarTimeCraftProps {
     email?: string;
     loader?: boolean;
 }
-export const AvatarTimeCraft = ({
+export const AvatarTimeCraft = React.memo(({
     src,
     name,
     email,
@@ -35,8 +36,11 @@ export const AvatarTimeCraft = ({
             </div>
         )
     }
+    console.log('src: ', src);
+    const partOfname = name.split(' ');
+    const firstName = partOfname.length > 0 ? partOfname[0] : name;
     return (
-        <div className="flex items-center w-full gap-3">
+        <div className="flex items-center max-w-[300px] w-full gap-3">
             <Avatar className="size-8 text-gray-500">
                 <AvatarImage src={src} />
                 <AvatarFallback className="bg-gray-200">
@@ -44,9 +48,9 @@ export const AvatarTimeCraft = ({
                 </AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-gray-600">
-                <p className="">{name}</p>
+                <p className="flex flex-wrap">{firstName}</p>
                 <p className="text-xs">{email}</p>
             </div>
         </div>
     )
-}
+})

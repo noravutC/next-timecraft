@@ -3,7 +3,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ListCheck, UserRoundPlus } from "lucide-react"
 import React from "react"
-import { MembersTab } from "./members-tab"
+import { MembersSelector } from "./members-selector"
 
 interface TabContentProps {
     taskId: string;
@@ -12,9 +12,9 @@ interface TabContentProps {
 export const TabContent = ({
     taskId,
     assignees,
-}:TabContentProps) => {
+}: TabContentProps) => {
     return (
-        <div className="flex items-center gap-4 mt-4">
+        <div className="flex items-center gap-4 my-4">
             <div className="relative">
                 <Button
                     variant={'outline'}
@@ -25,7 +25,8 @@ export const TabContent = ({
                 </Button>
             </div>
             <div className="relative">
-                <MembersTab taskId={taskId} assignees={assignees} />
+                <MembersSelector taskId={taskId} assignees={assignees} />
             </div>
-        </div>)
+        </div>
+    )
 }
