@@ -24,7 +24,7 @@ export const AssigneesAvatar = ({
         }
     }, [userIds])
     return (
-        <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
+        <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *">
             {statusUser === 'fetching' || statusUser === 'creating' ? (
                 <>
                     <Avatar className="animate-pulse bg-gray-200 dark:bg-gray-700">
@@ -47,7 +47,7 @@ export const AssigneesAvatar = ({
                 <>
                     {users.map((u) => (
                         <Avatar key={u._id}>
-                            <AvatarImage src={u.avatar} alt="@shadcn" />
+                            <AvatarImage src={u.avatar} alt="@shadcn" loading="lazy" />
                             <AvatarFallback>
                                 <CircleUser className="m-0" size={13} />
                             </AvatarFallback>

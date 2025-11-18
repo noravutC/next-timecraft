@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { CurrentUserProvider } from "@/context/current-user-context";
 // components
 import { HeaderMenu } from "@/components/menu-bar/header-menu";
-import { MenuRender } from "@/components/menu-bar/menu-render";
-import { SidebarMenu } from "@/components/menu-bar/sidebar-menu";
+// import { MenuRender } from "@/components/menu-bar/menu-render";
+// import { SidebarMenu } from "@/components/menu-bar/sidebar-menu";
 // utils
 import { cn } from "@/lib/utils";
 
@@ -22,11 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <HeaderMenu />
                     </div>
                     <div className="flex max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)]">
-                        <div className={cn(`duration-300 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] w-full`, isPanelOpen ? "max-w-[250px]" : "max-w-[50px]")}>
+                        {/* <div className={cn(`duration-300 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] w-full`, isPanelOpen ? "max-w-[250px]" : "max-w-[50px]")}>
                             <SidebarMenu handlePanelControl={handlePanelControl} isPanelOpen={isPanelOpen} >
                                 <MenuRender />
                             </SidebarMenu>
-                        </div>
+                        </div> */}
                         <div className="w-full p-2 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] overflow-hidden">
                             {/* Content */}
                             {children}

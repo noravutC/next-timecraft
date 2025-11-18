@@ -6,23 +6,23 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useProjectStore } from '@/hooks/useProjects.hook';
 // components
 import { KanbanBoard } from "./components/kanban/kanban-board";
-import { TemplateColumnForm } from "./components/sub-create-project/template-column-form";
+// import { TemplateColumnForm } from "./components/sub-create-project/template-column-form";
 // context
-import { useProjectTab } from "./context/project-tab-context";
+import { useProjectAtMenu } from "./context/project-menu-context";
 // types
 // import { LoaderPage } from "@/components/Loader-page";
 
 export default function Projects() {
   const { projectIdActivate } = useProjectStore();
-  const { tabValue } = useProjectTab();
+  const { menuValue } = useProjectAtMenu();
   return (
     <>
-      {tabValue === "Board" && (
+      {menuValue === "Board" && (
         <KanbanBoard projectId={projectIdActivate} />
       )}
-      {tabValue === "Board Templates" && (
+      {/* {menuValue === "Board Templates" && (
         <TemplateColumnForm projectId={projectIdActivate} />
-      )}
+      )} */}
     </>
   )
   // return (

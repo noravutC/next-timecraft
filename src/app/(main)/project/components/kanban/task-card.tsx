@@ -21,7 +21,7 @@ import { ColumnBar } from "./ui-customize/column-bar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Dialog } from "@/components/ui/dialog";
 import { TaskModal } from "./ui-customize/task-modal";
-import { PreviewMembers } from "./tab-task/preview-members";
+import { PreviewMembers } from "./task-tab-tools/preview-members";
 
 export interface TaskCardProps {
   task: Task;

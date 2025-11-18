@@ -1,4 +1,4 @@
-// src/hooks/useBoard.hook.ts
+// src/hooks/useTasks.hook.ts
 import { create } from "zustand";
 import { Task, TaskCache } from "@/types";
 import { taskServices } from "@/lib/services/tasks.service";
@@ -27,9 +27,14 @@ export interface TaskStore {
   createTask: (data: Partial<Task>) => Promise<void>;
   updateTask: (taskId: string, data: Partial<Task>) => Promise<void>;
   moveTaskToColumn: (
+    projectId: string,
     taskId: string,
     destinationColumnId: string
   ) => Promise<void>;
+
+  // pusher realtime action
+  addTaskFromRealtime: (createdTask: Task) => void; 
+  updateTaskFromRealtime: (updatedTask: Task) => void;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -87,20 +92,38 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
+  addTaskFromRealtime: (createdTask: Task) => {
+      set((state) => ({
+          tasks: {
+              ...state.tasks,
+              [createdTask._id]: { ...createdTask, timestamp: Date.now() }
+          }
+      }))
+  },
+
+  updateTaskFromRealtime: (updatedTask: Task) => {
+      set((state) => ({
+          tasks: {
+              ...state.tasks,
+              [updatedTask._id]: { ...updatedTask, timestamp: Date.now() }
+          }
+      }))
+  },
+
   createTask: async (data: Partial<Task>) => {
     try {
       set({ status: "creating" });
       const response = await taskServices.createTask(data);
-      const createdTask = response?.created;
+      // const createdTask = response?.created;
 
-      if (createdTask) {
-        set((state) => ({
-          tasks: {
-            ...state.tasks,
-            [createdTask._id]: { ...createdTask, timestamp: Date.now() }
-          }
-        }))
-      }
+      // if (createdTask) {
+      //   set((state) => ({
+      //     tasks: {
+      //       ...state.tasks,
+      //       [createdTask._id]: { ...createdTask, timestamp: Date.now() }
+      //     }
+      //   }))
+      // }
     } catch (error) {
       console.log("Failed to create task:", error);
       throw error;
@@ -113,16 +136,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       set({ status: "updating" });
       const response = await taskServices.updateOneTask(taskId, data);
-      const updatedTask = response?.updated;
+      // const updatedTask = response?.updated;
 
-      if (updatedTask) {
-        set((state) => ({
-          tasks: {
-            ...state.tasks,
-            [updatedTask._id]: { ...updatedTask, timestamp: Date.now() }
-          }
-        }))
-      }
+      // if (updatedTask) {
+      //   set((state) => ({
+      //     tasks: {
+      //       ...state.tasks,
+      //       [updatedTask._id]: { ...updatedTask, timestamp: Date.now() }
+      //     }
+      //   }))
+      // }
     } catch (error) {
       console.log("Failed to update task:", error);
       throw error;
@@ -131,26 +154,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  moveTaskToColumn: async (taskId: string, destinationColumnId: string) => {
+  moveTaskToColumn: async (projectId: string, taskId: string, destinationColumnId: string) => {
     try {
       set({ status: "updating" });
-      const task = get().getTaskById(taskId);
-      if (!task) {
-        console.log("Task not found with ID:", taskId);
-        throw new Error("Task not found");
-      }
+      // const task = get().getTaskById(taskId);
+      // if (!task) {
+      //   console.log("Task not found with ID:", taskId);
+      //   throw new Error("Task not found");
+      // }
 
       const response = await taskServices.moveTaskToColumn(
+        projectId,
         taskId,
         destinationColumnId
       );
-      const updatedTask = response?.updated;
+      // const updatedTask = response?.updated;
 
-      if (updatedTask) {
-        get().setUpdatedTask(updatedTask._id, updatedTask);
-      } else {
-        console.log("No updated task returned from the service");
-      }
+      // if (updatedTask) {
+      //   get().setUpdatedTask(updatedTask._id, updatedTask);
+      // } else {
+      //   console.log("No updated task returned from the service");
+      // }
     } catch (error) {
       console.log("Failed to move task to column:", error);
       throw error;

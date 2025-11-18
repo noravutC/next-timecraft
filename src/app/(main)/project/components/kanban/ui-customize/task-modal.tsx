@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/dialog"
 import { Task } from "@/types";
 import { useBoardStore, useUserStore } from "@/hooks";
-import { TabContent } from "../tab-task/tab-content";
-import { PreviewMembers } from "../tab-task/preview-members";
+import { TabContent } from "../task-tab-tools/tab-content";
+import { PreviewMembers } from "../task-tab-tools/preview-members";
+import { CheckListBuilder } from "./modal-group/checklist-builder";
 
 interface TaskModalProps extends React.ComponentPropsWithRef<typeof Dialog> {
     task: Task;
@@ -19,13 +20,14 @@ export const TaskModal = ({
     ...props
 }: TaskModalProps) => {
     const { getColumnById } = useBoardStore();
+    // const [tabValue, setTabValue] = useState<'checklist' | null>(null);
     // const { currentUser } = useCurrentUserContext();
     const columnValue = getColumnById(task.columnId);
     return (
         <Dialog {...props}>
             <DialogContent
                 className="[&>button]:hidden sm:max-w-[425px] md:max-w-[600px] 
-                lg:max-w-[900px] xl:max-w-[1000px] max-h-[550px] h-full rounded-xl p-0 overflow-hidden"
+                lg:max-w-[900px] xl:max-w-[1100px] max-h-[550px] h-full rounded p-0 overflow-hidden"
             >
                 <DialogHeader hidden>
                     <DialogTitle>
@@ -62,10 +64,16 @@ export const TaskModal = ({
                         >
                             <p className="text-gray-700 font-bold text-xl">{task.title}</p>
                             <TabContent taskId={task._id} assignees={task.assignees} />
-                            <PreviewMembers assinees={task.assignees} size="size-8" />
+                            {task.assignees.length > 0 && (
+                            <div className="mt-6 flex flex-col">
+                                <p className="mb-2 text-xs font-semibold text-gray-700">Assignee</p>
+                                <PreviewMembers assinees={task.assignees} size="size-8" />
+                            </div>
+                            )}
+                            <CheckListBuilder />
                         </div>
-                        <div className="min-w-[300px] overflow-y-auto scrollbar-thin-y overflow-x-hidden">
-                            
+                        <div className="min-w-[400px] overflow-y-auto scrollbar-thin-y overflow-x-hidden ">
+
                             {/* <div className="h-[2000px]"></div> */}
                         </div>
                     </div>

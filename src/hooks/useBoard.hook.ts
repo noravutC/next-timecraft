@@ -8,8 +8,16 @@ import { useTaskStore } from "./useTasks.hook";
 
 export interface BoardStore {
   lastFetchedBoard: number;
-  columns: Record<string, ColumnCache>;
+  columns: {
+    [columnId: string]: ColumnCache;
+  };
   // cache props
+  groupColumnsOfProjectCache: {
+    [projectId: string]: {
+      timestamp: number;
+      columns: ColumnCache[];
+    };
+  };
   // columnsCache: Record<string, ColumnCache>;
 
   status: LoaderStatus;
@@ -36,7 +44,7 @@ export interface BoardStore {
 export const useBoardStore = create<BoardStore>((set, get) => ({
   lastFetchedBoard: 0,
   columns: {},
-  // columnsCache: {},
+  groupColumnsOfProjectCache: {},
   status: "none",
 
   setStatus: (status) => set({ status }),
@@ -56,7 +64,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   },
 
   fetchBoardByProjectId: async (projectId: string | null | undefined) => {
-    const { lastFetchedBoard, columns } = get();
+    const { groupColumnsOfProjectCache } = get();
     const now = Date.now();
     if (!projectId) {
       toast.error("Not found project is activate.");
@@ -64,10 +72,12 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     }
 
     const cacheDuration = 1 * 60 * 1000;
-
-    if (Object.keys(columns).length > 0 && now - lastFetchedBoard < cacheDuration) {
+    const currentProject = groupColumnsOfProjectCache[projectId];
+    if (currentProject && now - currentProject.timestamp < cacheDuration) {
       console.log("Using cached column cache data.");
       return;
+    } else {
+      delete groupColumnsOfProjectCache[projectId]; //removed cache not use
     }
     try {
       set({ status: "fetching" });
@@ -78,9 +88,8 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
 
       const newColumnsCache: Record<string, ColumnCache> = {};
       const newTasks: Record<string, TaskCache> = {};
-
+      // console.log('combineColsTasks: ', combineColsTasks);
       combineColsTasks.forEach((ct) => {
-        // newColumns[ct._id] = ct;
         newColumnsCache[ct._id] = {
           ...ct,
           timestamp: now,
@@ -92,10 +101,23 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
           });
         }
       });
+      // apply group columns after timestamp
+      const newColumns = Object.values(newColumnsCache);
 
-      set(() => ({
+      
+      set((state) => ({
         lastFetchedBoard: now,
-        columns: newColumnsCache,
+        columns: {
+          ...state.columns,
+          ...newColumnsCache,
+        },
+        groupColumnsOfProjectCache: {
+          ...state.groupColumnsOfProjectCache,
+          [projectId]: {
+              timestamp: now,
+              columns: newColumns
+          },
+        }
       }));
       // apply tasks into store
       const taskStore = useTaskStore.getState();

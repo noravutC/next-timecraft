@@ -1,16 +1,16 @@
 import { cn } from "@/lib/utils";
 import React from "react";
-import { useProjectTab } from "../context/project-tab-context";
+import { useProjectAtMenu } from "../context/project-menu-context";
 import { Columns3, Calendar, Layers2, LayoutDashboard, LayoutTemplate } from "lucide-react";
 
 
 export const TabProject = () => {
-    const { tabValue, setTabValue } = useProjectTab();
+    const { menuValue, setMenuValue } = useProjectAtMenu();
     const tabs = [
-        { label: "Summary", icon: LayoutDashboard },
-        { label: "Board", icon: Columns3 },
-        { label: "Calendar", icon: Calendar },
-        { label: "Templates", icon: Layers2 }
+        { value: "Summary", label: "Summary", icon: LayoutDashboard },
+        { value: "Board", label: "Board", icon: Columns3 },
+        { value: "Calendar", label: "Calendar", icon: Calendar },
+        { value: "Board Templates", label: "Templates", icon: Layers2 }
     ];
     return (
         <div
@@ -21,7 +21,7 @@ export const TabProject = () => {
             {tabs.map((tab) => (
                 <div
                     key={tab.label}
-                    onClick={() => setTabValue(tab.label)}
+                    onClick={() => setMenuValue(tab.value)}
                     className={cn(
                         "w-full relative cursor-pointer h-full duration-200 rounded-sm overflow-hidden text-gray-700",
                         "hover:text-blue-500 hover:bg-blue-50"
@@ -29,7 +29,7 @@ export const TabProject = () => {
                 >
                     <span
                         className={cn("text-sm flex justify-center items-center font-semibold w-full h-full",
-                            tabValue === tab.label && "bg-blue-50 text-blue-500")}>
+                            menuValue === tab.value && "bg-blue-50 text-blue-500")}>
                                <tab.icon className="size-4 mr-2" />
                         {tab.label}
                     </span>

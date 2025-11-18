@@ -16,35 +16,34 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { TemplateColumn } from "@/types/template-column";
 import { useProjectStore } from "@/hooks";
-import { useProjectAtMenu } from "../../context/project-menu-context";
+import { LoaderCircle } from "lucide-react";
 
-interface TemplateColumnFormProps {
+interface BoardTemplateProps {
     projectId: string | null | undefined;
-    // selectTab: (tab: string) => void;
 }
 
-export const TemplateColumnForm = ({
+export const BoardTemplate = ({
     projectId,
-    // selectTab,
-}: TemplateColumnFormProps) => {
-    const disableSelect = (!!!projectId);
+}: BoardTemplateProps) => {
     const {
         fetchTemplateColumns,
         templateColumns,
+        applyBoardTemplateIntoProject,
         status,
     } = useTemplateColumnsStore();
-    const { setMenuValue } = useProjectAtMenu();
-    // const { applyBoardIntoProject: applyBoardIntoProjectStore } = useProjectStore();
+    const [onTriggerTemplateId, setOnTriggerTemplateId] = useState<string | null>(null);
 
     const columnsKeys = Object.keys(templateColumns);
     const [onHoverTemplateId, setOnHoverTemplateId] = useState<string | null>(null);
 
+    if (!projectId) return null;
     const templates = columnsKeys.map(key => templateColumns[key]);
 
     const applyBoardIntoProject = async (template: TemplateColumn) => {
         if (!projectId) return;
-        // await applyBoardIntoProjectStore(projectId, template);
-        setMenuValue("Board");
+        setOnTriggerTemplateId(template._id);
+        await applyBoardTemplateIntoProject(projectId, template);
+        setOnTriggerTemplateId(null);
     }
 
     useEffect(() => {
@@ -53,12 +52,14 @@ export const TemplateColumnForm = ({
 
 
     return (
-        <div className="w-full h-full grid grid-cols-3 gap-6 p-4">
+        <div className="w-full flex items-center justify-center whitespace-nowrap gap-4 h-fit  gap-6 p-4 border-t border-b">
             {(templates ?? []).map((template) => (
                 <div
                     key={template._id}
                     className={
-                        cn("flex flex-col col-span-1 border shadow-md min-h-fit rounded-md")
+                        cn("flex flex-col col-span-1 border shadow-md min-h-fit rounded-md",
+                            "max-w-[350px] w-full"
+                        )
                     }
                     onMouseEnter={() => setOnHoverTemplateId(template._id)}
                     onMouseLeave={() => setOnHoverTemplateId(null)}
@@ -89,15 +90,19 @@ export const TemplateColumnForm = ({
                         <Button
                             className={cn(
                                 "transition-all duration-300 mt-4",
-                                template._id === onHoverTemplateId
+                                (template._id === onHoverTemplateId)
                                     ? "opacity-100 translate-x-0"
                                     : "opacity-0 translate-x-2 pointer-events-none"
                             )}
-                            disabled={disableSelect}
+                            disabled={status === 'updating'}
                             onClick={() => applyBoardIntoProject(template)}
                         >
+                            {onTriggerTemplateId === template._id && status === 'updating' && (
+                                <LoaderCircle className="mr-2 animate-spin text-blue-300" strokeWidth={3} />
+                            )}
                             Select Template
                         </Button>
+                        
                     </div>
                 </div>
             ))}

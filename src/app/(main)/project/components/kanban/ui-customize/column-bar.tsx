@@ -1,5 +1,5 @@
-import React from "react";
-import { useBoardStore, useTaskStore } from "@/hooks";
+import React, { useEffect, useMemo } from "react";
+import { useBoardStore, useProjectStore, useTaskStore } from "@/hooks";
 import {
     Tooltip,
     TooltipContent,
@@ -15,16 +15,31 @@ export const ColumnBar = ({
     taskId,
     taskAtColumnId,
 }: ColumnBarProps) => {
-    const { columns } = useBoardStore();
+    const { projectIdActivate, getProjectById } = useProjectStore();
+    if (!projectIdActivate)
+        return null;
+    const { columns, groupColumnsOfProjectCache } = useBoardStore();
     const { moveTaskToColumn } = useTaskStore();
-    const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
-    const lengthColumns = tempColumns.length;
+    // const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
+
 
     const onMoveTaskToColumn = (destinationColumnId: string) => {
-        moveTaskToColumn(taskId, destinationColumnId);
+        moveTaskToColumn(projectIdActivate, taskId, destinationColumnId);
     }
-    const orderColActive = columns[taskAtColumnId]?.order;
-    const colorColActive = columns[taskAtColumnId]?.color;
+
+    const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
+        const columnsOfProject = groupColumnsOfProjectCache[projectIdActivate].columns;
+        const colActive = columnsOfProject.find((col) => col._id === taskAtColumnId);
+        return {
+            tempColumns: columnsOfProject.sort((a, b) => a.order - b.order),
+            orderColActive: colActive?.order ?? 0,
+            colorColActive: colActive?.color,
+        };
+
+    }, [groupColumnsOfProjectCache, taskAtColumnId]);
+
+    const lengthColumns = tempColumns.length;
+
     return (
         <div className="w-full min-h-[13px] max-h-[13px] grid grid-cols-6 rounded-full bg-gray-100 overflow-hidden border border-gray-300">
             {tempColumns.map((col, index) => {

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover" // <- Used here
 import { useTaskStore, useUserStore } from "@/hooks"
 import { ListCheck, UserRoundPlus } from "lucide-react"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import React from "react"
 
@@ -24,6 +24,16 @@ export const MembersSelector = React.memo(({
     const [open, setOpen] = useState<boolean>(false);
     const [currentAssignees, setCurrentAssignees] = useState<string[]>(assignees);
     const assigneesInProject = Object.values(users);
+
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop += e.deltaY;
+
+            e.stopPropagation();
+        }
+    }, []);
 
     const handleToggleAssignee = (userId: string) => {
         const isAssigned = currentAssignees.includes(userId);
@@ -67,22 +77,30 @@ export const MembersSelector = React.memo(({
                         // instead of <Input> as they are designed for filtering lists.
                         />
                     </div>
-                    <div className="flex flex-col text-sm text-gray-600 overflow-y-auto scrollbar-thin-y max-h-[300px]">
+                    <div
+                        ref={scrollRef}
+                        className="flex flex-col text-sm text-gray-600 overflow-y-auto scrollbar-thin-y max-h-[200px] scroll-smooth"
+                        onWheel={handleWheel}
+                        tabIndex={-1}
+                        role="listbox"
+                    >
                         {(assigneesInProject?.length > 0) ? (
                             <>
                                 {(assigneesInProject ?? []).map((u) => {
                                     const isChecked = currentAssignees.includes(u._id);
                                     return (
-                                        <div
-                                            key={u._id}
-                                            className={cn("cursor-pointer hover:bg-gray-100 p-2 flex items-center justify-between",
-                                                isChecked && 'bg-gray-100'
-                                            )}
-                                            onClick={() => handleToggleAssignee(u._id)}
-                                        >
-                                            <AvatarTimeCraft src={u.avatar} name={u.fullName} email={u.email} />
-                                            {isChecked && <ListCheck className="h-4 w-4 text-green-500" />}
-                                        </div>
+                                        <React.Fragment key={u._id}>
+                                            <div
+                                                key={u._id}
+                                                className={cn("cursor-pointer hover:bg-gray-100 p-2 flex items-center justify-between",
+                                                    isChecked && 'bg-gray-100'
+                                                )}
+                                                onClick={() => handleToggleAssignee(u._id)}
+                                            >
+                                                <AvatarTimeCraft src={u.avatar} name={u.fullName} email={u.email} />
+                                                {isChecked && <ListCheck className="h-4 w-4 text-green-500" />}
+                                            </div>
+                                        </React.Fragment>
                                     )
                                 })}
 

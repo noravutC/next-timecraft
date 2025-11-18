@@ -43,6 +43,20 @@ class ProjectService {
         );
       });
   }
+  async updateProject(
+    projectId: string,
+    project: Partial<Project>
+  ): Promise<APIPatch<Project>> {
+    return this.client
+      .patch(`/project/${projectId}`, project)
+      .then((response) => response.data as APIPatch<Project>)
+      .catch((error) => {
+        throw (
+          (error?.response?.data as APIError) ||
+          new Error("Failed to create project")
+        );
+      });
+  }
 
   async applyTemplateColumnsToProject(
     projectId: string,
@@ -57,7 +71,6 @@ class ProjectService {
         );
       });
   }
-
 }
 
 export const projectServices = new ProjectService();
