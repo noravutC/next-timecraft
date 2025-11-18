@@ -1,5 +1,6 @@
 // project/layout.tsx
 'use client';
+
 import React, { useEffect } from "react";
 // components
 import { TabProject } from "./components/tab-project";
@@ -9,7 +10,7 @@ import { useProjectStore } from "@/hooks";
 import { ProjectTabProvider } from "./context/project-menu-context";
 import { LoaderPage } from "@/components/Loader-page";
 import { ProjectToolsMenu } from "./components/project-tools/project-tools";
-
+export const dynamic = 'force-dynamic';
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     const {
         fetchProjects,
