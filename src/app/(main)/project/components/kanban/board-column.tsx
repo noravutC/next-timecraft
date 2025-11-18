@@ -1,14 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Column, ColumnCache } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { TaskCard } from "./task-card";
 import { Skeleton } from "@/components/ui/skeleton";
-// import { cn } from "@/lib/utils";
-// import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { PreviewTaskForm } from "./ui-customize/preview-task-form";
 import { useBoardStore, useTaskStore } from "@/hooks";
+import { cn } from "@/lib/utils";
+import { hexToRgba } from "@/helper/utils";
 
 interface BoardColumnProps {
   column: ColumnCache;
@@ -26,10 +25,15 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
     return statusBoard === 'fetching' || (statusTask === 'fetching');
   }, [statusBoard, statusTask]);
 
+  const targetOpacity = 0.6;
+  const backgroundStyle = column.color
+    ? { background: hexToRgba(column.color, targetOpacity) }
+    : {};
+
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
     const scrollThreshold = 100; // Load more when 100px from the bottom
-  
+
     // if (
     //   scrollTop + clientHeight >= scrollHeight - scrollThreshold &&
     //   column.hasMoreTasks &&
@@ -77,18 +81,17 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
 
   return (
     <div
-      className='max-h-[450px] h-full min-h-[150px] max-w-[250px] min-w-[250px] flex flex-col flex-shrink-0 rounded-md border'
+      className={cn('max-h-[450px] h-full min-h-[150px] max-w-[250px] min-w-[250px] z-2',
+        'flex flex-col flex-shrink-0 rounded-md border'
+      )}
       data-board-column
     >
-      <div className='flex justify-between flex-shrink-0 p-3 border-b'>
+      <div className='flex justify-between flex-shrink-0 p-3 border-b rounded-t-md'
+        style={backgroundStyle}
+      >
         <p className="font-semibold text-sm">{column.name}</p>
 
         <div className="flex gap-2 items-center">
-          <div className="rounded-full w-3 h-3"
-            style={{
-              background: column.color ?? ``,
-            }}
-          />
           <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start">
             <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
             {/* Unit */}
@@ -101,15 +104,15 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
         onScroll={handleScroll}
       >
         {
-        isFetch ? (
-          <div className="p-2 flex flex-col gap-2">
-            <Skeleton className="h-[100px] w-full" />
-            <Skeleton className="h-[100px] w-full" />
-            <Skeleton className="h-[100px] w-full" />
-          </div>
-        ) : (
-          renderTasks()
-        )}
+          isFetch ? (
+            <div className="p-2 flex flex-col gap-2">
+              <Skeleton className="h-[100px] w-full" />
+              <Skeleton className="h-[100px] w-full" />
+              <Skeleton className="h-[100px] w-full" />
+            </div>
+          ) : (
+            renderTasks()
+          )}
       </div>
       <div className="h-[45px] w-full flex items-center justify-start gap-2 cursor-pointer pb-1">
         <div className="h-full w-full flex gap-2 items-center rounded m-1 duration-300 transition-all hover:bg-gray-100 px-2"

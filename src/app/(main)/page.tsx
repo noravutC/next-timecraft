@@ -9,6 +9,10 @@ export default function RootPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push("/login");
+      // return;
+    }
     if (session) {
       router.push("/home");
     }
@@ -20,9 +24,6 @@ export default function RootPage() {
         <LoaderPage ballSize={4} />
       </div>
     )
-  } else if (status === 'unauthenticated') {
-    router.push("/login");
-    return;
   } else {
     return (
       <div className="w-full h-full flex items-center justify-center">

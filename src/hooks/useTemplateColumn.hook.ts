@@ -1,8 +1,9 @@
 // src/hooks/useTemplateColumn.hook.ts
 import { create } from "zustand";
-import { TemplateColumn } from "@/types";
+import { ColumnCache, TaskCache, TemplateColumn } from "@/types";
 import { templateColumnsServices } from "@/lib/services/template-columns.service";
 import { LoaderStatus } from "./hook.type";
+import { useBoardStore } from "./useBoard.hook";
 
 interface TemplateBoardStore {
   templateColumns: Record<string, TemplateColumn>;
@@ -22,6 +23,10 @@ interface TemplateBoardStore {
   fetchTemplateColumns: () => Promise<TemplateColumn[]>;
 
   // actions
+  applyBoardTemplateIntoProject: (
+    projectId: string,
+    template: TemplateColumn
+  ) => Promise<void>;
 }
 
 export const useTemplateColumnsStore = create<TemplateBoardStore>(
@@ -84,5 +89,48 @@ export const useTemplateColumnsStore = create<TemplateBoardStore>(
     },
 
     // actions
+    applyBoardTemplateIntoProject: async (
+      projectId: string,
+      template: TemplateColumn
+    ) => {
+      try {
+        set({ status: "updating" });
+        const response =
+          await templateColumnsServices.applyTemplateColumnsToProject(
+            projectId,
+            template
+          );
+        const updatedColumns = response?.updated;
+
+        if (updatedColumns) {
+          const now = Date.now();
+          const newColumnsCache: Record<string, ColumnCache> = {};
+          updatedColumns.forEach((ct) => {
+            newColumnsCache[ct._id] = {
+              ...ct,
+              timestamp: now,
+            } as ColumnCache;
+          });
+          const newColumns = Object.values(newColumnsCache);
+          const boardStoreSet = useBoardStore.setState;
+          boardStoreSet((state) => ({
+            columns: {
+              ...state.columns,
+              ...newColumnsCache,
+            },
+            [projectId]: {
+              timestamp: now,
+              columns: newColumns,
+            },
+          }));
+        }
+        return;
+      } catch (error) {
+        console.log("Failed to apply board into project:", error);
+        throw error;
+      } finally {
+        set({ status: "none" });
+      }
+    },
   })
 );

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
-import { PreviewCard } from "./preview-card";
 import { Circle, LoaderCircle, Mail } from "lucide-react";
 import { useProjectStore } from "@/hooks/useProjects.hook";
 import { toast } from "sonner";
@@ -14,7 +13,7 @@ import { Combobox } from "@/components/selector/combobox";
 import { MultiEmailInput } from "./sub-create-project/invite-member-form";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { TemplateColumnForm } from "./sub-create-project/template-column-form";
+// import { TemplateColumnForm } from "./sub-create-project/template-column-form";
 
 interface CreateProjectFormProps {
     onCloseNewProject: (value: boolean) => void;
@@ -114,7 +113,6 @@ export const CreateProjectForm = ({
                         </div>
                     </div>
                     <div className="max-h-[80vh] h-[80vh] w-full flex flex-col items-center px-auto pt-20">
-                        <PreviewCard name={projectForm?.name} description={projectForm?.description} />
                     </div>
                 </>
             )}

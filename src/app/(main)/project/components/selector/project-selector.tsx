@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+import { CheckIcon, ChevronsUpDownIcon, ChevronDownIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,7 +31,7 @@ interface ProjectSelectorProps<T> {
     value: string | null;
     onChange: (option: string) => void;
     placeholder: string;
-    placeholderHead: string;
+    placeholderKeyword: string;
     isLoading?: boolean;
     disabled?: boolean;
 }
@@ -41,7 +41,7 @@ export const ProjectSelector = <T,>({
     value: selectedValue,
     onChange,
     placeholder,
-    placeholderHead,
+    placeholderKeyword,
     isLoading,
     disabled
 }: ProjectSelectorProps<T>) => {
@@ -54,35 +54,35 @@ export const ProjectSelector = <T,>({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-fit justify-between"
+                    className="w-full justify-between cursor-pointer h-fit p-3"
                 >
                     {selectedValue
-                        ? String(options.find((o) => o[optionKeys.value] === selectedValue)?.[optionKeys.label] ?? "no found")
-                        : placeholder}
-                    <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        ? <p className="text-sm font-normal">
+                            {String(options.find((o) => o[optionKeys.value] === selectedValue)?.[optionKeys.label] ?? "not found")}
+                        </p>
+                        : <p>{placeholder}</p>}
+
+                    <ChevronDownIcon className="ml-2 size-4 min-w-4 max-w-4 min-h-4 min-w-5 shrink-0 opacity-50" strokeWidth={2.5} />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+            <PopoverContent className="w-full min-w-[var(--radix-popover-trigger-width)] maxw-[var(--radix-popover-trigger-width)] p-0">
                 <Command>
-                    <CommandInput placeholder={`Search ${placeholderHead}...`} />
-                    <CommandList>
-                        <CommandEmpty>No {placeholderHead} found.</CommandEmpty>
-                        <CommandGroup>
+                    <CommandInput placeholder={`Search ${placeholderKeyword}...`} />
+                    <CommandList className="scrollbar-thin-y">
+                        <CommandEmpty>No {placeholderKeyword} found.</CommandEmpty>
+                        <CommandGroup >
                             {options.map((o) => (
                                 <CommandItem
                                     key={o[optionKeys.value] as React.Key}
                                     value={o[optionKeys.label] as string}
+                                    className={cn("cursor-pointer h-fit p-3",
+                                        selectedValue === o[optionKeys.value] as string ? 'bg-blue-100' : ''
+                                    )}
                                     onSelect={() => {
                                         onChange(o[optionKeys.value] as string)
                                         setOpen(false)
                                     }}
                                 >
-                                    <CheckIcon
-                                        className={cn(
-                                            "mr-2 h-4 w-4",
-                                            selectedValue === o[optionKeys.value] as string ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
                                     {o[optionKeys.label] as string}
                                 </CommandItem>
                             ))}

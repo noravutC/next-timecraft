@@ -42,7 +42,7 @@ export const AvatarTimeCraft = React.memo(({
     return (
         <div className="flex items-center max-w-[300px] w-full gap-3">
             <Avatar className="size-8 text-gray-500">
-                <AvatarImage src={src} />
+                <AvatarImage src={src} loading="lazy" />
                 <AvatarFallback className="bg-gray-200">
                     <User size={14} strokeWidth={3} />
                 </AvatarFallback>

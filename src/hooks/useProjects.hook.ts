@@ -3,10 +3,15 @@ import { create } from "zustand";
 import { Project, TemplateColumn, ProjectCache } from "@/types";
 import { projectServices } from "@/lib/services/projects.service";
 import { LoaderStatus } from "./hook.type";
+import Projects from "@/app/(main)/project/page";
+import { now } from "lodash";
+import { toast } from "sonner";
 
 interface ProjectStore {
   lastFetched: number;
-  projects: Record<string, ProjectCache>;
+  projects: {
+    [projectId: string]: ProjectCache;
+  };
   projectIdActivate?: string | null | undefined;
 
   status: LoaderStatus;
@@ -17,14 +22,14 @@ interface ProjectStore {
   clearProjects: () => void;
 
   // get
-  getProjectById: (projectId: string) => Project | undefined;
+  getProjectById: (projectId: string) => ProjectCache | undefined;
 
   // fetch
   fetchProjects: (isBackground?: boolean) => Promise<Project[]>;
   fetchProjectById: (projectId: string) => void;
   // actions
   createProject: (data: Partial<Project>) => void;
-  applyBoardIntoProject: (projectId: string, template: TemplateColumn) => void;
+  updateProject: (projectId: string, data: Partial<Project>) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -62,7 +67,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const projectIdActivate = get().projectIdActivate;
 
       const mappedProjects = fetchedProjects.reduce((acc, project) => {
-        acc[project._id] = {...project, timestamp: now } as ProjectCache;
+        acc[project._id] = { ...project, timestamp: now } as ProjectCache;
         return acc;
       }, {} as Record<string, ProjectCache>);
 
@@ -90,7 +95,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const cacheDuration = 2 * 60 * 1000;
     const projectCache = projects[projectId];
     if (projectCache && now - projectCache.timestamp < cacheDuration) {
-      console.log('Use project cache');
+      console.log("Use project cache");
       return;
     }
     try {
@@ -115,11 +120,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     try {
       set({ status: "creating" });
       const response = await projectServices.createProject(data);
-      const project = response.created;
+      const newProject = response.created;
 
-      if (project) {
-        // get().setProject(project._id, project);
-        return project;
+      if (newProject) {
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            [newProject._id]: { ...newProject, timestamp: Date.now() },
+          },
+          projectIdActivate: newProject._id,
+        }));
       }
     } catch (error) {
       console.log("Failed to create project:", error);
@@ -128,26 +138,28 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       set({ status: "none" });
     }
   },
-
-  applyBoardIntoProject: async (
-    projectId: string,
-    template: TemplateColumn
-  ) => {
+  updateProject: async (projectId: string, data: Partial<Project>) => {
+    const project = get().getProjectById(projectId);
+    if (!project) {
+      toast.error("Project is required to update a project.");
+      return;
+    }
     try {
       set({ status: "updating" });
-      const response = await projectServices.applyTemplateColumnsToProject(
-        projectId,
-        template
-      );
-      const updatedProject = response?.updated;
+      const response = await projectServices.updateProject(projectId, data);
+      const updatedProject = response.updated;
 
       if (updatedProject) {
-        // get().setProject(updatedProject._id, updatedProject);
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            [updatedProject._id]: { ...project, ...updatedProject, timestamp: Date.now() },
+          },
+          projectIdActivate: updatedProject._id,
+        }));
       }
-
-      return updatedProject;
     } catch (error) {
-      console.log("Failed to apply board into project:", error);
+      console.log("Failed to update project:", error);
       throw error;
     } finally {
       set({ status: "none" });

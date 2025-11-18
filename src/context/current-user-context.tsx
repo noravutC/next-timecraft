@@ -41,28 +41,28 @@ export function CurrentUserProvider({
 }: {
   children: React.ReactNode;
 }) {
- const router = useRouter();
+  const router = useRouter();
   const [contextData, setContextData] =
     useState<CurrentUserContext>(initContext());
-    const { data: session, status } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-     if (status === 'loading') {
-        setContextData(prev => ({ ...prev, currentUserLoader: true }));
-      } else if (status === 'unauthenticated') {
-        router.push("/login");
-      } else {
-        setContextData((prev) => ({
-          ...prev,
-          currentUser: {
-            userId: session?.user.id || '',
-            fullName: session?.user.name || '',
-            email: session?.user.email || '',
-            avatar: session?.user.image || '',
-          },
-          currentUserLoader: false,
-        }));
-      }
+    if (status === 'unauthenticated') {
+      router.push("/login");
+    } else if (status === 'loading') {
+      setContextData(prev => ({ ...prev, currentUserLoader: true }));
+    } else {
+      setContextData((prev) => ({
+        ...prev,
+        currentUser: {
+          userId: session?.user.id || '',
+          fullName: session?.user.name || '',
+          email: session?.user.email || '',
+          avatar: session?.user.image || '',
+        },
+        currentUserLoader: false,
+      }));
+    }
   }, [status, session]);
 
   return (

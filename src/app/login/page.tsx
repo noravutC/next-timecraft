@@ -104,13 +104,7 @@ export default function Login() {
     }
   }, [session, router]);
 
-  if (status === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoaderPage ballSize={4} />
-      </div>
-    )
-  } else if (status === 'unauthenticated') {
+  if (status === 'unauthenticated') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-2xl font-bold mb-4">Login</h1>
@@ -119,6 +113,12 @@ export default function Login() {
         </Button>
       </div>
     );
+  } else if (status === "loading") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <LoaderPage ballSize={4} />
+      </div>
+    )
   } else {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">

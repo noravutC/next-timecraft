@@ -1,6 +1,6 @@
-// src/lib/services/columns.service.ts
+// src/lib/services/template-columns.service.ts
 import apiClient from "../axios";
-import { TemplateColumn, Project, APIGet, APIPut } from "@/types";
+import { TemplateColumn, Project, Column, APIGet, APIPut } from "@/types";
 
 class TemplateColumnsService {
   private client = apiClient;
@@ -13,6 +13,23 @@ class TemplateColumnsService {
         throw (
           error?.response?.data ||
           new Error("Failed to fetch template columns.")
+        );
+      });
+  }
+  async applyTemplateColumnsToProject(
+    projectId: string,
+    template: TemplateColumn
+  ): Promise<APIPut<Column[]>> {
+    return this.client
+      .put(`/template-column/apply-to-project/`, {
+        projectId,
+        template,
+      })
+      .then((response) => response.data as APIPut<Column[]>)
+      .catch((error) => {
+        throw (
+          error?.response?.data ||
+          new Error("Failed to apply template columns to project.")
         );
       });
   }

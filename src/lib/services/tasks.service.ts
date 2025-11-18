@@ -41,11 +41,12 @@ class TaskService {
   }
 
   async moveTaskToColumn(
+    projectId: string,
     taskId: string,
     destinationColumnId: string
   ): Promise<APIPatch<Task>> {
     return this.client
-      .patch(`/task/${taskId}/move/`, { columnId: destinationColumnId })
+      .patch(`/task/${taskId}/move/`, { projectId, columnId: destinationColumnId })
       .then((response) => response.data as APIPatch<Task>)
       .catch((error) => {
         throw (

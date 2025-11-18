@@ -31,7 +31,7 @@ export const HeaderMenu = () => {
                         <Avatar className="cursor-pointer">
                             {currentUser ? (
                                 <>
-                                    <AvatarImage src={currentUser.avatar} alt={currentUser.fullName ?? ''} />
+                                    <AvatarImage src={currentUser.avatar} alt={currentUser.fullName ?? ''} loading="lazy" />
                                     <AvatarFallback className="text-xs font-semibold">
                                         {currentUser.fullName
                                             ?.split(' ')
