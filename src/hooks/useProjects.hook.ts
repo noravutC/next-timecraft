@@ -1,10 +1,8 @@
 // src/hooks/useProjects.ts
 import { create } from "zustand";
-import { Project, TemplateColumn, ProjectCache } from "@/types";
+import { Project, ProjectCache } from "@/types";
 import { projectServices } from "@/lib/services/projects.service";
 import { LoaderStatus } from "./hook.type";
-import Projects from "@/app/(main)/project/page";
-import { now } from "lodash";
 import { toast } from "sonner";
 
 interface ProjectStore {
