@@ -8,6 +8,7 @@ import { HeaderMenu } from "@/components/menu-bar/header-menu";
 // import { SidebarMenu } from "@/components/menu-bar/sidebar-menu";
 // utils
 import { cn } from "@/lib/utils";
+import { ProjectProvider } from "@/context/project-tab";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     const [isPanelOpen, setIsPanelOpen] = useState<boolean>(true);
@@ -22,14 +23,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <HeaderMenu />
                     </div>
                     <div className="flex max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)]">
-                        {/* <div className={cn(`duration-300 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] w-full`, isPanelOpen ? "max-w-[250px]" : "max-w-[50px]")}>
-                            <SidebarMenu handlePanelControl={handlePanelControl} isPanelOpen={isPanelOpen} >
-                                <MenuRender />
-                            </SidebarMenu>
-                        </div> */}
                         <div className="w-full p-2 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] overflow-hidden">
                             {/* Content */}
-                            {children}
+                            <ProjectProvider>
+                                {children}
+                            </ProjectProvider>
                         </div>
                     </div>
                 </div>
