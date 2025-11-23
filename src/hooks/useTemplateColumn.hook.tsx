@@ -1,6 +1,6 @@
 // src/hooks/useTemplateColumn.hook.ts
 import { create } from "zustand";
-import { ColumnCache, TaskCache, TemplateColumn } from "@/types";
+import { ColumnCache, TemplateColumn } from "@/types";
 import { templateColumnsServices } from "@/lib/services/template-columns.service";
 import { LoaderStatus } from "./hook.type";
 import { useBoardStore } from "./useBoard.hook";
