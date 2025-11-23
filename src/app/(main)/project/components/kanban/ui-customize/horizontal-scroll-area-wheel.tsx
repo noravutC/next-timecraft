@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from "react";
 import { ScrollBar } from "@/components/ui/scroll-area";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";

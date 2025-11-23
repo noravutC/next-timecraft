@@ -1,3 +1,5 @@
+"use client";
+
 import { Combobox } from "@/components/selector/combobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
