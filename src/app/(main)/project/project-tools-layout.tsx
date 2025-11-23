@@ -7,7 +7,7 @@ import { TabProject } from "./components/tab-project";
 // hooks
 import { useProjectStore } from "@/hooks";
 // utils
-import { ProjectTabProvider } from "./context/project-menu-context";
+import { ProjectTabProvider } from "./context-project/project-menu-context";
 import { LoaderPage } from "@/components/Loader-page";
 import { ProjectToolsMenu } from "./components/project-tools/project-tools";
 

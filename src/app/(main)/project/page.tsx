@@ -30,13 +30,14 @@
 // projects/page.tsx
 "use client";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 import React from "react";
 import { useProjectStore } from '@/hooks/useProjects.hook';
 import { KanbanBoard } from "./components/kanban/kanban-board";
-import { useProjectAtMenu } from "./context/project-menu-context";
+import { useProjectAtMenu } from "./context-project/project-menu-context";
 import { ProjectToolsLayout } from "./project-tools-layout";
-import { ProjectTabProvider } from "./context/project-menu-context";
+import { ProjectTabProvider } from "./context-project/project-menu-context";
 
 export default function Projects() {
 

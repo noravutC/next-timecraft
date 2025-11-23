@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useMemo } from "react";
 import { useBoardStore, useProjectStore, useTaskStore } from "@/hooks";
 import {
