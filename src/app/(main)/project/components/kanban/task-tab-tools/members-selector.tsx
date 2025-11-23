@@ -1,3 +1,5 @@
+'use client';
+
 import { AvatarTimeCraft } from "@/components/ui/avatar-timecraft"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"

@@ -1,3 +1,5 @@
+"use client";
+
 import { ColumnPreview } from "@/components/kanban-preview/column-preview";
 import { LayoutPreview } from "@/components/kanban-preview/layout-preview";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -16,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { TemplateColumn } from "@/types/template-column";
 import { useProjectStore } from "@/hooks";
-import { useProjectAtMenu } from "../../context-project/project-menu-context";
+import { useProjectAtMenu } from "../../../../../context/project/project-menu-context";
 
 interface TemplateColumnFormProps {
     projectId: string | null | undefined;

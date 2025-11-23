@@ -35,28 +35,19 @@ export const fetchCache = "force-no-store";
 import React from "react";
 import { useProjectStore } from '@/hooks/useProjects.hook';
 import { KanbanBoard } from "./components/kanban/kanban-board";
-import { useProjectAtMenu } from "./context-project/project-menu-context";
-import { ProjectToolsLayout } from "./project-tools-layout";
-import { ProjectTabProvider } from "./context-project/project-menu-context";
+import { useProjectAtMenu } from "../../../context/project/project-menu-context";
+import { ProjectProvider } from "@/context/project-tab";
 
-export default function Projects() {
-
-  return (
-    <ProjectTabProvider>
-      <ProjectsContent />
-    </ProjectTabProvider>
-  );
-}
-
-function ProjectsContent() {
+export default  function ProjectsContent() {
   const { projectIdActivate } = useProjectStore();
   const { menuValue } = useProjectAtMenu();
 
   return (
-    <ProjectToolsLayout>
+    <ProjectProvider>
+
       {menuValue === "Board" && (
         <KanbanBoard projectId={projectIdActivate} />
       )}
-    </ProjectToolsLayout>
+    </ProjectProvider>
   );
 }
