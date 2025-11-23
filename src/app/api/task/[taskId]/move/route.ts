@@ -1,4 +1,5 @@
 // // app/api/task/[taskId]/move/route.ts
+export const dynamic = 'force-dynamic';
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
@@ -26,7 +27,7 @@ export async function PATCH(
   try {
     const { taskId } = await params;
     const body = await request.json();
-    console.log("Request body:", body);
+    // console.log("Request body:", body);
     const { projectId, columnId } = body;
     if (!taskId || !projectId || !columnId) { 
       return NextResponse.json(
