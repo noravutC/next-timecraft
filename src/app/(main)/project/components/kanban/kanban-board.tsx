@@ -1,15 +1,12 @@
+'use client';
 
 import { useBoardStore, useProjectStore, useUserStore } from '@/hooks';
-// import { CircleAlert } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react';
 import { BoardColumn } from './board-column';
 import { LoaderPage } from '@/components/Loader-page';
-// import { CreateColumn } from './ui-customize/create-column';
-// import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRealtimeBoard } from '@/hooks/sync-live-data/useRealtimeBoard';
 import { Button } from '@/components/ui/button';
 import { BoardTemplate } from '@/components/board-template/board-template';
-// import { useDragScroll } from '../../context/use-drag-scroll';
 
 interface KanbanBoardProps {
     projectId: string | null | undefined;

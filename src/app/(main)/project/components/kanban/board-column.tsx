@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from "@/components/ui/badge";
 import { Column, ColumnCache } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";

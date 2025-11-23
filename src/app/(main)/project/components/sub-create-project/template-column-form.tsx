@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { TemplateColumn } from "@/types/template-column";
 import { useProjectStore } from "@/hooks";
-import { useProjectAtMenu } from "../../context/project-menu-context";
+import { useProjectAtMenu } from "../../context-project/project-menu-context";
 
 interface TemplateColumnFormProps {
     projectId: string | null | undefined;
