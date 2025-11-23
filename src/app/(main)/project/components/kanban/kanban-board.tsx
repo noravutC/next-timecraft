@@ -25,7 +25,7 @@ export const KanbanBoard = ({
     const { getProjectById, projects } = useProjectStore();
     const { fetchUsersByIds } = useUserStore();
 
-    useRealtimeBoard(projectId);
+    // useRealtimeBoard(projectId);
 
     useEffect(() => {
         if (projectId) {
