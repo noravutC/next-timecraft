@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { InviteMembers } from "./invite-member"
 import { AssigneesAvatar } from "../kanban/ui-customize/assignees-avatar"
+import { PreviewMembers } from "../kanban/task-tab-tools/preview-members"
 
 export const ProjectToolsMenu = () => {
     const {
@@ -65,8 +66,9 @@ export const ProjectToolsMenu = () => {
                 )} */}
             </DropdownMenu>
             <div className="flex items-center justify-end">
-                <div className="mr-4">
-                    <AssigneesAvatar userIds={(projectIsActive?.members.map((m) => m.userId) ?? [])} />
+                <div className="mr-4 flex items-center gap-2 bg-gray-200 p-2 rounded-md">
+                    <PreviewMembers assinees={(projectIsActive?.members.map((m) => m.userId) ?? [])} />
+                    {/* <AssigneesAvatar userIds={(projectIsActive?.members.map((m) => m.userId) ?? [])} /> */}
                 </div>
                 <InviteMembers />
             </div>
