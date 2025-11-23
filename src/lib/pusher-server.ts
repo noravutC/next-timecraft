@@ -1,3 +1,4 @@
+'use server';
 // lib/pusher.ts
 import Pusher from "pusher";
 // Use for server side
