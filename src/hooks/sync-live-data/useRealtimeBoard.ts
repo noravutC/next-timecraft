@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { pusherClient } from "@/lib/pusher-client";
-import { useBoardStore, useTaskStore } from "@/hooks";
+import { useTaskStore } from "@/hooks";
 import { Task } from "@/types"; // ต้อง Import Type Task ด้วย
 
 export const useRealtimeBoard = (projectId?: string | null) => {

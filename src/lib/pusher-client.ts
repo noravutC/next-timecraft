@@ -1,3 +1,4 @@
+'use client';
 // lib/pusher-client.ts
 import Pusher from "pusher-js";
 // Use for client side
