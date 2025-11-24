@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
