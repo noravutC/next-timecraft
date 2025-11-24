@@ -25,7 +25,9 @@ export const KanbanBoard = ({
     const { getProjectById, projects } = useProjectStore();
     const { fetchUsersByIds } = useUserStore();
 
-    // useRealtimeBoard(projectId);
+    useEffect(() => {
+        useRealtimeBoard(projectId);
+    }, []);
 
     useEffect(() => {
         if (projectId) {
@@ -62,13 +64,13 @@ export const KanbanBoard = ({
                 <>
                     {columnInProject.length === 0 ? (
                         <>
-                        <div className='max-w-full h-fit overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
-                            <BoardTemplate projectId={projectId} />
-                        </div>
-                        <div className='flex w-full items-center justify-center gap-2 mt-10'>
-                            <Button variant={'secondary'} className='cursor-pointer'>Continue without template</Button>
-                            {/* <Button>BoardTemplate</Button> */}
-                        </div>
+                            <div className='max-w-full h-fit overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
+                                <BoardTemplate projectId={projectId} />
+                            </div>
+                            <div className='flex w-full items-center justify-center gap-2 mt-10'>
+                                <Button variant={'secondary'} className='cursor-pointer'>Continue without template</Button>
+                                {/* <Button>BoardTemplate</Button> */}
+                            </div>
                         </>
                     ) : (
                         <>
