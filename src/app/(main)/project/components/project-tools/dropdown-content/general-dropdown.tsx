@@ -13,6 +13,7 @@ import { ProjectSelector } from "../../selector/project-selector"
 import { useProjectStore } from "@/hooks"
 import { Dispatch, SetStateAction, useState } from "react"
 import { CreateProjectDropdown } from "./create-project-dropdown"
+import { SettingsProjectDropDown } from "./settings-project-dropdown";
 
 interface GeneralDropdownContentProps {
     // setMenuOption: Dispatch<SetStateAction<{
@@ -28,9 +29,11 @@ export const GeneralDropdownContent = ({
     const {
         projects,
         projectIdActivate,
+        getProjectById,
         setActivateProject,
     } = useProjectStore();
     const currentProjects = Object.values(projects);
+    const activeProject = getProjectById(projectIdActivate ?? '');
     switch (submenuOpen) {
         case 'new-project':
             return (
@@ -38,14 +41,15 @@ export const GeneralDropdownContent = ({
                     setSubmenuOpen={setSubmenuOpen}
                 />
             )
-        // case 'settings':
-        //     return (
-        //         <SettingsProjectDropdown
-        //             setMenuOption={setMenuOption}
-        //         />
-        //     )
+        case 'settings':
+            return (
+                <SettingsProjectDropDown
+                    activeProject={activeProject}
+                    setSubmenuOpen={setSubmenuOpen}
+                />
+            )
         // case null:
-            
+
         default:
             return (
                 <>
@@ -84,9 +88,10 @@ export const GeneralDropdownContent = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             className="cursor-pointer"
+                            disabled={!activeProject}
                             onSelect={(event) => {
                                 event.preventDefault();
-                                setSubmenuOpen('new-project');
+                                setSubmenuOpen('settings');
                             }}
                         >
                             <Avatar className="rounded-md w-fit h-full">

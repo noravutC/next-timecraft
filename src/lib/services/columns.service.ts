@@ -9,6 +9,7 @@ import {
   // APIError,
   // APIPatch,
   CombineColumnTask,
+  APIPatch,
   // ColumnWithBoardData,
 } from "@/types";
 
@@ -40,6 +41,20 @@ class ColumnService {
         throw (
           error?.response?.data ||
           new Error("Failed to create column by projectId")
+        );
+      });
+  }
+
+  async updateColumn(
+    columnId: string,
+    columnData: Partial<Column>
+  ): Promise<APIPatch<Column>> {
+    return this.client
+      .patch(`/column/${columnId}`, columnData)
+      .then((response) => response.data as APIPatch<Column>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to update column")
         );
       });
   }

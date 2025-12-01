@@ -19,7 +19,7 @@ export const KanbanBoard = ({
         fetchBoardByProjectId,
         clearColumns,
         columns,
-        // groupColumnsOfProjectCache,
+        // columnsBarOfProjectCache,
         status
     } = useBoardStore();
     const { getProjectById, projects } = useProjectStore();
@@ -53,12 +53,6 @@ export const KanbanBoard = ({
                 <div className='h-full w-full pt-2 flex justify-center items-center'>
                     <LoaderPage ballSize={3} />
                 </div>) : (
-                // <div 
-                //     ref={kanbanScrollRef} // 👈 ผูก Ref เข้ากับ div นี้
-                //     // ปรับ className: เพิ่ม 'cursor-grab' และ 'select-none'
-                //     className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto cursor-grab select-none z-1' 
-                // >
-
                 <>
                     {columnInProject.length === 0 ? (
                         <>

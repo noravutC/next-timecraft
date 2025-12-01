@@ -58,9 +58,8 @@ export async function PATCH(
 
     // 💡 PUSHER TRIGGER LOGIC:
     const channelName = `project-${projectId}`; 
-    const eventName = 'task-updated'; // ใช้ event 'task-updated'
+    const eventName = 'task-updated';
 
-    // ส่ง Task object ที่อัปเดตแล้วไปยัง Frontend
     await pusherServer.trigger(
       channelName,
       eventName,
