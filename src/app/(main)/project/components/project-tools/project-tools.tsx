@@ -37,12 +37,12 @@ export const ProjectToolsMenu = () => {
         <div className="flex items-center justify-between w-full pr-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild disabled={status === 'fetching'}>
-                    <div className="flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-gray-100 ">
+                    <div className="flex items-center gap-2 p-2 rounded-md cursor-pointer bg-white shadow-sm hover:bg-blue-500 text-gray-700 hover:text-white duration-300 transition-all">
                         {status === 'fetching' ? (
                             <Skeleton className="h-[30px] w-[120px] mr-4" />
                         ) : (
 
-                            <p className="text-md text-gray-700 font-bold">{projectIsActive?.name}</p>
+                            <p className="text-md font-bold">{projectIsActive?.name}</p>
                         )}
                         <Avatar className="rounded-md w-fit h-full">
                             <AvatarImage src={''} alt="@shadcn" />

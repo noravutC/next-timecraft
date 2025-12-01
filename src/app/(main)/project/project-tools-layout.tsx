@@ -3,13 +3,13 @@
 
 import React, { useEffect } from "react";
 // components
-import { TabProject } from "../../app/(main)/project/components/tab-project";
+import { TabProject } from "./components/tab-project";
 // hooks
 import { useProjectStore } from "@/hooks";
 // utils
-import { ProjectTabProvider } from "./project-menu-context";
+import { ProjectTabProvider } from "@/context/project/project-menu-context";
 import { LoaderPage } from "@/components/Loader-page";
-import { ProjectToolsMenu } from "../../app/(main)/project/components/project-tools/project-tools";
+import { ProjectToolsMenu } from "./components/project-tools/project-tools";
 
 export const ProjectToolsLayout = ({ children }: { children: React.ReactNode })  => {
     const {

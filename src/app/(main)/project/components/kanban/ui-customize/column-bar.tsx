@@ -10,17 +10,19 @@ import {
 import { cn } from "@/lib/utils";
 
 interface ColumnBarProps {
+    disabled?: boolean;
     taskId: string;
     taskAtColumnId: string;
 }
 export const ColumnBar = ({
+    disabled = false,
     taskId,
     taskAtColumnId,
 }: ColumnBarProps) => {
     const { projectIdActivate, getProjectById } = useProjectStore();
     if (!projectIdActivate)
         return null;
-    const { columns, groupColumnsOfProjectCache } = useBoardStore();
+    const { columns, columnsBarOfProjectCache } = useBoardStore();
     const { moveTaskToColumn } = useTaskStore();
     // const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
 
@@ -30,7 +32,7 @@ export const ColumnBar = ({
     }
 
     const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
-        const columnsOfProject = groupColumnsOfProjectCache[projectIdActivate].columns;
+        const columnsOfProject = columnsBarOfProjectCache[projectIdActivate].columns;
         const colActive = columnsOfProject.find((col) => col._id === taskAtColumnId);
         return {
             tempColumns: columnsOfProject.sort((a, b) => a.order - b.order),
@@ -38,7 +40,7 @@ export const ColumnBar = ({
             colorColActive: colActive?.color,
         };
 
-    }, [groupColumnsOfProjectCache, taskAtColumnId]);
+    }, [columnsBarOfProjectCache, taskAtColumnId]);
 
     const lengthColumns = tempColumns.length;
 
@@ -49,7 +51,7 @@ export const ColumnBar = ({
                 const isLast = index === lengthColumns - 1;
                 return (
                     <Tooltip key={col._id}>
-                        <TooltipTrigger asChild className="cursor-pointer" onClick={() => onMoveTaskToColumn(col._id)}>
+                        <TooltipTrigger asChild className="cursor-pointer" onClick={() => disabled ? undefined : onMoveTaskToColumn(col._id)}>
                             <div
                                 className={cn(
                                     "h-full w-full transition-colors duration-200",

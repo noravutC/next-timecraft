@@ -3,9 +3,11 @@ import { create } from "zustand";
 import { Task, TaskCache } from "@/types";
 import { taskServices } from "@/lib/services/tasks.service";
 import { LoaderStatus } from "./hook.type";
+import { toast } from "sonner";
 
 export interface TaskStore {
   tasks: Record<string, TaskCache>;
+  taskLoaders: Record<string, boolean>;
 
   status: LoaderStatus;
   setStatus: (status: LoaderStatus) => void;
@@ -39,6 +41,7 @@ export interface TaskStore {
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: {},
+  taskLoaders: {},
   status: "none",
 
   setStatus: (status) => set({ status }),
@@ -155,13 +158,28 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   moveTaskToColumn: async (projectId: string, taskId: string, destinationColumnId: string) => {
+     const { tasks } = get();
+     const currentTaskValues = tasks[taskId];
     try {
       set({ status: "updating" });
-      // const task = get().getTaskById(taskId);
-      // if (!task) {
-      //   console.log("Task not found with ID:", taskId);
-      //   throw new Error("Task not found");
-      // }
+      if (projectId === '' || taskId === '' || destinationColumnId === '') {
+        toast.error('Missing project, task or destination column.');
+        return;
+      }
+      if (!currentTaskValues) {
+        toast.error('Unknow current task.');
+        return;
+      }
+      set((state) => ({
+        tasks: {
+          ...state.tasks,
+          [taskId]: { ...currentTaskValues, columnId: destinationColumnId },
+        },
+        taskLoaders: {
+          ...state.taskLoaders,
+          [taskId]: true,
+        },
+      }))
 
       const response = await taskServices.moveTaskToColumn(
         projectId,
@@ -177,9 +195,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       // }
     } catch (error) {
       console.log("Failed to move task to column:", error);
+      // If error back to old task values.
+      set((state) => ({
+        tasks: {
+          ...state.tasks,
+          [taskId]: currentTaskValues,
+        },
+      }))
       throw error;
     } finally {
       set({ status: "none" });
+      set((state) => ({
+        taskLoaders: {
+          ...state.taskLoaders,
+          [taskId]: false,
+        },
+      }))
     }
   },
 }));

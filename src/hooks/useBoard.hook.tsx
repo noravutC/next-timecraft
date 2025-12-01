@@ -12,7 +12,7 @@ export interface BoardStore {
     [columnId: string]: ColumnCache;
   };
   // cache props
-  groupColumnsOfProjectCache: {
+  columnsBarOfProjectCache: {
     [projectId: string]: {
       timestamp: number;
       columns: ColumnCache[];
@@ -38,13 +38,17 @@ export interface BoardStore {
     projectId: string,
     columnData: Partial<Column>
   ) => Promise<Column | null>;
+  updateColumn: (
+    columnId: string,
+    columnData: Partial<Column>
+  ) => Promise<void>;
   // moveTaskInStore: (taskId: string, newColumnId: string) => void;
 }
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
   lastFetchedBoard: 0,
   columns: {},
-  groupColumnsOfProjectCache: {},
+  columnsBarOfProjectCache: {},
   status: "none",
 
   setStatus: (status) => set({ status }),
@@ -64,7 +68,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   },
 
   fetchBoardByProjectId: async (projectId: string | null | undefined) => {
-    const { groupColumnsOfProjectCache } = get();
+    const { columnsBarOfProjectCache } = get();
     const now = Date.now();
     if (!projectId) {
       toast.error("Not found project is activate.");
@@ -72,12 +76,12 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     }
 
     const cacheDuration = 1 * 60 * 1000;
-    const currentProject = groupColumnsOfProjectCache[projectId];
+    const currentProject = columnsBarOfProjectCache[projectId];
     if (currentProject && now - currentProject.timestamp < cacheDuration) {
       console.log("Using cached column cache data.");
       return;
     } else {
-      delete groupColumnsOfProjectCache[projectId]; //removed cache not use
+      delete columnsBarOfProjectCache[projectId]; //removed cache not use
     }
     try {
       set({ status: "fetching" });
@@ -111,8 +115,8 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
           ...state.columns,
           ...newColumnsCache,
         },
-        groupColumnsOfProjectCache: {
-          ...state.groupColumnsOfProjectCache,
+        columnsBarOfProjectCache: {
+          ...state.columnsBarOfProjectCache,
           [projectId]: {
               timestamp: now,
               columns: newColumns
@@ -146,6 +150,36 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       return column;
     } catch (error) {
       console.log("Failed to create column:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+  updateColumn: async (columnId: string, columnData: Partial<Column>) => {
+    try {
+      set({ status: "updating" });
+      const response = await columnServices.updateColumn(
+        columnId,
+        columnData
+      );
+      console.log('response: ', response);
+      const updatedColumn = response.updated;
+      if (!updatedColumn) {
+        toast.error("Failed to update column.");
+        return;
+      }
+      // Update column in store
+      set((state) => ({
+        columns: {
+          ...state.columns,
+          [updatedColumn._id]: {
+            ...state.columns[columnId],
+            ...updatedColumn,
+          },
+        },
+      }));
+    } catch (error) {
+      console.log("Failed to update column:", error);
       throw error;
     } finally {
       set({ status: "none" });

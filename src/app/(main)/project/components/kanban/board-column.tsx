@@ -2,24 +2,33 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Column, ColumnCache } from "@/types";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import { TaskCard } from "./task-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import { PreviewTaskForm } from "./ui-customize/preview-task-form";
 import { useBoardStore, useTaskStore } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { hexToRgba } from "@/helper/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface BoardColumnProps {
   column: ColumnCache;
 }
 
 export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnProps) => {
-  const { status: statusBoard } = useBoardStore();
+  const { updateColumn, status: statusBoard } = useBoardStore();
   const { tasks: stateTasks, status: statusTask } = useTaskStore();
   const column = useBoardStore(state => state.columns[initialColumn._id] || initialColumn);
   const [openTaskForm, setOpenTaskForm] = useState(false);
+  const [editBoard, setEditBoard] = useState<{
+    value?: string;
+    isEdit: boolean;
+  }>({
+    value: column.name,
+    isEdit: false,
+  });
   if (!column) return null;
   const tasks = (Object.values(stateTasks) || []).filter((t) => t.columnId === column._id);
 
@@ -81,25 +90,65 @@ export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnPro
     )
   }
 
+  const handleUpdateBoardValues = async () => {
+    if (column._id) {
+      await updateColumn(column._id, { name: editBoard.value ?? column.name });
+      setEditBoard((prev) => ({ ...prev, isEdit: false }));
+    }else {
+      
+    }
+  }
+
+  useEffect(() => {
+    if (editBoard.isEdit) {
+      setEditBoard((prev) => ({ ...prev, value: column.name }));
+    }
+  }, [column, editBoard.isEdit]);
+
   return (
     <div
-      className={cn('max-h-[450px] h-full min-h-[150px] max-w-[250px] min-w-[250px] z-2',
+      className={cn('max-h-[450px] h-full min-h-[150px] max-w-[250px] min-w-[250px] z-2 bg-white',
         'flex flex-col flex-shrink-0 rounded-md border'
       )}
       data-board-column
     >
-      <div className='flex justify-between flex-shrink-0 p-3 border-b rounded-t-md'
+      <div className={cn('flex h-12 items-center justify-between flex-shrink-0 p-3 border-b rounded-t-md', editBoard && '!p-2')}
         style={backgroundStyle}
       >
-        <p className="font-semibold text-sm">{column.name}</p>
+        {!editBoard.isEdit ? (
+          <>
+            <div
+              className="font-semibold text-sm"
+              onClick={() => setEditBoard({ isEdit: true })}
+            >
+              {column.name}
+            </div>
+            <div className="flex gap-2 items-center">
+              <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start">
+                <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
+                {/* Unit */}
+                <div>task</div>
+              </Badge>
+            </div>
+          </>
+        ) : (
+          <div className="relative w-full">
+            <Input
+              className="bg-white text-md font-semibold w-full pr-12"
+              value={editBoard.value ?? ''}
+              onChange={(e) => setEditBoard((prev) => ({ ...prev, value: e.target.value }))} />
+              <div className="absolute bottom-[-35px] max-w-40 w-40 min-h-fit flex justify-end gap-1 right-0">
+                <Button variant={'white'} size={'sm'} onClick={handleUpdateBoardValues}>
+                  <Check className="size-3 text-gray-600" strokeWidth={3} />
+                </Button>
+                <Button variant={'white'} size={'sm'} onClick={() => setEditBoard((prev) => ({...prev, isEdit: false}))}>
+                  <X className="size-3 text-gray-600" strokeWidth={3} />
+                </Button>
+              </div>
+          </div>
+        )}
 
-        <div className="flex gap-2 items-center">
-          <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start">
-            <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
-            {/* Unit */}
-            <div>task</div>
-          </Badge>
-        </div>
+
       </div>
       <div
         className='flex-1 overflow-y-auto scrollbar-thin-y space-y-2'

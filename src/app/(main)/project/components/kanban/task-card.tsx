@@ -11,18 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // icons
-import { Calendar, EllipsisVertical, User } from "lucide-react";
+import { Calendar, EllipsisVertical, LoaderCircle, User } from "lucide-react";
 // types
 import { Task } from "@/types";
 // utils
 import { formatDateToString } from "@/helper/utils";
 import { useState } from "react";
-import { useBoardStore } from "@/hooks";
+import { useBoardStore, useTaskStore } from "@/hooks";
 import { ColumnBar } from "./ui-customize/column-bar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Dialog } from "@/components/ui/dialog";
 import { TaskModal } from "./ui-customize/task-modal";
 import { PreviewMembers } from "./task-tab-tools/preview-members";
+import { cn } from "@/lib/utils";
 
 export interface TaskCardProps {
   task: Task;
@@ -30,15 +31,21 @@ export interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const [open, setOpen] = useState(false);
+  const { taskLoaders } = useTaskStore();
+  const isLoading = taskLoaders[task._id];
   return (
-    <div key={task._id} className="h-fit w-full border rounded-md p-4 hover:shadow-md transition-shadow duration-200 flex flex-col gap-6">
+    <div key={task._id}
+      className={cn("h-fit w-full border rounded-md p-4 hover:shadow-md transition-shadow duration-200 flex flex-col gap-6",
+        isLoading && 'opacity-60 bg-gray-300/20',
+      )}
+    >
       <div className="grid grid-cols-5 w-full">
-        <div className="col-span-4 flex flex-col gap-1 cursor-pointer" onClick={() => setOpen(true)}>
+        <div className="col-span-4 flex flex-col gap-1 cursor-pointer" onClick={() => isLoading ? undefined : setOpen(true)}>
           <span className="text-sm text-gray-700 font-semibold">{task.title}</span>
         </div>
         <div className="col-span-1 flex justify-end items-start">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild disabled={isLoading}>
               <Button type="button" variant="ghost" className="p-1 cursor-pointer" size={null}>
                 <EllipsisVertical size={10} />
               </Button>
@@ -53,6 +60,7 @@ export function TaskCard({ task }: TaskCardProps) {
 
       <ColumnBar
         // Bar indicating task's column position
+        disabled={isLoading}
         taskId={task._id}
         taskAtColumnId={task.columnId}
       />
@@ -64,23 +72,29 @@ export function TaskCard({ task }: TaskCardProps) {
             <p className="text-xs text-gray-500">{task.dueDate ? formatDateToString(task.dueDate) : '-'}</p>
           </div>
         </div>
-        <div className="h-fit">
-          <PreviewMembers assinees={task.assignees} />
-          {task.assignees.length === 0 && (
-            <Avatar className="w-6 h-6 select-none">
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="font-semibold">Unassigned</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
-            </Avatar>
+          {isLoading ? (
+            <div className="min-w-6 min-h-6 flex items-center justify-center">
+              <LoaderCircle className="animate-spin size-4 text-blue-500" />
+            </div>
+          ) : (
+            <div className="h-fit">
+              <PreviewMembers assinees={task.assignees} />
+              {task.assignees.length === 0 && (
+                <Avatar className="w-6 h-6 select-none">
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-semibold">Unassigned</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                </Avatar>
+              )}
+            </div>
           )}
-        </div>
       </div>
       <TaskModal task={task} open={open} onOpenChange={setOpen} />
     </div>
