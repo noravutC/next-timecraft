@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  turbopack: {},
   images: {
     remotePatterns: [
       {
@@ -9,10 +10,6 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
     ],
-  },
-  // @ts-expect-error - TS types don't know "turbo" yet
-  turbo: {
-    enabled: false,
   },
   webpack(config) {
     config.module.rules.push({
