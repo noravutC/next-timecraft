@@ -30,7 +30,11 @@ export const ColorPicker = ({
                 />
                 {/* <Badge className='w-20 h-10 rounded-sm'></Badge> */}
             </PopoverTrigger>
-            <PopoverContent side='right' align='start' className="w-fit h-fit p-0">
+            <PopoverContent
+                side='right' align='start'
+                className="w-fit h-fit p-0"
+
+            >
                 <Sketch
                     width={250}
                     color={hex}

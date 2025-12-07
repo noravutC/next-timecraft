@@ -89,6 +89,8 @@ import { useEffect } from "react";
 // components
 import { Button } from "@/components/ui/button";
 import { LoaderPage } from "@/components/Loader-page";
+import LogoAnimationLoop from "@/components/logo-space/logo-animation-loop";
+import { LogoAnimation } from "@/components/logo-space/logo-animation";
 
 export default function Login() {
   const { data: session, status } = useSession();
@@ -106,23 +108,30 @@ export default function Login() {
 
   if (status === 'unauthenticated') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        <Button onClick={() => signIn("google")}>
-          Sign in with Google
-        </Button>
+      <div className="flex flex-col items-center justify-between gap-10 min-h-screen">
+        {/* <h1 className="text-2xl font-bold mb-4">Login</h1> */}
+        <div className="flex-1 flex items-center justify-center pt-30">
+          <LogoAnimation />
+        </div>
+        <div className="min-h-[100px] flex items-center justify-center duration-1500">
+          <Button onClick={() => signIn("google")}>
+            Sign in with Google
+          </Button>
+        </div>
       </div>
     );
   } else if (status === "loading") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoaderPage ballSize={4} />
+        {/* <LoaderPage ballSize={4} /> */}
+        <LogoAnimationLoop />
       </div>
     )
   } else {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoaderPage ballSize={4} />
+        {/* <LoaderPage ballSize={4} /> */}
+        <LogoAnimationLoop />
       </div>
     )
   }

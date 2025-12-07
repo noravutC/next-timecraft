@@ -10,6 +10,7 @@ import { useProjectStore } from "@/hooks";
 import { ProjectTabProvider } from "@/context/project/project-menu-context";
 import { LoaderPage } from "@/components/Loader-page";
 import { ProjectToolsMenu } from "./components/project-tools/project-tools";
+import LogoAnimationLoop from "@/components/logo-space/logo-animation-loop";
 
 export const ProjectToolsLayout = ({ children }: { children: React.ReactNode })  => {
     const {
@@ -35,7 +36,8 @@ export const ProjectToolsLayout = ({ children }: { children: React.ReactNode }) 
                 <div className="flex-1 max-h-flex-1 overflow-hidden">
                     {status === 'fetching' ? (
                         <div className='h-full w-full pt-2 flex justify-center items-center'>
-                            <LoaderPage ballSize={3} />
+                            {/* <LoaderPage ballSize={3} /> */}
+                            <LogoAnimationLoop />
                         </div>
                     ) : (
                         <>

@@ -19,12 +19,15 @@ import {
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useCurrentUserContext } from "@/context/current-user-context";
+import { Logo } from "../logo-space/logo";
 
 export const HeaderMenu = () => {
     const { currentUser } = useCurrentUserContext();
     return (
         <div className="w-full flex justify-between items-center h-[7vh] p-4">
-            <div></div>
+            <div>
+                <Logo />
+            </div>
             <div className="items-center flex">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
