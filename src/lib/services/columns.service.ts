@@ -45,6 +45,20 @@ class ColumnService {
       });
   }
 
+  async insertColumnInOrder(
+    projectId: string, columnData: Partial<Column>, order: number,
+  ): Promise<APIPost<Column>> {
+    return this.client
+      .post(`/column/order`, { projectId, data: columnData, order })
+      .then((response) => response.data as APIPost<Column>)
+      .catch((error) => {
+        throw (
+          error?.response?.data ||
+          new Error("Failed to create column by projectId")
+        );
+      });
+  }
+
   async updateColumn(
     columnId: string,
     columnData: Partial<Column>
@@ -52,6 +66,19 @@ class ColumnService {
     return this.client
       .patch(`/column/${columnId}`, columnData)
       .then((response) => response.data as APIPatch<Column>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to update column")
+        );
+      });
+  }
+  async updateOnlyColumnOrder(
+    columnId: string,
+    columnData: Partial<Column>
+  ): Promise<APIPatch<Column[]>> {
+    return this.client
+      .patch(`/column/${columnId}/order`, columnData)
+      .then((response) => response.data as APIPatch<Column[]>)
       .catch((error) => {
         throw (
           error?.response?.data || new Error("Failed to update column")

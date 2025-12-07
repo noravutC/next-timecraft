@@ -30,7 +30,8 @@ export interface BoardStore {
 
   // fetch
   fetchBoardByProjectId: (
-    projectId: string | null | undefined
+    projectId: string | null | undefined,
+    reqLiveBoards?: boolean,
   ) => Promise<void>;
 
   // actions
@@ -38,7 +39,16 @@ export interface BoardStore {
     projectId: string,
     columnData: Partial<Column>
   ) => Promise<Column | null>;
+  insertColumnInOrder: (
+    projectId: string,
+    columnData: Partial<Column>,
+    order: number
+  ) => Promise<Column | null>;
   updateColumn: (
+    columnId: string,
+    columnData: Partial<Column>
+  ) => Promise<void>;
+  updateColumnOrder: (
     columnId: string,
     columnData: Partial<Column>
   ) => Promise<void>;
@@ -67,7 +77,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     return filteredColumns;
   },
 
-  fetchBoardByProjectId: async (projectId: string | null | undefined) => {
+  fetchBoardByProjectId: async (projectId: string | null | undefined, reqLiveBoards?: boolean) => {
     const { columnsBarOfProjectCache } = get();
     const now = Date.now();
     if (!projectId) {
@@ -75,13 +85,15 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       return;
     }
 
-    const cacheDuration = 1 * 60 * 1000;
-    const currentProject = columnsBarOfProjectCache[projectId];
-    if (currentProject && now - currentProject.timestamp < cacheDuration) {
-      console.log("Using cached column cache data.");
-      return;
-    } else {
-      delete columnsBarOfProjectCache[projectId]; //removed cache not use
+    if (!reqLiveBoards) {
+      const cacheDuration = 1 * 60 * 1000;
+      const currentProject = columnsBarOfProjectCache[projectId];
+      if (currentProject && now - currentProject.timestamp < cacheDuration) {
+        console.log("Using cached column cache data.");
+        return;
+      } else {
+        delete columnsBarOfProjectCache[projectId]; //removed cache not use
+      }
     }
     try {
       set({ status: "fetching" });
@@ -108,7 +120,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       // apply group columns after timestamp
       const newColumns = Object.values(newColumnsCache);
 
-      
+
       set((state) => ({
         lastFetchedBoard: now,
         columns: {
@@ -118,8 +130,8 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         columnsBarOfProjectCache: {
           ...state.columnsBarOfProjectCache,
           [projectId]: {
-              timestamp: now,
-              columns: newColumns
+            timestamp: now,
+            columns: newColumns
           },
         }
       }));
@@ -155,6 +167,30 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       set({ status: "none" });
     }
   },
+  insertColumnInOrder: async (projectId: string, columnData: Partial<Column>, order: number) => {
+    const { fetchBoardByProjectId } = get();
+    try {
+      set({ status: "creating" });
+      const response = await columnServices.insertColumnInOrder(
+        projectId ?? "",
+        columnData,
+        order
+      );
+      const column = response?.created;
+
+      if (column) {
+
+        await fetchBoardByProjectId(projectId, true);
+        // get().setColumn(column._id, column);
+      }
+      return column;
+    } catch (error) {
+      console.log("Failed to insert column in order:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
   updateColumn: async (columnId: string, columnData: Partial<Column>) => {
     try {
       set({ status: "updating" });
@@ -162,7 +198,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         columnId,
         columnData
       );
-      console.log('response: ', response);
+      // console.log('response: ', response);
       const updatedColumn = response.updated;
       if (!updatedColumn) {
         toast.error("Failed to update column.");
@@ -178,6 +214,68 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
           },
         },
       }));
+    } catch (error) {
+      console.log("Failed to update column:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
+  updateColumnOrder: async (columnId: string, columnData: Partial<Column>) => {
+    // const { fetchBoardByProjectId } = get();
+    try {
+      set({ status: "updating" });
+
+      const response = await columnServices.updateOnlyColumnOrder(columnId, columnData);
+      let updatedColumns = response.updated;
+      // console.log('response updateColumnOrder: ', updatedColumns);
+      if (!updatedColumns) {
+        toast.error("Failed to update column.");
+        return;
+      }
+
+      if (!Array.isArray(updatedColumns)) updatedColumns = [updatedColumns];
+
+      const now = Date.now();
+      const projectId = updatedColumns[0].projectId;
+
+      // แปลง updatedColumns เป็น ColumnCache
+      const updatedColumnsCache: ColumnCache[] = updatedColumns.map((col) => ({
+        ...col,
+        timestamp: now,
+      }));
+
+      // ดึง columns เดิมของ project
+      const prevColumns = Object.values(get().columns).filter(c => c.projectId === projectId);
+
+      // merge columns เก่าและใหม่
+      const mergedColumns: ColumnCache[] = [
+        ...prevColumns.filter(c => !updatedColumnsCache.some(u => u._id === c._id)),
+        ...updatedColumnsCache,
+      ];
+
+      // สร้าง columns map
+      const newColumnsCache: Record<string, ColumnCache> = {};
+      mergedColumns.forEach((col) => {
+        newColumnsCache[col._id] = col;
+      });
+
+      // set state
+      set((state) => ({
+        columns: {
+          ...state.columns,
+          ...newColumnsCache,
+        },
+        columnsBarOfProjectCache: {
+          ...state.columnsBarOfProjectCache,
+          [projectId]: {
+            timestamp: now,
+            columns: mergedColumns, // ✅ ตอนนี้เป็น ColumnCache[]
+          },
+        },
+      }));
+
+      console.log("after apply update column", Object.values(get().columns));
     } catch (error) {
       console.log("Failed to update column:", error);
       throw error;
