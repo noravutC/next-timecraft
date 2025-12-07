@@ -85,7 +85,7 @@
 
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 // components
 import { Button } from "@/components/ui/button";
 import { LoaderPage } from "@/components/Loader-page";
@@ -95,6 +95,15 @@ import { LogoAnimation } from "@/components/logo-space/logo-animation";
 export default function Login() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowButton(true);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (session) {
@@ -113,7 +122,13 @@ export default function Login() {
         <div className="flex-1 flex items-center justify-center pt-30">
           <LogoAnimation />
         </div>
-        <div className="min-h-[100px] flex items-center justify-center duration-1500">
+        <div
+          className={`
+    min-h-[100px] flex items-center justify-center
+    transition-opacity duration-700
+    ${showButton ? "opacity-100" : "opacity-0"}
+  `}
+        >
           <Button onClick={() => signIn("google")}>
             Sign in with Google
           </Button>
