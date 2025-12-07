@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // @ts-expect-error - TS types don't know "turbo" yet
+  turbo: {
+    enabled: false,
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
