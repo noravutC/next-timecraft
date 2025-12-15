@@ -5,7 +5,7 @@ export interface APIGet<T> {
 }
 
 export interface APISingleGet<T> {
-    data: T;
+    data: T | null;
     message: string;
     status: number;
 }
@@ -24,6 +24,12 @@ export interface APIPut<T> {
 
 export interface APIPatch<T> {
     updated : T | null;
+    message: string;
+    status: number;
+}
+
+export interface APIDelete<T> {
+    deleted : T | null;
     message: string;
     status: number;
 }

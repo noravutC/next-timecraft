@@ -25,7 +25,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { projectId, template } = body;
-    console.log('projectId: ', projectId);
+    // console.log('projectId: ', projectId);
     if (!projectId || !template) {
       return NextResponse.json(
         { success: false, message: "Missing projectId or template" },

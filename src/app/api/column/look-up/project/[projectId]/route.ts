@@ -42,6 +42,7 @@ export async function GET(
       {
         $match: {
           projectId: new ObjectId(projectId),
+          isDeleted: false,
         },
       },
       {

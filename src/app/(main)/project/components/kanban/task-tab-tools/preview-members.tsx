@@ -22,26 +22,26 @@ export const PreviewMembers = React.memo(({
     }).filter((item) => item !== undefined);
     return (
         <>
-            {(userAsMember ?? []).map((u) => (
-                <React.Fragment key={u._id}>
-                    <Tooltip>
-                        <TooltipTrigger asChild className="cursor-pointer">
-                            <Image
-                                src={u.avatar ?? "/default-avatar.png"}
-                                alt={u.fullName}
-                                width={10}
-                                height={10}
-                                className={cn("rounded-full object-cover", size)}
-                            />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{u.fullName}</p>
-                        </TooltipContent>
-                    </Tooltip>
+            <div className="*:data-[slot=avatar]:ring-background flex -space-x-1 *:data-[slot=avatar]:ring-2 *">
+                {(userAsMember ?? []).map((u) => (
+                    <React.Fragment key={u._id}>
+                        <Tooltip>
+                            <TooltipTrigger asChild className="cursor-pointer">
+                                <Image
+                                    src={u.avatar ?? "/default-avatar.png"}
+                                    alt={u.fullName}
+                                    width={10}
+                                    height={10}
+                                    className={cn("rounded-full object-cover", size)}
+                                />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{u.fullName}</p>
+                            </TooltipContent>
+                        </Tooltip>
 
-                </React.Fragment>
-            ))}
-            <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *">
+                    </React.Fragment>
+                ))}
             </div>
         </>
     )

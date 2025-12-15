@@ -30,6 +30,7 @@ export const TaskModal = ({
             <DialogContent
                 className="[&>button]:hidden sm:max-w-[425px] md:max-w-[600px] 
                 lg:max-w-[900px] xl:max-w-[1100px] max-h-[550px] h-full rounded p-0 overflow-hidden"
+                onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 <DialogHeader hidden>
                     <DialogTitle>
@@ -67,10 +68,10 @@ export const TaskModal = ({
                             <p className="text-gray-700 font-bold text-xl">{task.title}</p>
                             <TabContent taskId={task._id} assignees={task.assignees} />
                             {task.assignees.length > 0 && (
-                            <div className="mt-6 flex flex-col">
-                                <p className="mb-2 text-xs font-semibold text-gray-700">Assignee</p>
-                                <PreviewMembers assinees={task.assignees} size="size-8" />
-                            </div>
+                                <div className="mt-6 flex flex-col">
+                                    <p className="mb-2 text-xs font-semibold text-gray-700">Assignee</p>
+                                    <PreviewMembers assinees={task.assignees} size="size-8" />
+                                </div>
                             )}
                             <CheckListBuilder />
                         </div>
