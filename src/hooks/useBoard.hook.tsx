@@ -52,6 +52,7 @@ export interface BoardStore {
     columnId: string,
     columnData: Partial<Column>
   ) => Promise<void>;
+  softDeleteColumn: (columnId: string) => Promise<void>;
   // moveTaskInStore: (taskId: string, newColumnId: string) => void;
 }
 
@@ -270,7 +271,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
           ...state.columnsBarOfProjectCache,
           [projectId]: {
             timestamp: now,
-            columns: mergedColumns, // ✅ ตอนนี้เป็น ColumnCache[]
+            columns: mergedColumns,
           },
         },
       }));
@@ -283,53 +284,26 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       set({ status: "none" });
     }
   },
-  // moveTaskInStore: (taskId: string, newColumnId: string) => {
-  //   set((state) => {
-  //     const columns = state.columns;
-  //     let movedTask: Task | undefined;
-
-  //     // 1. ค้นหา Task และสร้าง Column ที่ถูกอัปเดต
-  //     const updatedColumns = Object.values(columns).reduce((acc, col) => {
-  //       // หาก Column นี้คือปลายทาง
-  //       if (col._id === newColumnId) {
-  //         acc[col._id] = col; // เก็บ Column ปลายทางไว้ก่อน
-  //         return acc;
-  //       }
-
-  //       // หาก Column นี้ไม่ใช่ Column ปลายทาง (คือ Column ต้นทางหรือ Column อื่น)
-  //       const taskIndex = col.tasks.findIndex((t) => t._id === taskId);
-
-  //       if (taskIndex !== -1) {
-  //         // 1.1 Task ถูกพบ: เก็บ Task ที่ถูกย้าย
-  //         movedTask = col.tasks[taskIndex];
-
-  //         // 1.2 อัปเดต Column ต้นทาง: ลบ Task ออก
-  //         acc[col._id] = {
-  //           ...col,
-  //           tasks: col.tasks.filter((t) => t._id !== taskId),
-  //         };
-  //       } else {
-  //         // 1.3 Column ที่ไม่มีการเปลี่ยนแปลง
-  //         acc[col._id] = col;
-  //       }
-  //       return acc;
-  //     }, {} as Record<string, ColumnWithBoardData>);
-
-  //     // 2. เพิ่ม Task เข้าไปใน Column ใหม่
-  //     if (movedTask && updatedColumns[newColumnId]) {
-  //       const newCol = updatedColumns[newColumnId];
-
-  //       // อัปเดตข้อมูล Column ID ของ Task และเพิ่มเข้าไป
-  //       const taskWithNewColId = { ...movedTask, columnId: newColumnId };
-
-  //       updatedColumns[newColumnId] = {
-  //         ...newCol,
-  //         tasks: [...newCol.tasks, taskWithNewColId],
-  //       };
-  //     }
-
-  //     // คืนค่า State ใหม่
-  //     return { columns: updatedColumns };
-  //   });
-  // },
+  softDeleteColumn: async (columnId: string) => {
+    try {
+      set({ status: "deleting" });
+      const response = await columnServices.softDeleteColumn(columnId);
+      const deletedColumn = response.deleted;
+      if (!deletedColumn) {
+        toast.error("Failed to delete column.");
+        return;
+      }
+      // Remove column from store
+      set((state) => {
+        const newColumns = { ...state.columns };
+        delete newColumns[columnId];
+        return { columns: newColumns };
+      });
+    } catch (error) {
+      console.log("Failed to delete column:", error);
+      throw error;
+    } finally {
+      set({ status: "none" });
+    }
+  },
 }));

@@ -8,6 +8,7 @@ import { ProjectSchema } from "@/model/validate/project";
 import mongoose from "mongoose";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
+import { ColumnsModel } from "@/model/column";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -23,7 +24,6 @@ export async function GET() {
   }
   try {
     await connectDB();
-
     const response = await ProjectsModel.find().lean<Project[]>().exec();
     return NextResponse.json(
       {

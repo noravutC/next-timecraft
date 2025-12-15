@@ -2,8 +2,6 @@
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-// import { TemplateColumnModel } from "@/model/template-column";
-// import { type TemplateColumn } from "@/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 import mongoose from "mongoose";

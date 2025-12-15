@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useBoardStore, useProjectStore, useTaskStore } from "@/hooks";
 import {
     Tooltip,
@@ -19,10 +19,10 @@ export const ColumnBar = ({
     taskId,
     taskAtColumnId,
 }: ColumnBarProps) => {
-    const { projectIdActivate, getProjectById } = useProjectStore();
+    const { projectIdActivate } = useProjectStore();
     if (!projectIdActivate)
         return null;
-    const { columns, columnsBarOfProjectCache } = useBoardStore();
+    const { columnsBarOfProjectCache } = useBoardStore();
     const { moveTaskToColumn } = useTaskStore();
     // const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
 

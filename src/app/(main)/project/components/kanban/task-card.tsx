@@ -50,7 +50,10 @@ export function TaskCard({ task }: TaskCardProps) {
                 <EllipsisVertical size={10} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
               <DropdownMenuItem className="cursor-pointer">Open tasks</DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">Delete</DropdownMenuItem>
             </DropdownMenuContent>
@@ -72,29 +75,29 @@ export function TaskCard({ task }: TaskCardProps) {
             <p className="text-xs text-gray-500">{task.dueDate ? formatDateToString(task.dueDate) : '-'}</p>
           </div>
         </div>
-          {isLoading ? (
-            <div className="min-w-6 min-h-6 flex items-center justify-center">
-              <LoaderCircle className="animate-spin size-4 text-blue-500" />
-            </div>
-          ) : (
-            <div className="h-fit">
-              <PreviewMembers assinees={task.assignees} />
-              {task.assignees.length === 0 && (
-                <Avatar className="w-6 h-6 select-none">
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-semibold">Unassigned</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </>
-                </Avatar>
-              )}
-            </div>
-          )}
+        {isLoading ? (
+          <div className="min-w-6 min-h-6 flex items-center justify-center">
+            <LoaderCircle className="animate-spin size-4 text-blue-500" />
+          </div>
+        ) : (
+          <div className="h-fit">
+            <PreviewMembers assinees={task.assignees} />
+            {task.assignees.length === 0 && (
+              <Avatar className="w-6 h-6 select-none">
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-semibold">Unassigned</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              </Avatar>
+            )}
+          </div>
+        )}
       </div>
       <TaskModal task={task} open={open} onOpenChange={setOpen} />
     </div>

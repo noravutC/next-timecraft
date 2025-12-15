@@ -34,7 +34,10 @@ export async function PATCH(
     await connectDB();
 
     // หา column ตัวนี้
-    const targetColumn = await ColumnsModel.findById(columnId)
+    const targetColumn = await ColumnsModel.findOne({
+      _id: columnId,
+      isDeleted: false,
+    })
       .lean<Column>()
       .exec();
     if (!targetColumn) {
@@ -47,7 +50,10 @@ export async function PATCH(
     const projectId = targetColumn.projectId;
 
     // หา columns ทั้งหมดใน project
-    const columns = await ColumnsModel.find({ projectId })
+    const columns = await ColumnsModel.find({
+      projectId,
+      isDeleted: false,
+    })
       .lean<Column[]>()
       .exec();
 
@@ -55,8 +61,8 @@ export async function PATCH(
 
     // ถ้า order ไม่เปลี่ยน ก็ไม่ต้องทำอะไร
     if (originalOrder === newOrder) {
-      const updatedColumn = await ColumnsModel.findByIdAndUpdate(
-        columnId,
+      const updatedColumn = await ColumnsModel.findOneAndUpdate(
+        { _id: columnId, isDeleted: false },
         body,
         { new: true }
       ).lean();
@@ -93,7 +99,7 @@ export async function PATCH(
     await ColumnsModel.bulkWrite(bulkOps);
 
     const updatedColumn = await ColumnsModel.find({ projectId }).lean();
-    console.log('updatedColumn: ', updatedColumn);
+    console.log("updatedColumn: ", updatedColumn);
     return NextResponse.json(
       {
         success: true,

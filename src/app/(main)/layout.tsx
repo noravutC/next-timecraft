@@ -17,13 +17,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     }
     return (
         <CurrentUserProvider>
-            <div className="max-h-[100vw] max-h-[100vh] h-full w-full overflow-hidden">
-                <div className="flex flex-col">
+            <div className="max-w-screen max-h-screen h-full w-full overflow-hidden">
+                <div className="flex flex-col h-full">
                     <div className="max-w-[100vw] min-h-[7vh] max-h-[7vh] min-w-[100vw] border-b">
                         <HeaderMenu />
                     </div>
-                    <div className="flex max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] bg-gray-50">
-                        <div className="w-full p-2 max-h-[calc(100vh-7vh)] h-[calc(100vh-7vh)] overflow-hidden">
+                    <div className="flex-1 flex max-h-screen h-full bg-gray-50">
+                        <div className="w-full p-2 h-full overflow-hidden">
                             {/* Content */}
                             <ProjectProvider>
                                 {children}

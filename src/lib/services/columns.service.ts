@@ -10,6 +10,7 @@ import {
   // APIPatch,
   CombineColumnTask,
   APIPatch,
+  APIDelete,
   // ColumnWithBoardData,
 } from "@/types";
 
@@ -82,6 +83,18 @@ class ColumnService {
       .catch((error) => {
         throw (
           error?.response?.data || new Error("Failed to update column")
+        );
+      });
+  }
+  async softDeleteColumn(
+    columnId: string,
+  ): Promise<APIDelete<Column>> {
+    return this.client
+      .delete(`/column/${columnId}`)
+      .then((response) => response.data as APIDelete<Column>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to delete column")
         );
       });
   }

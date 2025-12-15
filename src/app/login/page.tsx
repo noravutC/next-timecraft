@@ -129,7 +129,7 @@ export default function Login() {
     ${showButton ? "opacity-100" : "opacity-0"}
   `}
         >
-          <Button onClick={() => signIn("google")}>
+          <Button className="g_id_signin" onClick={() => signIn("google")}>
             Sign in with Google
           </Button>
         </div>
