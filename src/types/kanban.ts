@@ -22,3 +22,17 @@ export interface Column {
   color: ColumnColor;
   order: number;
 }
+
+export interface TempColumn {
+  id: string;
+  projectId: string;
+  title: string;
+  order: number;
+}
+
+export interface TempTask {
+  id: string;
+  columnId: string;
+  title: string;
+  order: number;
+}
