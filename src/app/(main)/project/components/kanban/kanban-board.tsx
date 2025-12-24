@@ -10,6 +10,7 @@ import { BoardTemplate } from '@/components/board-template/board-template';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import LogoAnimationLoop from '@/components/logo-space/logo-animation-loop';
+import { BoardDnd } from './dnd-wrapper/board-dnd';
 
 interface KanbanBoardProps {
     projectId: string | null | undefined;
@@ -69,13 +70,14 @@ export const KanbanBoard = ({
                         </>
                     ) : (
                         <>
-                            <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
+                        <BoardDnd initailColumns={sortedColumns} />
+                            {/* <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
                                 <div className='w-full min-w-max flex gap-6 h-full p-4'>
                                     {sortedColumns.map((col) => (
                                         <BoardColumn key={col._id} column={col} />
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
                         </>
                     )}
                 </>
