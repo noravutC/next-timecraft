@@ -1,16 +1,19 @@
-import { ColumnCache } from '@/types/column';
+import { ColumnCache, CombineColumnTask } from '@/types/column';
 import { Task } from '@/types';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ColumnDnd } from './column-dnd';
 import { TaskDnd } from './task-dnd';
+import { useBoardStore, useTaskStore } from '@/hooks';
 
 interface BoardDndProps {
-    initailColumns: ColumnCache[]
+    projectId: string;
 }
-export const BoardDnd = ({ initailColumns }: BoardDndProps) => {
-    const [activeColumn, setActiveColumn] = useState<ColumnCache | null>(null);
+export const BoardDnd = ({ projectId }: BoardDndProps) => {
+    const { columnCombineTasks } = useBoardStore();
+    const { tasks, moveTaskState } = useTaskStore();
+    const [activeColumn, setActiveColumn] = useState<CombineColumnTask | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
 
     const sensors = useSensors(
@@ -32,23 +35,35 @@ export const BoardDnd = ({ initailColumns }: BoardDndProps) => {
         const { active, over } = event;
         if (!over) return;
 
-        const activeId = active.id;
-        const overId = over.id;
+        const activeId = active.id as string;
+        const overId = over.id as string;
 
         if (activeId === overId) return;
-
+        const taskActive = tasks[activeId];
         const isActiveTask = active.data.current?.type === "task";
         const isOverTask = over.data.current?.type === "task";
         const isOverColumn = over.data.current?.type === "column";
 
-        if (!isActiveTask) return;
+        if (!isActiveTask || !taskActive) return;
+        const activeColumnId = taskActive.columnId;
+        let overColumnId: string | null = null;
         // Task over task
         if (isActiveTask && isOverTask) {
+            const overTask = tasks[overId];
+            if  (overTask) overColumnId = overTask.columnId;
+            moveTaskState(activeId, overTask.columnId, overTask._id);
             // No action on drag over for now
             console.log('Drag over task in same column');
             // return;
+        } else if (isOverColumn) {
+            overColumnId = overId;
         }
-        // Task over column
+        if (!overColumnId) return;
+        // Task over different column
+        if (activeColumnId !== overColumnId) {
+            const overTask = tasks[overId];
+            moveTaskState(activeId, overColumnId, overTask?._id);
+        }
         if (isActiveTask && isOverColumn) {
             // No action on drag over for now
             console.log('Drag over column');
@@ -59,6 +74,14 @@ export const BoardDnd = ({ initailColumns }: BoardDndProps) => {
         setActiveColumn(null);
         setActiveTask(null);
     }
+    const colProps = useMemo(() => {
+        const colsCombineTasks = Object.values(columnCombineTasks).filter((item) => item.projectId === projectId);
+        const colKeys = colsCombineTasks.map((col) => col._id);
+        return {
+            colKeys,
+            colsCombineTasks,
+        }
+    }, [columnCombineTasks, projectId])
 
     return (
         <DndContext
@@ -74,20 +97,20 @@ export const BoardDnd = ({ initailColumns }: BoardDndProps) => {
             onDragEnd={handleDragEnd}
         >
             <SortableContext
-                items={initailColumns.map((c) => c._id)}
+                items={colProps.colKeys}
                 strategy={horizontalListSortingStrategy}
             >
                 <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
                     <div className='w-full min-w-max flex gap-6 h-full p-4'>
-                        {initailColumns.map((col) => (
-                            <ColumnDnd key={col._id} initailColumn={col} />
+                        {colProps.colsCombineTasks.map((col) => (
+                            <ColumnDnd key={col._id} colTasks={col} />
                         ))}
                     </div>
                 </div>
             </SortableContext>
             <DragOverlay>
                 {activeColumn && (
-                    <ColumnDnd initailColumn={activeColumn} />
+                    <ColumnDnd colTasks={activeColumn} />
                 )}
                 {activeTask && (
                     <TaskDnd task={activeTask} />

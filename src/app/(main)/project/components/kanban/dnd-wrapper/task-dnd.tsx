@@ -50,8 +50,9 @@ export const TaskDnd = React.memo((({ task }: TaskDndProps) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? 'none' : transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+    opacity: isDragging ? 0.4 : 1,
+    pointerEvents: isDragging ? 'none' : 'auto',
+  } as const;
   // ------------------------------------------------------
   const [open, setOpen] = useState(false);
   const { taskLoaders } = useTaskStore();

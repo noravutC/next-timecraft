@@ -1,6 +1,6 @@
 // src/hooks/useBoard.hook.ts
 import { create } from "zustand";
-import { Column, ColumnCache, Task, TaskCache } from "@/types";
+import { Column, ColumnCache, CombineColumnTask, Task, TaskCache } from "@/types";
 import { columnServices } from "@/lib/services/columns.service";
 import { LoaderStatus } from "./hook.type";
 import { toast } from "sonner";
@@ -10,6 +10,9 @@ export interface BoardStore {
   lastFetchedBoard: number;
   columns: {
     [columnId: string]: ColumnCache;
+  };
+  columnCombineTasks: {
+    [columnId: string]: CombineColumnTask;
   };
   // cache props
   columnsBarOfProjectCache: {
@@ -59,6 +62,7 @@ export interface BoardStore {
 export const useBoardStore = create<BoardStore>((set, get) => ({
   lastFetchedBoard: 0,
   columns: {},
+  columnCombineTasks: {},
   columnsBarOfProjectCache: {},
   status: "none",
 
@@ -102,11 +106,11 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         projectId
       );
       const combineColsTasks = response?.data || [];
-
+      const newCombineColsTasks: Record<string, CombineColumnTask> = {};
       const newColumnsCache: Record<string, ColumnCache> = {};
       const newTasks: Record<string, TaskCache> = {};
-      // console.log('combineColsTasks: ', combineColsTasks);
       combineColsTasks.forEach((ct) => {
+        newCombineColsTasks[ct._id] = ct;
         newColumnsCache[ct._id] = {
           ...ct,
           timestamp: now,
@@ -127,6 +131,10 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         columns: {
           ...state.columns,
           ...newColumnsCache,
+        },
+        columnCombineTasks: {
+          ...state.columnCombineTasks,
+          ...newCombineColsTasks,
         },
         columnsBarOfProjectCache: {
           ...state.columnsBarOfProjectCache,

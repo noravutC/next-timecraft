@@ -14,13 +14,13 @@ import {
 import { cn } from "@/lib/utils"
 import React, { useEffect, useMemo, useState } from "react"
 import { useBoardStore, useProjectStore } from "@/hooks";
-import { ColumnCache } from "@/types";
+import { ColumnCache, CombineColumnTask } from "@/types";
 import { ChevronDownIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { hexToRgba } from "@/helper/utils";
 
 interface ColumnSelectorProps extends React.ComponentPropsWithRef<typeof Popover> {
-    column: ColumnCache;
+    column: CombineColumnTask;
 }
 export const ColumnSelector = ({
     column,

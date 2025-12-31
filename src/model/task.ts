@@ -33,6 +33,37 @@ const TimeTrackingSchema = new Schema(
 );
 
 // Task
+// const TasksSchema = new Schema(
+//   {
+//     columnId: {
+//       type: Schema.Types.ObjectId,
+//       ref: "Column",
+//       required: true,
+//     },
+//     title: { type: String, required: true },
+//     description: { type: String },
+//     order: { type: Number, required: true, default: 1 },
+//     assignees: [{ type: Schema.Types.ObjectId, ref: "User" }],
+//     priority: {
+//       type: String,
+//       enum: ["low", "medium", "high", "urgent"],
+//       default: "medium",
+//     },
+//     status: {
+//       type: String,
+//       enum: ["active", "archived", "done"],
+//       default: "active",
+//     },
+//     dueDate: { type: Date },
+//     startDate: { type: Date },
+//     checklist: { type: [ChecklistSchema], default: [] },
+//     attachments: { type: [AttachmentSchema], default: [] },
+//     comments: { type: [CommentSchema], default: [] },
+//     timeTracking: { type: TimeTrackingSchema, default: {} },
+//     dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }],
+//   },
+//   { timestamps: true }
+// );
 const TasksSchema = new Schema(
   {
     columnId: {
@@ -40,21 +71,27 @@ const TasksSchema = new Schema(
       ref: "Column",
       required: true,
     },
+
     title: { type: String, required: true },
     description: { type: String },
+
     assignees: [{ type: Schema.Types.ObjectId, ref: "User" }],
+
     priority: {
       type: String,
-      enum: ["low", "medium", "high", "urgent"],
+      enum: ["low", "medium", "high"],
       default: "medium",
     },
-    status: {
-      type: String,
-      enum: ["active", "archived", "done"],
-      default: "active",
-    },
+
     dueDate: { type: Date },
-    startDate: { type: Date },
+
+    tags: [{ type: String, default: [] }],
+
+    order: { type: Number, required: true, default: 1 },
+
+    archived: { type: Boolean, default: false },
+
+    // คุณยังใช้ checklist / attachment / comments / timeTracking ต่อได้
     checklist: { type: [ChecklistSchema], default: [] },
     attachments: { type: [AttachmentSchema], default: [] },
     comments: { type: [CommentSchema], default: [] },

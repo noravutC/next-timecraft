@@ -50,7 +50,7 @@ export const KanbanBoard = ({
             }
         }
     }, [projectId, clearColumns, projects]);
-
+    if (!projectId) return null;
     return (
         <>
             {status === "fetching" ? (
@@ -70,7 +70,7 @@ export const KanbanBoard = ({
                         </>
                     ) : (
                         <>
-                        <BoardDnd initailColumns={sortedColumns} />
+                        <BoardDnd projectId={projectId} />
                             {/* <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
                                 <div className='w-full min-w-max flex gap-6 h-full p-4'>
                                     {sortedColumns.map((col) => (
