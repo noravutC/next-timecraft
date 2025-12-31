@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from "@/components/ui/badge";
-import { ColumnCache } from "@/types";
+import { ColumnCache, CombineColumnTask } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { TaskCard } from "./task-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,13 +16,14 @@ import { BoardTools } from "./ui-customize/board-tools";
 import { BoardInsert } from "./ui-customize/board-insert";
 
 interface BoardColumnProps {
-  column: ColumnCache;
+  column: CombineColumnTask;
 }
 
-export const BoardColumn = React.memo(({ column: initialColumn }: BoardColumnProps) => {
+export const BoardColumn = React.memo(({ column }: BoardColumnProps) => {
   const { updateColumn, status: statusBoard } = useBoardStore();
   const { tasks: stateTasks, status: statusTask } = useTaskStore();
-  const column = useBoardStore(state => state.columns[initialColumn._id] || initialColumn);
+
+  // const column = useBoardStore(state => state.columns[initialColumn._id] || initialColumn);
   const [openTaskForm, setOpenTaskForm] = useState(false);
 
   const [onFocusBoardTools, setOnFocusBoardTools] = useState<{ hover: boolean; active: boolean; }>({ hover: false, active: false });
