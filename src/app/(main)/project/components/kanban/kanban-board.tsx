@@ -2,7 +2,7 @@
 
 import { useBoardStore, useProjectStore, useUserStore } from '@/hooks';
 import React, { useEffect, useMemo, useState } from 'react';
-import { BoardColumn } from './board-column';
+// import { BoardColumn } from './board-column';
 import { LoaderPage } from '@/components/Loader-page';
 import { useRealtimeBoard } from '@/hooks/sync-live-data/useRealtimeBoard';
 import { Button } from '@/components/ui/button';
