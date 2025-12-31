@@ -12,7 +12,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ColumnCache } from "@/types/column";
+import { ColumnCache, CombineColumnTask } from "@/types/column";
 import { useTaskStore } from "@/hooks";
 import { TaskCard } from "../task-card";
 import { MoveRight, PackageMinus } from "lucide-react";
@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface MoveTaskToColumnProps extends React.ComponentPropsWithRef<typeof Dialog> {
     // task: Task;
-    column: ColumnCache;
+    column: CombineColumnTask;
 }
 
 export const MoveTaskToColumn = ({

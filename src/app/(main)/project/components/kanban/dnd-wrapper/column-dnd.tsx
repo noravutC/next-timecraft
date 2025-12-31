@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from "@/components/ui/badge";
-import { ColumnCache } from "@/types";
+import { ColumnCache, CombineColumnTask } from "@/types";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 // import { TaskCard } from "./task-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,11 +21,11 @@ import { useDroppable } from "@dnd-kit/core";
 import { TaskDnd } from "./task-dnd";
 
 interface BoardColumnProps {
-  initailColumn: ColumnCache;
+  colTasks: CombineColumnTask;
 }
 
 
-export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
+export const ColumnDnd = React.memo(({ colTasks }: BoardColumnProps) => {
   const {
     attributes,
     listeners,
@@ -34,13 +34,13 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
     transition,
     isDragging,
   } = useSortable({
-    id: initailColumn._id,
-    data: { type: "column", initailColumn },
+    id: colTasks._id,
+    data: { type: "column", colTasks },
   });
 
   const { setNodeRef: setDroppableRef } = useDroppable({
-    id: initailColumn._id,
-    data: { type: "column", initailColumn },
+    id: colTasks._id,
+    data: { type: "column", colTasks },
   });
 
   const style = {
@@ -50,8 +50,8 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
   };
   // --------------------------------------------------------------------------------
   const { updateColumn, status: statusBoard } = useBoardStore();
-  const { tasks: stateTasks, status: statusTask } = useTaskStore();
-  const column = useBoardStore(state => state.columns[initailColumn._id] || initailColumn);
+  const { status: statusTask } = useTaskStore();
+  // const column = useBoardStore(state => state.columns[colTasks._id] || colTasks);
   const [openTaskForm, setOpenTaskForm] = useState(false);
 
   const [onFocusBoardTools, setOnFocusBoardTools] = useState<{ hover: boolean; active: boolean; }>({ hover: false, active: false });
@@ -59,21 +59,22 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
     value?: string;
     isEdit: boolean;
   }>({
-    value: column.name,
+    value: colTasks.name,
     isEdit: false,
   });
   const [insertDirection, setInsertDirection] = useState<'left' | 'right' | null>(null);
 
-  if (!column) return null;
-  const tasks = (Object.values(stateTasks) || []).filter((t) => t.columnId === column._id);
+  // if (!colTasks) return null;
+  const tasks = colTasks?.tasks ?? [];
+  //  (Object.values(stateTasks) || []).filter((t) => t.columnId === column._id);
 
   const isFetch = useMemo(() => {
     return statusBoard === 'fetching' || (statusTask === 'fetching');
   }, [statusBoard, statusTask]);
 
   const targetOpacity = 0.6;
-  const backgroundStyle = column.color
-    ? { background: hexToRgba(column.color, targetOpacity) }
+  const backgroundStyle = colTasks.color
+    ? { background: hexToRgba(colTasks.color, targetOpacity) }
     : {};
 
   const handleOpenTaskForm = () => {
@@ -81,8 +82,8 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
   }
 
   const handleUpdateBoardValues = async () => {
-    if (column._id) {
-      await updateColumn(column._id, { name: editBoard.value ?? column.name });
+    if (colTasks._id) {
+      await updateColumn(colTasks._id, { name: editBoard.value ?? colTasks.name });
       setEditBoard((prev) => ({ ...prev, isEdit: false }));
     } else {
 
@@ -91,9 +92,9 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
 
   useEffect(() => {
     if (editBoard.isEdit) {
-      setEditBoard((prev) => ({ ...prev, value: column.name }));
+      setEditBoard((prev) => ({ ...prev, value: colTasks.name }));
     }
-  }, [column, editBoard.isEdit]);
+  }, [colTasks, editBoard.isEdit]);
 
   return (
     <div
@@ -101,7 +102,7 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
       style={style}
       className="flex gap-4"
     >
-      <BoardInsert currentOrder={column.order} insertDirection={insertDirection} setInsertDirection={setInsertDirection}>
+      <BoardInsert currentOrder={colTasks.order} insertDirection={insertDirection} setInsertDirection={setInsertDirection}>
         <div
           className={cn('max-h-[450px] h-full min-h-[150px] max-w-[250px] min-w-[250px] z-2 bg-white',
             'flex flex-col flex-shrink-0 rounded-md border'
@@ -124,16 +125,16 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
                   {...attributes}
                   {...listeners}
                 >
-                  {column.name}
+                  {colTasks.name}
                 </div>
                 <div className="flex gap-2 items-center justify-end">
 
                   <Badge variant={'outline'} className="rounded-full text-xs bg-white text-gray-500 flex items-center text-start group-hover:hidden">
-                    <div>{tasks.length}{column.wipLimit > 0 && `/${column.wipLimit}`}</div>
+                    <div>{tasks.length}{colTasks.wipLimit > 0 && `/${colTasks.wipLimit}`}</div>
                     <div>task</div>
                   </Badge>
                   <BoardTools
-                    column={column}
+                    column={colTasks}
                     onFocusBoardTools={onFocusBoardTools}
                     setOnFocusBoardTools={setOnFocusBoardTools}
                     setInsertDirection={setInsertDirection}
@@ -183,7 +184,7 @@ export const ColumnDnd = React.memo(({ initailColumn }: BoardColumnProps) => {
                     ))}
                     {openTaskForm && (
                       <PreviewTaskForm
-                        colId={column._id}
+                        colId={colTasks._id}
                         handleOpenTaskForm={handleOpenTaskForm}
                       />
                     )}

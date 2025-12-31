@@ -57,7 +57,7 @@ export async function GET(
           pipeline: [
             {
               $match: {
-                status: "active",
+                archived: false,
               },
             },
             {
@@ -71,6 +71,7 @@ export async function GET(
                 title: 1,
                 columnId: 1,
                 assignees: 1,
+                order: 1,
                 priority: 1,
                 status: 1,
                 dueDate: 1,
@@ -82,6 +83,7 @@ export async function GET(
         },
       },
     ]);
+    console.log("columnsWithTasks: ", columnsWithTasks);
     return NextResponse.json(
       {
         success: true,

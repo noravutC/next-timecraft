@@ -14,14 +14,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useBoardStore } from "@/hooks";
-import { ColumnCache } from "@/types";
+import { CombineColumnTask } from "@/types";
 import { Ellipsis, PackageMinus } from "lucide-react"
 import { toast } from "sonner";
 import { MoveTaskToColumn } from "./move-tasks-to-column";
 import { useState } from "react";
 
 interface BoardToolsProps {
-    column: ColumnCache
+    column: CombineColumnTask
     onFocusBoardTools: {
         hover: boolean;
         active: boolean;
