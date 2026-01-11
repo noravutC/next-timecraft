@@ -83,7 +83,7 @@ export async function GET(
         },
       },
     ]);
-    console.log("columnsWithTasks: ", columnsWithTasks);
+
     return NextResponse.json(
       {
         success: true,

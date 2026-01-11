@@ -48,6 +48,7 @@ export function CurrentUserProvider({
 
   useEffect(() => {
     if (status === 'unauthenticated') {
+      console.log('unauthenticated');
       router.push("/login");
     } else if (status === 'loading') {
       setContextData(prev => ({ ...prev, currentUserLoader: true }));

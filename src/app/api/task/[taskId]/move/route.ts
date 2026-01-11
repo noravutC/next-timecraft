@@ -1,12 +1,13 @@
-// // app/api/task/[taskId]/move/route.ts
+// app/api/task/[taskId]/move/route.ts
 
 import { connectDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { TasksModel } from "@/model/task";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
-import mongoose from "mongoose";
 import { pusherServer } from "@/lib/pusher-server";
+import { PayloadMoveTask, Task } from "@/types";
+import { ObjectId } from "mongodb";
 
 export async function PATCH(
   request: Request,
@@ -26,51 +27,132 @@ export async function PATCH(
   try {
     const { taskId } = await params;
     const body = await request.json();
-    // console.log("Request body:", body);
-    const { projectId, columnId } = body;
-    if (!taskId || !projectId || !columnId) { 
-      return NextResponse.json(
+    if (!body.jsonPayload) {
+        return NextResponse.json(
         {
           success: false,
-          message: "Task ID, Project ID, and Column ID are required for move tasks",
+          message: "Cannot update unknow payload.",
+          data: [],
         },
         { status: 400 }
       );
     }
+    const payload: PayloadMoveTask = JSON.parse(body.jsonPayload);
 
     await connectDB();
-    const moveTask = await TasksModel.findByIdAndUpdate(
-      taskId,
-      { columnId: new mongoose.Types.ObjectId(columnId) },
-      { new: true }
-    ).lean();
-
-    if (!moveTask) {
+    const activeTaskId = payload.activeTaskId || taskId;
+    const activeTask = await TasksModel.findById(activeTaskId).lean<Task>();
+    if (!activeTask) {
       return NextResponse.json(
         {
           success: false,
           message: "Task not found",
-          updated: null,
+          data: [],
         },
         { status: 404 }
       );
     }
 
-    // 💡 PUSHER TRIGGER LOGIC:
-    const channelName = `project-${projectId}`; 
-    const eventName = 'task-updated';
+    const destinationColumnId = new ObjectId(payload.columnDestination);
+    const orderDestination = Number(payload.orderDestination);
 
-    await pusherServer.trigger(
-      channelName,
-      eventName,
-      moveTask 
+    if (!payload.columnDestination || Number.isNaN(orderDestination) || orderDestination < 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid destination column or order.",
+          data: [],
+        },
+        { status: 400 }
+      );
+    }
+
+    const sourceColumnId = new ObjectId(activeTask.columnId);
+    const sourceTasks = await TasksModel.find({ columnId: sourceColumnId })
+      .sort({ order: 1 })
+      .lean<Task[]>();
+
+    const destinationTasks = sourceColumnId.equals(destinationColumnId)
+      ? sourceTasks
+      : await TasksModel.find({ columnId: destinationColumnId })
+          .sort({ order: 1 })
+          .lean<Task[]>();
+
+    const activeTaskIdStr = activeTaskId.toString();
+    const clampIndex = (value: number, max: number) => Math.max(0, Math.min(value, max));
+
+    const isSameColumn = sourceColumnId.equals(destinationColumnId);
+    let newSourceTasks: Task[] = [];
+    let newDestinationTasks: Task[] = [];
+
+    if (isSameColumn) {
+      const remaining = sourceTasks.filter((t) => t._id.toString() !== activeTaskIdStr);
+      const insertIndex = clampIndex(orderDestination - 1, remaining.length);
+      remaining.splice(insertIndex, 0, activeTask);
+      newSourceTasks = remaining;
+      newDestinationTasks = remaining;
+    } else {
+      newSourceTasks = sourceTasks.filter((t) => t._id.toString() !== activeTaskIdStr);
+      const destList = destinationTasks.filter((t) => t._id.toString() !== activeTaskIdStr);
+      const insertIndex = clampIndex(orderDestination - 1, destList.length);
+      destList.splice(insertIndex, 0, { ...activeTask, columnId: destinationColumnId.toString() });
+      newDestinationTasks = destList;
+    }
+
+    const bulkOps: Array<{ updateOne: { filter: { _id: any }; update: { $set: Record<string, unknown> } } }> = [];
+    const updatedIds = new Set<string>();
+
+    newSourceTasks.forEach((task, index) => {
+      const order = index + 1;
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: task._id },
+          update: { $set: { order } },
+        },
+      });
+      updatedIds.add(task._id.toString());
+    });
+
+    if (!isSameColumn) {
+      newDestinationTasks.forEach((task, index) => {
+        const order = index + 1;
+        const updateData: Record<string, unknown> = { order };
+        if (task._id.toString() === activeTaskIdStr) {
+          updateData.columnId = destinationColumnId;
+        }
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: task._id },
+            update: { $set: updateData },
+          },
+        });
+        updatedIds.add(task._id.toString());
+      });
+    }
+
+    if (bulkOps.length > 0) {
+      await TasksModel.bulkWrite(bulkOps);
+    }
+
+    const updatedTasks = await TasksModel.find({
+      _id: { $in: [...updatedIds].map((id) => new ObjectId(id)) },
+    })
+      .lean<Task[]>()
+      .exec();
+
+    const channelName = `project-${payload.projectId}`;
+    const eventName = "task-updated";
+    await Promise.all(
+      updatedTasks.map((updatedTask) =>
+        pusherServer.trigger(channelName, eventName, updatedTask)
+      )
     );
 
     return NextResponse.json(
       {
         success: true,
-        message: "Move task to column is success",
-        updated: moveTask,
+        message: "Move task is success",
+        data: updatedTasks,
       },
       { status: 200 }
     );

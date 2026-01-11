@@ -1,6 +1,6 @@
 // src/hooks/useBoard.hook.ts
 import { create } from "zustand";
-import { Column, ColumnCache, CombineColumnTask, Task, TaskCache } from "@/types";
+import { Column, ColumnCache, CombineColumnTask, TaskCache } from "@/types";
 import { columnServices } from "@/lib/services/columns.service";
 import { LoaderStatus } from "./hook.type";
 import { toast } from "sonner";

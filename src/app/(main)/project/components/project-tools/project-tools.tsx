@@ -20,19 +20,9 @@ export const ProjectToolsMenu = () => {
         status,
         projectIdActivate,
         getProjectById,
-        // setActivateProject,
     } = useProjectStore();
-    // const [menuOption, setMenuOption] = useState<{
-    //     newProject: boolean;
-    //     settings: boolean;
-    // }>({
-    //     newProject: false,
-    //     settings: false,
-    // });
-    // const { menuValue, setMenuValue } = useProjectAtMenu();
     const projectIsActive = getProjectById(projectIdActivate ?? '');
 
-    // const isHidden = !(menuOption.newProject || menuOption.settings);
     return (
         <div className="flex items-center justify-between w-full pr-2">
             <DropdownMenu>

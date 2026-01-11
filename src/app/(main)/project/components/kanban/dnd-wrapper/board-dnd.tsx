@@ -1,20 +1,30 @@
-import { ColumnCache, CombineColumnTask } from '@/types/column';
+import { CombineColumnTask } from '@/types/column';
 import { Task } from '@/types';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ColumnDnd } from './column-dnd';
 import { TaskDnd } from './task-dnd';
 import { useBoardStore, useTaskStore } from '@/hooks';
+import { useShallow } from 'zustand/react/shallow';
+
 
 interface BoardDndProps {
     projectId: string;
 }
 export const BoardDnd = ({ projectId }: BoardDndProps) => {
-    const { columnCombineTasks } = useBoardStore();
-    const { tasks, moveTaskState } = useTaskStore();
+    // const { columnCombineTasks } = useBoardStore();
+    // const { tasks, dropTask, moveTaskState } = useTaskStore();
+    const { columnCombineTasks } = useBoardStore(useShallow(state => ({
+        columnCombineTasks: state.columnCombineTasks
+    })));
+    const moveTaskState = useTaskStore(state => state.moveTaskState);
+    const moveTaskTo = useTaskStore(state => state.moveTaskTo);
+    const tasks = useTaskStore(useShallow(state => state.tasks));
+    const dropTask = useTaskStore(state => state.dropTask);
     const [activeColumn, setActiveColumn] = useState<CombineColumnTask | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+    const activeTaskSnapshotRef = useRef<Task | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -29,6 +39,7 @@ export const BoardDnd = ({ projectId }: BoardDndProps) => {
             setActiveColumn(active.data.current.column);
         } else if (active.data.current?.type === "task") {
             setActiveTask(active.data.current.task);
+            activeTaskSnapshotRef.current = active.data.current.task;
         }
     };
     const handleDragOver = (event: DragOverEvent) => {
@@ -45,34 +56,72 @@ export const BoardDnd = ({ projectId }: BoardDndProps) => {
         const isOverColumn = over.data.current?.type === "column";
 
         if (!isActiveTask || !taskActive) return;
-        const activeColumnId = taskActive.columnId;
         let overColumnId: string | null = null;
         // Task over task
         if (isActiveTask && isOverTask) {
             const overTask = tasks[overId];
             if  (overTask) overColumnId = overTask.columnId;
             moveTaskState(activeId, overTask.columnId, overTask._id);
-            // No action on drag over for now
-            console.log('Drag over task in same column');
-            // return;
+            return;
         } else if (isOverColumn) {
             overColumnId = overId;
         }
         if (!overColumnId) return;
         // Task over different column
-        if (activeColumnId !== overColumnId) {
+        if (isActiveTask && isOverColumn) {
             const overTask = tasks[overId];
             moveTaskState(activeId, overColumnId, overTask?._id);
-        }
-        if (isActiveTask && isOverColumn) {
-            // No action on drag over for now
-            console.log('Drag over column');
-            // return;
+            return;
         }
     }
     const handleDragEnd = (event: DragEndEvent) => {
         setActiveColumn(null);
         setActiveTask(null);
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeId = active.id as string;
+        const overId = over.id as string;
+
+        if (activeId === overId) return;
+        const taskActive = tasks[activeId];
+        const isActiveTask = active.data.current?.type === "task";
+        const isOverTask = over.data.current?.type === "task";
+        const isOverColumn = over.data.current?.type === "column";
+
+        if (!isActiveTask || !taskActive) return;
+
+        const activeTaskData = active.data.current?.task as Task | undefined;
+        const activeTaskSnapshot = activeTaskSnapshotRef.current ?? activeTaskData;
+        const latestTasks = useTaskStore.getState().tasks;
+        const movedTask = latestTasks[activeId] ?? taskActive;
+        const boardState = useBoardStore.getState();
+
+        const sourceColumnId = activeTaskSnapshot?.columnId ?? taskActive.columnId;
+        const sourceOrder = activeTaskSnapshot?.order ?? taskActive.order;
+        let destinationColumnId = movedTask.columnId;
+        let destinationOrder = movedTask.order;
+
+        if (isOverTask) {
+            const overTask = tasks[overId] ?? (over.data.current?.task as Task | undefined);
+            if (!overTask) return;
+            destinationColumnId = overTask.columnId;
+            destinationOrder = overTask.order;
+        } else if (isOverColumn) {
+            destinationColumnId = overId;
+            const destTasks = boardState.columnCombineTasks[destinationColumnId]?.tasks ?? [];
+            const lastOrder = destTasks.length > 0
+                ? Math.max(...destTasks.map((t) => t.order))
+                : 0;
+            destinationOrder = lastOrder + 1;
+        }
+
+        if (sourceColumnId === destinationColumnId && sourceOrder === destinationOrder) {
+            return;
+        }
+
+        moveTaskTo(projectId, activeId, sourceColumnId, destinationColumnId, destinationOrder);
+        activeTaskSnapshotRef.current = null;
     }
     const colProps = useMemo(() => {
         const colsCombineTasks = Object.values(columnCombineTasks).filter((item) => item.projectId === projectId);
@@ -87,7 +136,6 @@ export const BoardDnd = ({ projectId }: BoardDndProps) => {
         <DndContext
             sensors={sensors}
             collisionDetection={(args) => {
-                // หาการชนด้วย pointer ก่อน ถ้าไม่เจอค่อยใช้ closestCorners
                 const pointerCollisions = pointerWithin(args);
                 if (pointerCollisions.length > 0) return pointerCollisions;
                 return closestCorners(args);
