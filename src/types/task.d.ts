@@ -16,5 +16,13 @@ export interface Task {
 }
 
 export interface TaskCache extends Task {
-  timestamp: number;
+  timestamp?: number;
+}
+
+export interface PayloadMoveTask {
+  activeTaskId: string;
+  projectId: string;
+  columnSouce: string;
+  orderDestination: number;
+  columnDestination: string;
 }

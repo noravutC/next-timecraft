@@ -1,21 +1,11 @@
 import { ColumnPreview } from "@/components/kanban-preview/column-preview";
 import { LayoutPreview } from "@/components/kanban-preview/layout-preview";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useTemplateColumnsStore } from "@/hooks/useTemplateColumn.hook";
-import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card"
-import {
-    Carousel,
-    CarouselContent,
-    CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
-} from "@/components/ui/carousel"
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { TemplateColumn } from "@/types/template-column";
-import { useProjectStore } from "@/hooks";
 import { LoaderCircle } from "lucide-react";
 
 interface BoardTemplateProps {
@@ -67,7 +57,7 @@ export const BoardTemplate = ({
                     <div className="w-full p-4">
                         <LayoutPreview>
                             {(template.columns ?? []).map((col) => (
-                                <ColumnPreview key={col.name} colName={col.name} />
+                                <ColumnPreview key={col.name} colName={col.name} color={col.color} />
                             ))}
                         </LayoutPreview>
                     </div>

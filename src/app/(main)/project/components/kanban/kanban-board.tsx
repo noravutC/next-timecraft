@@ -55,7 +55,6 @@ export const KanbanBoard = ({
         <>
             {status === "fetching" ? (
                 <div className='h-full w-full pt-2 flex justify-center items-center'>
-                    {/* <LoaderPage ballSize={3} /> */}
                     <LogoAnimationLoop />
                 </div>) : (
                 <>
@@ -70,14 +69,7 @@ export const KanbanBoard = ({
                         </>
                     ) : (
                         <>
-                        <BoardDnd projectId={projectId} />
-                            {/* <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
-                                <div className='w-full min-w-max flex gap-6 h-full p-4'>
-                                    {sortedColumns.map((col) => (
-                                        <BoardColumn key={col._id} column={col} />
-                                    ))}
-                                </div>
-                            </div> */}
+                            <BoardDnd projectId={projectId} />
                         </>
                     )}
                 </>

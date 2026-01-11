@@ -1,13 +1,16 @@
 // src/hooks/useTasks.hook.ts
 import { create } from "zustand";
-import { Task, TaskCache } from "@/types";
+import { PayloadMoveTask, Task, TaskCache } from "@/types";
 import { taskServices } from "@/lib/services/tasks.service";
 import { LoaderStatus } from "./hook.type";
 import { toast } from "sonner";
 import { useBoardStore } from "./useBoard.hook";
+import { insertIndexTo } from "@/helper/utils/re-order";
+import { toRecord } from "@/helper/utils/object";
 
 export interface TaskStore {
   tasks: Record<string, TaskCache>;
+  dropTask: { taskId: string | null | undefined, columnId: string, order: number } | undefined;
   taskLoaders: Record<string, boolean>;
 
   status: LoaderStatus;
@@ -33,7 +36,15 @@ export interface TaskStore {
   moveTaskToColumn: (
     projectId: string,
     taskId: string,
-    destinationColumnId: string
+    destinationColumnId: string,
+    taskOrder?: number,
+  ) => Promise<void>;
+  moveTaskTo: (
+    projectId: string,
+    activeTaskId: string,
+    columnSource: string,
+    columnDestination: string,
+    orderDestination: number,
   ) => Promise<void>;
 
   // pusher realtime action
@@ -43,6 +54,7 @@ export interface TaskStore {
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: {},
+  dropTask: undefined,
   taskLoaders: {},
   status: "none",
 
@@ -51,10 +63,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const { tasks } = get();
     const currentTask = tasks[taskId];
     if (!currentTask) return;
-
     const boardStore = useBoardStore.getState();
 
-    // 1. หาว่าจริงๆ แล้วตอนนี้ Task สิงอยู่ที่ Column ไหน (Visual/Ghost Location)
     let sourceColumnId = currentTask.columnId;
     for (const [colId, colData] of Object.entries(boardStore.columnCombineTasks)) {
       if (colData.tasks.some(t => t._id === taskId)) {
@@ -67,26 +77,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     if (!listTasks) return;
 
     if (sourceColumnId === targetColumnId) {
-      // --- Case 1: ย้ายภายใน Column เดิม (Same Column) ---
-      const targetList = [...listTasks].sort((a, b) => a.order - b.order);
+      // const targetList = [...listTasks].sort((a, b) => a.order - b.order);
 
-      const oldIndex = targetList.findIndex((t) => t._id === taskId);
-      const newIndex = targetList.findIndex((t) => t._id === targetTaskId);
+      // const oldIndex = targetList.findIndex((t) => t._id === taskId);
+      // const newIndex = targetList.findIndex((t) => t._id === targetTaskId);
 
-      if (oldIndex === -1 || newIndex === -1) return;
+      // if (oldIndex === -1 || newIndex === -1) return;
 
-      const [movedItem] = targetList.splice(oldIndex, 1);
+      // const [movedItem] = targetList.splice(oldIndex, 1);
 
-      if (newIndex !== -1) {
-        targetList.splice(newIndex, 0, movedItem);
-      } else {
-        targetList.push(movedItem);
-      }
+      // if (newIndex !== -1) {
+      //   targetList.splice(newIndex, 0, movedItem);
+      // } else {
+      //   targetList.push(movedItem);
+      // }
 
-      const newTasks = targetList.map((task, index) => ({
-        ...task,
-        order: index + 1
-      }));
+      // const newTasks = targetList.map((task, index) => ({
+      //   ...task,
+      //   order: index + 1
+      // }));
+      const newTasks = insertIndexTo(
+        listTasks,
+        {
+          orderKey: 'order',
+          keyFindIndex: '_id',
+        },
+        {
+          oldValue: taskId,
+          newValue: targetTaskId ?? '',
+        }
+      );
 
       useBoardStore.setState((state) => ({
         columnCombineTasks: {
@@ -97,18 +117,26 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           }
         }
       }));
+      set((state) => {
+        const updates: Record<string, TaskCache> = {};
+        newTasks.forEach((t) => {
+          updates[t._id] = { ...t, timestamp: Date.now() };
+        });
+        const targetTask = state.tasks[targetTaskId ?? ''];
+        return {
+          dropTask: {
+            taskId: targetTaskId,
+            columnId: targetColumnId,
+            order: targetTask ? targetTask.order : 1,
+          },
+          tasks: {
+            ...state.tasks,
+            ...updates
+          },
+        };
+      });
 
     } else {
-      // --- Case 2: ย้ายข้าม Column (Different Column) ---
-
-      // A. เตรียม Target List (ปลายทาง)
-      // *สำคัญ*: กรองเอา taskId ออกก่อนเสมอ (กันเหนียวเผื่อมันหลุดไปอยู่แล้ว) แล้วค่อยแทรกใหม่
-      // นี่คือเทคนิคที่ทำให้การ Reorder ข้าม Column นิ่งเหมือนใน Column เดียวกัน
-      const targetList = [...listTasks]
-        .filter(t => t._id !== taskId)
-        .sort((a, b) => a.order - b.order);
-
-      // B. เตรียม Source List (ต้นทาง) - ลบ Task ออก
       const sourceListRaw = boardStore.columnCombineTasks[sourceColumnId]?.tasks ?? [];
       const newSourceList = sourceListRaw
         .filter((t) => t._id !== taskId)
@@ -117,32 +145,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           ...t,
           order: index + 1
         }));
-
-      // C. Logic การแทรก (Insert)
-      // หาตำแหน่งที่เราจะไปแทรก (ทับ)
-      const targetIndex = targetList.findIndex((t) => t._id === targetTaskId);
-
       const updatedTask = {
         ...currentTask,
-        columnId: targetColumnId, // เปลี่ยนบ้านใหม่
+        columnId: targetColumnId,
       };
+      const newTasks = insertIndexTo(
+        listTasks,
+        {
+          orderKey: 'order',
+          keyFindIndex: '_id',
+        },
+        {
+          newValue: targetTaskId ?? '',
+        },
+        updatedTask,
+      );
+      const recordNewTasks = toRecord([...newTasks, ...newSourceList as Task[]], '_id')
+      // const targetList = [...listTasks]
+      //   .filter(t => t._id !== taskId)
+      //   .sort((a, b) => a.order - b.order);
+      // const targetIndex = targetList.findIndex((t) => t._id === targetTaskId);
+      // if (targetIndex !== -1) {
+      //   targetList.splice(targetIndex, 0, updatedTask);
+      // } else {
+      //   targetList.push(updatedTask);
+      // }
+      // const newTargetList = targetList.map((t, index) => ({
+      //   ...t,
+      //   order: index + 1
+      // }));
 
-      if (targetIndex !== -1) {
-        // เจอเป้าหมาย: แทรกเข้าข้างหน้า (Insert Before) 
-        // นี่คือ logic ที่ทำให้มันแทรกกลางวงได้เหมือน Same Column
-        targetList.splice(targetIndex, 0, updatedTask);
-      } else {
-        // ไม่เจอเป้าหมาย (ลากลงที่ว่าง หรือล่างสุด): ต่อท้าย
-        targetList.push(updatedTask);
-      }
-
-      // D. Re-order เลขใหม่
-      const newTargetList = targetList.map((t, index) => ({
-        ...t,
-        order: index + 1
-      }));
-
-      // E. Update State
       useBoardStore.setState((state) => ({
         columnCombineTasks: {
           ...state.columnCombineTasks,
@@ -152,216 +184,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           },
           [targetColumnId]: {
             ...state.columnCombineTasks[targetColumnId],
-            tasks: newTargetList,
+            tasks: newTasks,
           }
         }
       }));
+
+      set((state) => {
+        // const updates: Record<string, TaskCache> = {};
+        // newSourceList.forEach((t) => {
+        //   updates[t._id] = { ...t, timestamp: Date.now() };
+        // });
+
+        // newTasks.forEach((t) => {
+        //   updates[t._id] = { ...t, timestamp: Date.now() };
+        // });
+
+        const targetTask = state.tasks[targetTaskId ?? ''];
+        return {
+          dropTask: {
+            taskId: targetTaskId,
+            columnId: targetColumnId,
+            order: targetTask ? targetTask.order : 1,
+          },
+          tasks: {
+            ...state.tasks,
+            ...recordNewTasks
+          }
+        };
+      });
     }
-    console.log("Move from", sourceColumnId, "to", targetColumnId);
   },
-  // moveTaskState: (taskId, targetColumnId, targetTaskId) => {
-  //   const { tasks } = get();
-  //   const currentTask = tasks[taskId];
-  //   if (!currentTask) return;
-
-  //   const boardStore = useBoardStore.getState();
-
-  //   // --- จุดที่เพิ่ม: หาว่าจริงๆ แล้วตอนนี้ Task แสดงผลอยู่ที่ Column ไหน (Visual/Ghost Location) ---
-  //   let sourceColumnId = currentTask.columnId; // ค่า Default คือค่าเดิม
-
-  //   // วนหาว่า Task id นี้ ไปโผล่ที่ Column ไหนใน Store ปัจจุบัน
-  //   for (const [colId, colData] of Object.entries(boardStore.columnCombineTasks)) {
-  //       if (colData.tasks.some(t => t._id === taskId)) {
-  //           sourceColumnId = colId; // เจอแล้ว! ตอนนี้มันสิงอยู่ที่นี่
-  //           break;
-  //       }
-  //   }
-  //   // -----------------------------------------------------------------------------------
-
-  //   const listTasks = boardStore.columnCombineTasks[targetColumnId]?.tasks ?? [];
-  //   if (!listTasks) return;
-
-  //   // ตรงนี้เปลี่ยนจาก currentTask.columnId เป็น sourceColumnId ที่เราหามาตะกี้
-  //   if (sourceColumnId === targetColumnId) {
-  //     // --- Logic เดิมของคุณ (ย้ายใน Column เดียวกัน) ---
-  //     const targetList = [...listTasks].sort((a, b) => a.order - b.order);
-
-  //     const oldIndex = targetList.findIndex((t) => t._id === taskId);
-  //     const newIndex = targetList.findIndex((t) => t._id === targetTaskId);
-
-  //     if (oldIndex === -1 || newIndex === -1) return;
-
-  //     const [movedItem] = targetList.splice(oldIndex, 1);
-
-  //     // กรณีหา target ไม่เจอ หรือลากไปที่ว่าง ให้ใส่ตำแหน่งเดิม หรือต่อท้าย (กัน error)
-  //     if (newIndex !== -1) {
-  //         targetList.splice(newIndex, 0, movedItem);
-  //     } else {
-  //         targetList.push(movedItem);
-  //     }
-
-  //     const newTasks = targetList.map((task, index) => ({
-  //       ...task,
-  //       order: index + 1
-  //     }));
-
-  //     useBoardStore.setState((state) => ({
-  //       columnCombineTasks: {
-  //         ...state.columnCombineTasks,
-  //         [targetColumnId]: {
-  //           ...state.columnCombineTasks[targetColumnId],
-  //           tasks: newTasks
-  //         }
-  //       }
-  //     }));
-
-  //   } else {
-  //     // --- Logic เดิมของคุณ (ย้ายข้าม Column) ---
-  //     const targetList = [...listTasks].sort((a, b) => a.order - b.order); // *ย้ายมาไว้ตรงนี้เพื่อให้ targetList สดใหม่เสมอ
-
-  //     // 1. จัดการ Source Column: 
-  //     // *แก้* ใช้ sourceColumnId แทน currentTask.columnId เพื่อลบออกจากที่ที่มันสิงอยู่จริง
-  //     const sourceListRaw = boardStore.columnCombineTasks[sourceColumnId]?.tasks ?? [];
-
-  //     const newSourceList = sourceListRaw
-  //       .filter((t) => t._id !== taskId) // เอาตัวที่ย้ายออก
-  //       .sort((a, b) => a.order - b.order)
-  //       .map((t, index) => ({
-  //            ...t,
-  //            order: index + 1
-  //       }));
-
-  //     // 2. จัดการ Target Column (เหมือนเดิม)
-  //     const targetIndex = targetList.findIndex((t) => t._id === targetTaskId);
-
-  //     const updatedTask = {
-  //         ...currentTask,
-  //         columnId: targetColumnId,
-  //     };
-
-  //     if (targetIndex !== -1) {
-  //         targetList.splice(targetIndex, 0, updatedTask);
-  //     } else {
-  //         targetList.push(updatedTask);
-  //     }
-
-  //     const newTargetList = targetList.map((t, index) => ({
-  //         ...t,
-  //         order: index + 1
-  //     }));
-
-  //     // 3. Update State
-  //     useBoardStore.setState((state) => ({
-  //       columnCombineTasks: {
-  //         ...state.columnCombineTasks,
-  //         // *แก้* Key ตรงนี้ต้องเป็น sourceColumnId ไม่งั้นมันจะไปลบผิด Column
-  //         [sourceColumnId]: { 
-  //           ...state.columnCombineTasks[sourceColumnId],
-  //           tasks: newSourceList, 
-  //         },
-  //         [targetColumnId]: {
-  //           ...state.columnCombineTasks[targetColumnId],
-  //           tasks: newTargetList, 
-  //         }
-  //       }
-  //     }));
-  //   }
-  //   console.log("Move from", sourceColumnId, "to", targetColumnId);
-  // },
-  // moveTaskState: (taskId, targetColumnId, targetTaskId) => {
-  //   const { tasks } = get();
-  //   const currentTask = tasks[taskId];
-  //   if (!currentTask) return;
-
-  //   const boardStore = useBoardStore.getState();
-  //   const listTasks = boardStore.columnCombineTasks[targetColumnId]?.tasks ?? [];
-  //   if (!listTasks) return;
-
-  //   const targetList = [...listTasks].sort((a, b) => a.order - b.order);
-
-  //   if (currentTask.columnId === targetColumnId) {
-  //     //Logic to move task in same column
-  //     const oldIndex = targetList.findIndex((t) => t._id === taskId);
-  //     const newIndex = targetList.findIndex((t) => t._id === targetTaskId);
-
-  //     if (oldIndex === -1 || newIndex === -1) return;
-
-  //     const [movedItem] = targetList.splice(oldIndex, 1);
-  //     targetList.splice(newIndex, 0, movedItem);
-
-  //     const newTasks = targetList.map((task, index) => ({
-  //       ...task,
-  //       order: index + 1
-  //     }));
-
-  //     useBoardStore.setState((state) => ({
-  //       columnCombineTasks: {
-  //         ...state.columnCombineTasks,
-  //         [targetColumnId]: {
-  //           ...state.columnCombineTasks[targetColumnId],
-  //           tasks: newTasks
-  //         }
-  //       }
-  //     }));
-  //     //end logic to move task in same column
-  //   } else {
-  //     // 1. จัดการ Source Column (Column เดิม): ลบ Task ออก และรันเลข Order ใหม่
-  //     const sourceListRaw = boardStore.columnCombineTasks[currentTask.columnId]?.tasks ?? [];
-  //     const newSourceList = sourceListRaw
-  //       .filter((t) => t._id !== taskId) // เอาตัวที่ย้ายออก
-  //       .sort((a, b) => a.order - b.order)
-  //       .map((t, index) => ({
-  //            ...t,
-  //            order: index + 1
-  //       }));
-
-  //     // 2. จัดการ Target Column (Column ใหม่): แทรก Task เข้าไป
-  //     const targetIndex = targetList.findIndex((t) => t._id === targetTaskId);
-
-  //     // สร้าง Object Task ใหม่ที่อัปเดต ColumnId แล้ว
-  //     const updatedTask = {
-  //         ...currentTask,
-  //         columnId: targetColumnId, // *สำคัญ* ต้องเปลี่ยน Column ID
-  //         // order จะถูกทับในขั้นตอนถัดไป
-  //     };
-
-  //     if (targetIndex !== -1) {
-  //         // กรณีวางแทรกระหว่าง Task อื่น
-  //         targetList.splice(targetIndex, 0, updatedTask);
-  //     } else {
-  //         // กรณีวางลงใน Column เปล่า หรือวางต่อท้ายสุด (ถ้าหา target ไม่เจอ)
-  //         targetList.push(updatedTask);
-  //     }
-
-  //     // รันเลข Order ของ Target ใหม่
-  //     const newTargetList = targetList.map((t, index) => ({
-  //         ...t,
-  //         order: index + 1
-  //     }));
-
-  //     // 3. Update State ทีเดียวทั้ง 2 Column
-  //     useBoardStore.setState((state) => ({
-  //       columnCombineTasks: {
-  //         ...state.columnCombineTasks,
-  //         [currentTask.columnId]: {
-  //           ...state.columnCombineTasks[currentTask.columnId],
-  //           tasks: newSourceList, // อัปเดต list เดิม (ของหาย 1)
-  //         },
-  //         [targetColumnId]: {
-  //           ...state.columnCombineTasks[targetColumnId],
-  //           tasks: newTargetList, // อัปเดต list ใหม่ (ของเพิ่ม 1)
-  //         }
-  //       }
-  //     }));
-
-  //     // *Optional* หาก state `tasks` (ที่เป็น Flat Object) ใน store ของคุณ
-  //     // จำเป็นต้องถูกอัปเดต ColumnId ด้วย ให้ทำตรงนี้ (ขึ้นอยู่กับการออกแบบ Store ของคุณ)
-  //     // set((state) => ({
-  //     //    tasks: { ...state.tasks, [taskId]: { ...state.tasks[taskId], columnId: targetColumnId } }
-  //     // }))
-  //   }
-  //   console.log("target col and target task", targetColumnId, targetTaskId);
-  // },
   setUpdatedTask: (taskId, updatedTask) => {
     set((state) => ({
       tasks: {
@@ -434,16 +286,38 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       set({ status: "creating" });
       const response = await taskServices.createTask(data);
-      // const createdTask = response?.created;
+      const createdTask = response?.created;
 
-      // if (createdTask) {
-      //   set((state) => ({
-      //     tasks: {
-      //       ...state.tasks,
-      //       [createdTask._id]: { ...createdTask, timestamp: Date.now() }
-      //     }
-      //   }))
-      // }
+      if (createdTask) {
+        set((state) => ({
+          tasks: {
+            ...state.tasks,
+            [createdTask._id]: { ...createdTask, timestamp: Date.now() }
+          }
+        }))
+        useBoardStore.setState((state) => {
+          const columnId = createdTask.columnId;
+          const column = state.columnCombineTasks[columnId];
+          if (!column) {
+            return state;
+          }
+          const existingTasks = column.tasks ? [...column.tasks] : [];
+          const nextOrder = createdTask.order ?? (existingTasks.length > 0
+            ? Math.max(...existingTasks.map((t) => t.order)) + 1
+            : 1);
+          const nextTask = { ...createdTask, order: nextOrder };
+          const updatedTasks = [...existingTasks, nextTask].sort((a, b) => a.order - b.order);
+          return {
+            columnCombineTasks: {
+              ...state.columnCombineTasks,
+              [columnId]: {
+                ...column,
+                tasks: updatedTasks,
+              },
+            },
+          };
+        })
+      }
     } catch (error) {
       console.log("Failed to create task:", error);
       throw error;
@@ -474,7 +348,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  moveTaskToColumn: async (projectId: string, taskId: string, destinationColumnId: string) => {
+  moveTaskToColumn: async (projectId: string, taskId: string, destinationColumnId: string, taskOrder?: number) => {
     const { tasks } = get();
     const currentTaskValues = tasks[taskId];
     try {
@@ -498,18 +372,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         },
       }))
 
-      const response = await taskServices.moveTaskToColumn(
+      await taskServices.moveTaskToColumn(
         projectId,
         taskId,
         destinationColumnId
       );
-      // const updatedTask = response?.updated;
-
-      // if (updatedTask) {
-      //   get().setUpdatedTask(updatedTask._id, updatedTask);
-      // } else {
-      //   console.log("No updated task returned from the service");
-      // }
     } catch (error) {
       console.log("Failed to move task to column:", error);
       // If error back to old task values.
@@ -521,8 +388,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }))
       throw error;
     } finally {
-      set({ status: "none" });
       set((state) => ({
+        status: "none",
         taskLoaders: {
           ...state.taskLoaders,
           [taskId]: false,
@@ -530,4 +397,53 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }))
     }
   },
+  moveTaskTo: async (
+    projectId: string,
+    activeTaskId: string,
+    columnSouce: string,
+    columnDestination: string,
+    orderDestination: number,
+  ) => {
+    //every order start with 1 not 0
+    const { tasks } = get();
+    const { columnCombineTasks } = useBoardStore.getState()
+    const currentTaskValues = tasks[activeTaskId];
+    if (!currentTaskValues) {
+      toast.error('Not found task.');
+      return;
+    }
+    if (!columnDestination || !columnSouce || orderDestination < 1 || projectId === '') {
+      toast.error('Not found destination.');
+      return;
+    }
+    const payloadMoveTask: PayloadMoveTask = {
+      activeTaskId,
+      projectId,
+      columnSouce,
+      orderDestination,
+      columnDestination,
+    }
+    try {
+      set((state) => ({
+        status: 'updating',
+        taskLoaders: {
+          ...state.taskLoaders,
+          [activeTaskId]: true,
+        }
+      }));
+      const jsonPayload = JSON.stringify(payloadMoveTask);
+      await taskServices.moveTaskToDestination(activeTaskId, jsonPayload);
+
+    } catch (error) {
+      console.log("Failed cannot move task to destination:", error);
+    } finally {
+      set((state) => ({
+        status: 'none',
+        taskLoaders: {
+          ...state.taskLoaders,
+          [activeTaskId]: false,
+        }
+      }));
+    }
+  }
 }));

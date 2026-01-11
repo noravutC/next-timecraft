@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 // icons
 import { Calendar, EllipsisVertical, LoaderCircle, User } from "lucide-react";
 // types
@@ -29,6 +29,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card } from "@/components/ui/card";
 import { GripVertical, Trash2 } from "lucide-react";
+import { GhostTask } from "../ghost-preview";
 
 export interface TaskDndProps {
   task: Task;
@@ -57,6 +58,9 @@ export const TaskDnd = React.memo((({ task }: TaskDndProps) => {
   const [open, setOpen] = useState(false);
   const { taskLoaders } = useTaskStore();
   const isLoading = taskLoaders[task._id];
+  if (isDragging) {
+    return <GhostTask />
+  }
   return (
     <div
       ref={setNodeRef}
@@ -113,7 +117,8 @@ export const TaskDnd = React.memo((({ task }: TaskDndProps) => {
         ) : (
           <div className="h-fit">
             <PreviewMembers assinees={task.assignees} />
-            {task.assignees.length === 0 && (
+            <AvatarUnassigned isShow={task.assignees.length === 0} />
+            {/* {task.assignees.length === 0 && (
               <Avatar className="w-6 h-6 select-none">
                 <>
                   <Tooltip>
@@ -126,7 +131,7 @@ export const TaskDnd = React.memo((({ task }: TaskDndProps) => {
                   </Tooltip>
                 </>
               </Avatar>
-            )}
+            )} */}
           </div>
         )}
       </div>
@@ -134,3 +139,21 @@ export const TaskDnd = React.memo((({ task }: TaskDndProps) => {
     </div>
   );
 }))
+
+export const AvatarUnassigned = React.memo(({ isShow }: { isShow: boolean }) => {
+  if (!isShow) return null;
+  return (
+    <Avatar className="w-6 h-6 select-none">
+      <>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <AvatarFallback className="border-gray-500"><User className="m-0" size={13} /></AvatarFallback>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-semibold">Unassigned</p>
+          </TooltipContent>
+        </Tooltip>
+      </>
+    </Avatar>
+  )
+})

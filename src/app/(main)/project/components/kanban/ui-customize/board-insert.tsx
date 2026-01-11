@@ -13,7 +13,7 @@ interface BoardInsertProps {
     insertDirection: "left" | "right" | null;
     setInsertDirection: React.Dispatch<React.SetStateAction<"left" | "right" | null>>;
 }
-export const BoardInsert = ({
+export const BoardInsert = React.memo(({
     children,
     currentOrder,
     insertDirection,
@@ -36,9 +36,9 @@ export const BoardInsert = ({
                 />}
         </>
     )
-}
+})
 
-export const BoardInsertInput = ({
+export const BoardInsertInput = React.memo(({
     insertDirection,
     currentOrder,
     setInsertDirection,
@@ -108,4 +108,4 @@ export const BoardInsertInput = ({
             </div>
         </div>
     )
-}
+})

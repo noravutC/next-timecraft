@@ -12,11 +12,12 @@ export default function RootPage() {
   const router = useRouter();
   useEffect(() => {
     if (status === 'unauthenticated') {
+      // console.log('unauthenticated');
       router.push("/login");
       // return;
     }
     if (session) {
-      router.push("/home");
+      router.push("/project");
     }
   }, [session, router]);
 

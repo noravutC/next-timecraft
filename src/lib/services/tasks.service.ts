@@ -41,13 +41,28 @@ class TaskService {
   }
 
   async moveTaskToColumn(
-    projectId: string,
     taskId: string,
-    destinationColumnId: string
+    projectId: string,
+    destinationColumnId: string,
   ): Promise<APIPatch<Task>> {
     return this.client
       .patch(`/task/${taskId}/move/`, { projectId, columnId: destinationColumnId })
       .then((response) => response.data as APIPatch<Task>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to move task to column")
+        );
+      });
+  }
+
+  async moveTaskToDestination(
+    activeTaskId: string,
+    jsonPayload: string,
+  ): Promise<APIGet<Task>> {
+    console.log('jsonPayload: ', jsonPayload);
+    return this.client
+      .patch(`/task/${activeTaskId}/move/`, { jsonPayload })
+      .then((response) => response.data as APIGet<Task>)
       .catch((error) => {
         throw (
           error?.response?.data || new Error("Failed to move task to column")

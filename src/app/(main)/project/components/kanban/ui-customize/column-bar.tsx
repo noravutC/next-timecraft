@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useBoardStore, useProjectStore, useTaskStore } from "@/hooks";
+import { useShallow } from 'zustand/react/shallow';
 import {
     Tooltip,
     TooltipContent,
@@ -14,34 +15,65 @@ interface ColumnBarProps {
     taskId: string;
     taskAtColumnId: string;
 }
-export const ColumnBar = ({
+export const ColumnBar = React.memo(({
     disabled = false,
     taskId,
     taskAtColumnId,
 }: ColumnBarProps) => {
     const { projectIdActivate } = useProjectStore();
-    if (!projectIdActivate)
-        return null;
-    const { columnsBarOfProjectCache } = useBoardStore();
-    const { moveTaskToColumn } = useTaskStore();
+
+    const columnsBarOfProjectCache = useBoardStore(
+        useShallow(state => state.columnsBarOfProjectCache)
+    );
+    const columnCombineTasks = useBoardStore(
+        useShallow(state => state.columnCombineTasks)
+    );
+    const moveTaskTo = useTaskStore(state => state.moveTaskTo);
+    const moveTaskState = useTaskStore(state => state.moveTaskState);
     // const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
 
 
-    const onMoveTaskToColumn = (destinationColumnId: string) => {
-        moveTaskToColumn(projectIdActivate, taskId, destinationColumnId);
-    }
 
+
+    // const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
+    //     const columnsOfProject = columnsBarOfProjectCache[projectIdActivate].columns;
+    //     const colActive = columnsOfProject.find((col) => col._id === taskAtColumnId);
+    //     return {
+    //         tempColumns: columnsOfProject.sort((a, b) => a.order - b.order),
+    //         orderColActive: colActive?.order ?? 0,
+    //         colorColActive: colActive?.color,
+    //     };
+
+    // }, [columnsBarOfProjectCache, taskAtColumnId]);
     const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
-        const columnsOfProject = columnsBarOfProjectCache[projectIdActivate].columns;
+        const projectData = columnsBarOfProjectCache[projectIdActivate ?? ''] ?? undefined;
+        if (!projectData || !projectData.columns) {
+            return { tempColumns: [], orderColActive: 0, colorColActive: '' };
+        }
+
+        const columnsOfProject = projectData.columns;
         const colActive = columnsOfProject.find((col) => col._id === taskAtColumnId);
+
         return {
-            tempColumns: columnsOfProject.sort((a, b) => a.order - b.order),
+            tempColumns: [...columnsOfProject].sort((a, b) => a.order - b.order),
             orderColActive: colActive?.order ?? 0,
             colorColActive: colActive?.color,
         };
+        // แก้ไข 3: เพิ่ม Dependency ให้ครบ
+    }, [columnsBarOfProjectCache, taskAtColumnId, projectIdActivate]);
 
-    }, [columnsBarOfProjectCache, taskAtColumnId]);
-
+    if (!projectIdActivate)
+        return null;
+    const onMoveTaskToColumn = (destinationColumnId: string) => {
+        if (destinationColumnId === taskAtColumnId) return;
+        const destinationTasks = columnCombineTasks[destinationColumnId]?.tasks ?? [];
+        const lastOrder = destinationTasks.length > 0
+            ? Math.max(...destinationTasks.map((t) => t.order))
+            : 0;
+        const destinationOrder = lastOrder + 1;
+        moveTaskState(taskId, destinationColumnId, null);
+        moveTaskTo(projectIdActivate, taskId, taskAtColumnId, destinationColumnId, destinationOrder);
+    }
     const lengthColumns = tempColumns.length;
 
     return (
@@ -71,4 +103,4 @@ export const ColumnBar = ({
             })}
         </div>
     )
-}
+})

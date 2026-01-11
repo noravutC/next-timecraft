@@ -102,6 +102,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const project = response.data;
 
       if (project) {
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            [project._id]: { ...project, timestamp: now } as ProjectCache,
+          }
+        }))
         // get().setProject(project._id, project); // ✅ ใช้ method กลาง
         return project;
       }

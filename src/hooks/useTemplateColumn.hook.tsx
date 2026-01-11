@@ -1,9 +1,11 @@
 // src/hooks/useTemplateColumn.hook.ts
 import { create } from "zustand";
-import { ColumnCache, TemplateColumn } from "@/types";
+import { Column, ColumnCache, CombineColumnTask, TemplateColumn } from "@/types";
 import { templateColumnsServices } from "@/lib/services/template-columns.service";
 import { LoaderStatus } from "./hook.type";
 import { useBoardStore } from "./useBoard.hook";
+import { toRecord } from "@/helper/utils/object";
+import { useProjectStore } from "./useProjects.hook";
 
 interface TemplateBoardStore {
   templateColumns: Record<string, TemplateColumn>;
@@ -24,8 +26,8 @@ interface TemplateBoardStore {
 
   // actions
   applyBoardTemplateIntoProject: (
-    projectId: string,
-    template: TemplateColumn
+    projectIdOrParams: string | { projectId?: string; projectName?: string; template: TemplateColumn },
+    templateArg?: TemplateColumn
   ) => Promise<void>;
 }
 
@@ -71,7 +73,9 @@ export const useTemplateColumnsStore = create<TemplateBoardStore>(
     // fetch
     fetchTemplateColumns: async () => {
       try {
-        set({ status: "fetching" });
+        if (get().status !== "updating") {
+          set({ status: "fetching" });
+        }
         const response = await templateColumnsServices.getTemplateColumns();
         const templateColumns = response?.data || [];
 
@@ -84,52 +88,55 @@ export const useTemplateColumnsStore = create<TemplateBoardStore>(
         console.log("Failed to fetch template columns:", error);
         throw error;
       } finally {
-        set({ status: "none" });
+        if (get().status === "fetching") {
+          set({ status: "none" });
+        }
       }
     },
 
     // actions
     applyBoardTemplateIntoProject: async (
-      projectId: string,
-      template: TemplateColumn
+      projectIdOrParams: string | { projectId?: string; projectName?: string; template: TemplateColumn },
+      templateArg?: TemplateColumn
     ) => {
+      set({ status: "updating" });
       try {
-        set({ status: "updating" });
         const response =
           await templateColumnsServices.applyTemplateColumnsToProject(
-            projectId,
-            template
+            projectIdOrParams,
+            templateArg
           );
-        const updatedColumns = response?.updated;
-
-        if (updatedColumns) {
+        const updatedColumns = response?.updated?.columns ?? [];
+        const projectId = response?.updated?.projectId;
+        // const updatedColumns: Column[] | null = [];
+        if (updatedColumns && updatedColumns.length > 0) {
           const now = Date.now();
-          const newColumnsCache: Record<string, ColumnCache> = {};
-          updatedColumns.forEach((ct) => {
-            newColumnsCache[ct._id] = {
-              ...ct,
-              timestamp: now,
-            } as ColumnCache;
-          });
-          const newColumns = Object.values(newColumnsCache);
-          const boardStoreSet = useBoardStore.setState;
-          boardStoreSet((state) => ({
+          const colsCache: ColumnCache[] = updatedColumns.map((c) => ({ ...c, timestamp: now }))
+          const colCombined: CombineColumnTask[] = updatedColumns.map((c) => ({ ...c, tasks: [] }));
+          const columnsMap = toRecord(colsCache, '_id');
+          const combineColumnMap = toRecord(colCombined, '_id');
+          useBoardStore.setState((state) => ({
             columns: {
               ...state.columns,
-              ...newColumnsCache,
+              ...columnsMap,
             },
-            [projectId]: {
-              timestamp: now,
-              columns: newColumns,
-            },
+            columnCombineTasks: {
+              ...state.columnCombineTasks,
+              ...combineColumnMap,
+            }
           }));
+          if (projectId) {
+            useProjectStore.getState().setActivateProject(projectId);
+            useProjectStore.getState().fetchProjectById(projectId);
+          }
         }
-        return;
       } catch (error) {
         console.log("Failed to apply board into project:", error);
         throw error;
       } finally {
-        set({ status: "none" });
+        if (get().status === "updating") {
+          set({ status: "none" });
+        }
       }
     },
   })

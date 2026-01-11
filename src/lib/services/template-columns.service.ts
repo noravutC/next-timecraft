@@ -17,15 +17,34 @@ class TemplateColumnsService {
       });
   }
   async applyTemplateColumnsToProject(
-    projectId: string,
-    template: TemplateColumn
-  ): Promise<APIPut<Column[]>> {
+    projectIdOrParams:
+      | string
+      | { projectId?: string; projectName?: string; template: TemplateColumn },
+    templateArg?: TemplateColumn
+  ): Promise<
+    APIPut<{
+      projectId: string;
+      columns: Column[];
+    }>
+  > {
+    const payload =
+      typeof projectIdOrParams === "string"
+        ? { projectId: projectIdOrParams, template: templateArg }
+        : projectIdOrParams;
+    if (!payload?.template) {
+      throw new Error("Missing template for applying template columns.");
+    }
     return this.client
-      .put(`/template-column/apply-to-project/`, {
-        projectId,
-        template,
+      .post(`/template-column/apply-to-project/`, {
+        ...payload,
       })
-      .then((response) => response.data as APIPut<Column[]>)
+      .then(
+        (response) =>
+          response.data as APIPut<{
+            projectId: string;
+            columns: Column[];
+          }>
+      )
       .catch((error) => {
         throw (
           error?.response?.data ||
