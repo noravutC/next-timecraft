@@ -1,18 +1,18 @@
 "use client";
 
-import { ColumnPreview } from "@/components/kanban-preview/column-preview";
-import { LayoutPreview } from "@/components/kanban-preview/layout-preview";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+// import { ColumnPreview } from "@/components/kanban-preview/column-preview";
+// import { LayoutPreview } from "@/components/kanban-preview/layout-preview";
+// import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useTemplateColumnsStore } from "@/hooks/useTemplateColumn.hook";
 import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card"
-import {
-    Carousel,
-    CarouselContent,
-    CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
-} from "@/components/ui/carousel"
+// import { Card, CardContent } from "@/components/ui/card"
+// import {
+//     Carousel,
+//     CarouselContent,
+//     CarouselItem,
+//     CarouselNext,
+//     CarouselPrevious,
+// } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -66,11 +66,11 @@ export const TemplateColumnForm = ({
                     onMouseLeave={() => setOnHoverTemplateId(null)}
                 >
                     <div className="w-full p-4">
-                        <LayoutPreview>
+                        {/* <LayoutPreview>
                             {(template.columns ?? []).map((col) => (
                                 <ColumnPreview key={col.name} colName={col.name} />
                             ))}
-                        </LayoutPreview>
+                        </LayoutPreview> */}
                     </div>
                     <div className="w-full flex justify-center">
                         <Badge className="rounded-full p-1 px-2 bg-blue-500">{template.columns.length} Column</Badge>
