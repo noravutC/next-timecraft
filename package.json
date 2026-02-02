@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
+    "@atlaskit/pragmatic-drag-and-drop-react-beautiful-dnd-autoscroll": "^1.0.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -32,6 +36,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.25.0",
     "lodash": "^4.17.21",

@@ -12,8 +12,7 @@ export interface Column {
 }
 
 export interface ColumnCache extends Column {
-  timestamp: number; //Date.now()
-  // tasks: TaskCache[];
+  timestamp?: number;
 }
 
 export interface CombineColumnTask extends Column {

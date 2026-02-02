@@ -1,169 +1,320 @@
-import { CombineColumnTask } from '@/types/column';
-import { Task } from '@/types';
-import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent, pointerWithin } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { useMemo, useRef, useState } from 'react';
-import { ColumnDnd } from './column-dnd';
-import { TaskDnd } from './task-dnd';
+'use client';
+
+import { autoScroller } from '@atlaskit/pragmatic-drag-and-drop-react-beautiful-dnd-autoscroll';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBoardStore, useTaskStore } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
+import { BoardColumn } from './board-column';
 
+export type GhostAt = {
+  activeId: string;
+  columnId: string;
+  index: number;
+};
+
+type DragSourceData =
+  | { type: 'task'; taskId: string; columnId: string }
+  | { type: 'column'; columnId: string };
+
+type DropTargetData =
+  | { type: 'slot'; columnId: string; index: number }
+  | { type: 'task'; columnId: string; taskId: string }
+  | { type: 'column'; columnId: string };
+
+type DropTargetRecord = {
+  element?: HTMLElement;
+  data?: DropTargetData;
+};
 
 interface BoardDndProps {
-    projectId: string;
+  projectId: string;
 }
+
 export const BoardDnd = ({ projectId }: BoardDndProps) => {
-    // const { columnCombineTasks } = useBoardStore();
-    // const { tasks, dropTask, moveTaskState } = useTaskStore();
-    const { columnCombineTasks } = useBoardStore(useShallow(state => ({
-        columnCombineTasks: state.columnCombineTasks
-    })));
-    const moveTaskState = useTaskStore(state => state.moveTaskState);
-    const moveTaskTo = useTaskStore(state => state.moveTaskTo);
-    const tasks = useTaskStore(useShallow(state => state.tasks));
-    const dropTask = useTaskStore(state => state.dropTask);
-    const [activeColumn, setActiveColumn] = useState<CombineColumnTask | null>(null);
-    const [activeTask, setActiveTask] = useState<Task | null>(null);
-    const activeTaskSnapshotRef = useRef<Task | null>(null);
+  const columns = useBoardStore(useShallow((state) => state.columns));
+  const tasks = useTaskStore(useShallow((state) => state.tasks));
+  const moveTaskState = useTaskStore((state) => state.moveTaskState);
+  const moveTaskTo = useTaskStore((state) => state.moveTaskTo);
+  const updateColumnOrder = useBoardStore((state) => state.updateColumnOrder);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        })
-    );
-    const handleDragStart = (event: DragStartEvent) => {
-        const { active } = event;
-        if (active.data.current?.type === "column") {
-            setActiveColumn(active.data.current.column);
-        } else if (active.data.current?.type === "task") {
-            setActiveTask(active.data.current.task);
-            activeTaskSnapshotRef.current = active.data.current.task;
-        }
-    };
-    const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [ghostAt, setGhostAt] = useState<GhostAt | null>(null);
+  const lastGhostRef = useRef<GhostAt | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const tasksRef = useRef(tasks);
+  const columnsRef = useRef(columns);
 
-        const activeId = active.id as string;
-        const overId = over.id as string;
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
-        if (activeId === overId) return;
-        const taskActive = tasks[activeId];
-        const isActiveTask = active.data.current?.type === "task";
-        const isOverTask = over.data.current?.type === "task";
-        const isOverColumn = over.data.current?.type === "column";
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
-        if (!isActiveTask || !taskActive) return;
-        let overColumnId: string | null = null;
-        // Task over task
-        if (isActiveTask && isOverTask) {
-            const overTask = tasks[overId];
-            if  (overTask) overColumnId = overTask.columnId;
-            moveTaskState(activeId, overTask.columnId, overTask._id);
-            return;
-        } else if (isOverColumn) {
-            overColumnId = overId;
-        }
-        if (!overColumnId) return;
-        // Task over different column
-        if (isActiveTask && isOverColumn) {
-            const overTask = tasks[overId];
-            moveTaskState(activeId, overColumnId, overTask?._id);
-            return;
-        }
-    }
-    const handleDragEnd = (event: DragEndEvent) => {
-        setActiveColumn(null);
-        setActiveTask(null);
-        const { active, over } = event;
-        if (!over) return;
+  const columnList = useMemo(
+    () => Object.values(columns).sort((a, b) => a.order - b.order),
+    [columns]
+  );
+  const columnIds = useMemo(() => columnList.map((col) => col._id), [columnList]);
 
-        const activeId = active.id as string;
-        const overId = over.id as string;
+  const getTaskIdsByColumn = useCallback((columnId: string) => {
+    return Object.values(tasksRef.current)
+      .filter((task) => task.columnId === columnId)
+      .sort((a, b) => a.order - b.order)
+      .map((task) => task._id);
+  }, []);
 
-        if (activeId === overId) return;
-        const taskActive = tasks[activeId];
-        const isActiveTask = active.data.current?.type === "task";
-        const isOverTask = over.data.current?.type === "task";
-        const isOverColumn = over.data.current?.type === "column";
+  const findDropTarget = useCallback(
+    (dropTargets: DropTargetRecord[], type: DropTargetData['type']) =>
+      dropTargets.find((target) => target?.data?.type === type),
+    []
+  );
 
-        if (!isActiveTask || !taskActive) return;
-
-        const activeTaskData = active.data.current?.task as Task | undefined;
-        const activeTaskSnapshot = activeTaskSnapshotRef.current ?? activeTaskData;
-        const latestTasks = useTaskStore.getState().tasks;
-        const movedTask = latestTasks[activeId] ?? taskActive;
-        const boardState = useBoardStore.getState();
-
-        const sourceColumnId = activeTaskSnapshot?.columnId ?? taskActive.columnId;
-        const sourceOrder = activeTaskSnapshot?.order ?? taskActive.order;
-        let destinationColumnId = movedTask.columnId;
-        let destinationOrder = movedTask.order;
-
-        if (isOverTask) {
-            const overTask = tasks[overId] ?? (over.data.current?.task as Task | undefined);
-            if (!overTask) return;
-            destinationColumnId = overTask.columnId;
-            destinationOrder = overTask.order;
-        } else if (isOverColumn) {
-            destinationColumnId = overId;
-            const destTasks = boardState.columnCombineTasks[destinationColumnId]?.tasks ?? [];
-            const lastOrder = destTasks.length > 0
-                ? Math.max(...destTasks.map((t) => t.order))
-                : 0;
-            destinationOrder = lastOrder + 1;
-        }
-
-        if (sourceColumnId === destinationColumnId && sourceOrder === destinationOrder) {
-            return;
-        }
-
-        moveTaskTo(projectId, activeId, sourceColumnId, destinationColumnId, destinationOrder);
-        activeTaskSnapshotRef.current = null;
-    }
-    const colProps = useMemo(() => {
-        const colsCombineTasks = Object.values(columnCombineTasks).filter((item) => item.projectId === projectId);
-        const colKeys = colsCombineTasks.map((col) => col._id);
+  const resolveTaskDrop = useCallback(
+    (dropTargets: DropTargetRecord[], pointer: { clientY?: number } | null) => {
+      const slotTarget = findDropTarget(dropTargets, 'slot');
+      if (slotTarget?.data?.type === 'slot') {
         return {
-            colKeys,
-            colsCombineTasks,
-        }
-    }, [columnCombineTasks, projectId])
+          columnId: slotTarget.data.columnId,
+          dropIndexRaw: slotTarget.data.index,
+        };
+      }
 
-    return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={(args) => {
-                const pointerCollisions = pointerWithin(args);
-                if (pointerCollisions.length > 0) return pointerCollisions;
-                return closestCorners(args);
-            }}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-        >
-            <SortableContext
-                items={colProps.colKeys}
-                strategy={horizontalListSortingStrategy}
-            >
-                <div className='max-w-full h-full overflow-y-hidden scrollbar-thin-x overflow-x-auto'>
-                    <div className='w-full min-w-max flex gap-6 h-full p-4'>
-                        {colProps.colsCombineTasks.map((col) => (
-                            <ColumnDnd key={col._id} colTasks={col} />
-                        ))}
-                    </div>
-                </div>
-            </SortableContext>
-            <DragOverlay>
-                {activeColumn && (
-                    <ColumnDnd colTasks={activeColumn} />
-                )}
-                {activeTask && (
-                    <TaskDnd task={activeTask} />
-                )}
-            </DragOverlay>
-        </DndContext>
-    )
-}
+      const taskTarget = findDropTarget(dropTargets, 'task');
+      if (taskTarget?.data?.type === 'task') {
+        const { columnId, taskId } = taskTarget.data;
+        const taskIds = getTaskIdsByColumn(columnId);
+        const overIndex = taskIds.findIndex((id) => id === taskId);
+        if (overIndex >= 0) {
+          const rect = taskTarget.element?.getBoundingClientRect?.();
+          const pointerY = pointer?.clientY;
+          const isBelow =
+            rect && typeof pointerY === 'number'
+              ? pointerY > rect.top + rect.height / 2
+              : false;
+          return {
+            columnId,
+            dropIndexRaw: Math.min(
+              taskIds.length,
+              Math.max(0, overIndex + (isBelow ? 1 : 0))
+            ),
+          };
+        }
+      }
+
+      const columnTarget = findDropTarget(dropTargets, 'column');
+      if (columnTarget?.data?.type === 'column') {
+        const { columnId } = columnTarget.data;
+        const taskIds = getTaskIdsByColumn(columnId);
+        return { columnId, dropIndexRaw: taskIds.length };
+      }
+
+      return null;
+    },
+    [findDropTarget, getTaskIdsByColumn]
+  );
+
+  const updateGhost = useCallback(
+    (sourceData: DragSourceData, dropTargets: DropTargetRecord[], pointer: { clientY?: number } | null) => {
+      if (sourceData.type !== 'task') return;
+
+      const resolved = resolveTaskDrop(dropTargets, pointer);
+      if (!resolved) {
+        if (lastGhostRef.current) {
+          setGhostAt(null);
+          lastGhostRef.current = null;
+        }
+        return;
+      }
+
+      const { columnId, dropIndexRaw } = resolved;
+      const taskIds = getTaskIdsByColumn(columnId);
+      const activeId = sourceData.taskId;
+
+      let nextGhost: GhostAt | null = {
+        activeId,
+        columnId,
+        index: dropIndexRaw,
+      };
+
+      const activeTask = tasksRef.current[activeId];
+      if (activeTask && activeTask.columnId === columnId) {
+        const activeIndex = taskIds.findIndex((id) => id === activeId);
+        if (
+          activeIndex >= 0 &&
+          (dropIndexRaw === activeIndex || dropIndexRaw === activeIndex + 1)
+        ) {
+          nextGhost = null;
+        }
+      }
+
+      const lastGhost = lastGhostRef.current;
+      if (
+        lastGhost &&
+        nextGhost &&
+        lastGhost.activeId === nextGhost.activeId &&
+        lastGhost.columnId === nextGhost.columnId &&
+        lastGhost.index === nextGhost.index
+      ) {
+        return;
+      }
+
+      lastGhostRef.current = nextGhost;
+      setGhostAt(nextGhost);
+    },
+    [getTaskIdsByColumn, resolveTaskDrop]
+  );
+
+  const handleTaskDrop = useCallback(
+    (sourceData: DragSourceData, dropTargets: DropTargetRecord[], pointer: { clientY?: number } | null) => {
+      if (sourceData.type !== 'task') return;
+      const resolved = resolveTaskDrop(dropTargets, pointer);
+      if (!resolved) return;
+
+      const { columnId, dropIndexRaw } = resolved;
+      const activeId = sourceData.taskId;
+      const activeTask = tasksRef.current[activeId];
+      if (!activeTask) return;
+
+      const taskIds = getTaskIdsByColumn(columnId);
+      const sameColumn = activeTask.columnId === columnId;
+      const activeIndex = sameColumn ? taskIds.findIndex((id) => id === activeId) : -1;
+
+      if (sameColumn && (dropIndexRaw === activeIndex || dropIndexRaw === activeIndex + 1)) {
+        return;
+      }
+
+      let targetTaskId: string | null = null;
+      if (sameColumn) {
+        targetTaskId =
+          dropIndexRaw > activeIndex
+            ? taskIds[dropIndexRaw - 1] ?? null
+            : taskIds[dropIndexRaw] ?? null;
+      } else {
+        targetTaskId = taskIds[dropIndexRaw] ?? null;
+      }
+
+      moveTaskState(activeId, columnId, targetTaskId);
+      const updatedTask = useTaskStore.getState().tasks[activeId];
+      if (updatedTask && typeof updatedTask.order === 'number') {
+        moveTaskTo(projectId, activeId, activeTask.columnId, columnId, updatedTask.order);
+      }
+    },
+    [getTaskIdsByColumn, moveTaskState, moveTaskTo, projectId, resolveTaskDrop]
+  );
+
+  const handleColumnDrop = useCallback(
+    (sourceData: DragSourceData, dropTargets: DropTargetRecord[], pointer: { clientX?: number } | null) => {
+      if (sourceData.type !== 'column') return;
+      const columnTarget = findDropTarget(dropTargets, 'column');
+      if (!columnTarget?.data || columnTarget.data.type !== 'column') return;
+
+      const sourceColumnId = sourceData.columnId;
+      const targetColumnId = columnTarget.data.columnId;
+      if (sourceColumnId === targetColumnId) return;
+
+      const sourceColumn = columnsRef.current[sourceColumnId];
+      const targetColumn = columnsRef.current[targetColumnId];
+      if (!sourceColumn || !targetColumn) return;
+
+      const rect = columnTarget.element?.getBoundingClientRect?.();
+      const pointerX = pointer?.clientX;
+      const isAfter =
+        rect && typeof pointerX === 'number'
+          ? pointerX > rect.left + rect.width / 2
+          : false;
+
+      const newOrder = isAfter
+        ? targetColumn.order + (sourceColumn.order > targetColumn.order ? 1 : 0)
+        : targetColumn.order - (sourceColumn.order < targetColumn.order ? 1 : 0);
+
+      const clampedOrder = Math.max(0, newOrder);
+      if (clampedOrder === sourceColumn.order) return;
+
+      updateColumnOrder(sourceColumnId, { order: clampedOrder });
+    },
+    [findDropTarget, updateColumnOrder]
+  );
+
+  const resetDragState = useCallback(() => {
+    setActiveTaskId(null);
+    setGhostAt(null);
+    lastGhostRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!boardRef.current) return;
+
+    return combine(
+      monitorForElements({
+        onDragStart({ source, location }) {
+          const sourceData = source.data as DragSourceData;
+
+          if (sourceData?.type === 'task') {
+            setActiveTaskId(sourceData.taskId);
+          } else if (sourceData?.type === 'column') {
+            setActiveTaskId(null);
+            setGhostAt(null);
+            lastGhostRef.current = null;
+          }
+
+          if (location.current.input) {
+            autoScroller.start({ input: location.current.input });
+          }
+        },
+        onDrag({ source, location }) {
+          const sourceData = source.data as DragSourceData;
+          if (location.current.input) {
+            autoScroller.updateInput({ input: location.current.input });
+          }
+
+          if (sourceData?.type === 'task') {
+            const dropTargets = (location.current.dropTargets ?? []) as DropTargetRecord[];
+            updateGhost(sourceData, dropTargets, location.current.input ?? null);
+          }
+        },
+        onDrop({ source, location }) {
+          const sourceData = source.data as DragSourceData;
+          autoScroller.stop();
+
+          if (sourceData?.type === 'task') {
+            const dropTargets = (location.current.dropTargets ?? []) as DropTargetRecord[];
+            handleTaskDrop(sourceData, dropTargets, location.current.input ?? null);
+          } else if (sourceData?.type === 'column') {
+            const dropTargets = (location.current.dropTargets ?? []) as DropTargetRecord[];
+            handleColumnDrop(sourceData, dropTargets, location.current.input ?? null);
+          }
+
+          resetDragState();
+        },
+      }),
+      autoScrollForElements({
+        element: boardRef.current,
+        canScroll: () => true,
+        getConfiguration: () => ({
+          maxScrollSpeed: 'standard',
+        }),
+      })
+    );
+  }, [handleColumnDrop, handleTaskDrop, resetDragState, updateGhost]);
+
+  return (
+    <div
+      ref={boardRef}
+      className="flex max-w-full h-full gap-4 items-start justify-start overflow-y-hidden overflow-x-auto scrollbar-thin-x"
+    >
+      {columnIds.map((id) => (
+        <BoardColumn
+          key={id}
+          columnId={id}
+          ghostAt={ghostAt?.columnId === id ? ghostAt : null}
+          activeTaskId={activeTaskId}
+        />
+      ))}
+    </div>
+  );
+};

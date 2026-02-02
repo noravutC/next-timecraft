@@ -30,21 +30,7 @@ export const ColumnBar = React.memo(({
     );
     const moveTaskTo = useTaskStore(state => state.moveTaskTo);
     const moveTaskState = useTaskStore(state => state.moveTaskState);
-    // const tempColumns = Object.values(columns).sort((a, b) => a.order - b.order);
 
-
-
-
-    // const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
-    //     const columnsOfProject = columnsBarOfProjectCache[projectIdActivate].columns;
-    //     const colActive = columnsOfProject.find((col) => col._id === taskAtColumnId);
-    //     return {
-    //         tempColumns: columnsOfProject.sort((a, b) => a.order - b.order),
-    //         orderColActive: colActive?.order ?? 0,
-    //         colorColActive: colActive?.color,
-    //     };
-
-    // }, [columnsBarOfProjectCache, taskAtColumnId]);
     const { tempColumns, orderColActive, colorColActive } = useMemo(() => {
         const projectData = columnsBarOfProjectCache[projectIdActivate ?? ''] ?? undefined;
         if (!projectData || !projectData.columns) {
@@ -77,7 +63,9 @@ export const ColumnBar = React.memo(({
     const lengthColumns = tempColumns.length;
 
     return (
-        <div className="w-full min-h-[13px] max-h-[13px] grid grid-cols-6 rounded-full bg-gray-100 overflow-hidden border border-gray-300">
+        <div className={cn("w-full min-h-[13px] max-h-[13px] grid rounded-full bg-gray-100 overflow-hidden border border-gray-300",
+            lengthColumns > 0 && "grid-cols-" + lengthColumns
+        )}>
             {tempColumns.map((col, index) => {
                 const isActive = taskAtColumnId === col._id;
                 const isLast = index === lengthColumns - 1;

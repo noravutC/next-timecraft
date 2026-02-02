@@ -32,38 +32,6 @@ const TimeTrackingSchema = new Schema(
   { _id: false }
 );
 
-// Task
-// const TasksSchema = new Schema(
-//   {
-//     columnId: {
-//       type: Schema.Types.ObjectId,
-//       ref: "Column",
-//       required: true,
-//     },
-//     title: { type: String, required: true },
-//     description: { type: String },
-//     order: { type: Number, required: true, default: 1 },
-//     assignees: [{ type: Schema.Types.ObjectId, ref: "User" }],
-//     priority: {
-//       type: String,
-//       enum: ["low", "medium", "high", "urgent"],
-//       default: "medium",
-//     },
-//     status: {
-//       type: String,
-//       enum: ["active", "archived", "done"],
-//       default: "active",
-//     },
-//     dueDate: { type: Date },
-//     startDate: { type: Date },
-//     checklist: { type: [ChecklistSchema], default: [] },
-//     attachments: { type: [AttachmentSchema], default: [] },
-//     comments: { type: [CommentSchema], default: [] },
-//     timeTracking: { type: TimeTrackingSchema, default: {} },
-//     dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }],
-//   },
-//   { timestamps: true }
-// );
 const TasksSchema = new Schema(
   {
     columnId: {
