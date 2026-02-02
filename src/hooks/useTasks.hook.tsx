@@ -9,7 +9,9 @@ import { insertIndexTo } from "@/helper/utils/re-order";
 import { toRecord } from "@/helper/utils/object";
 
 export interface TaskStore {
-  tasks: Record<string, TaskCache>;
+  tasks: {
+    [taskId: string]: TaskCache;
+  };
   dropTask: { taskId: string | null | undefined, columnId: string, order: number } | undefined;
   taskLoaders: Record<string, boolean>;
 

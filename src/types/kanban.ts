@@ -1,4 +1,4 @@
-export type ColumnColor = 
+export type ColumnColor =
   | "purple"
   | "pink"
   | "blue"
@@ -23,16 +23,9 @@ export interface Column {
   order: number;
 }
 
-export interface TempColumn {
-  id: string;
-  projectId: string;
-  title: string;
-  order: number;
-}
-
-export interface TempTask {
-  id: string;
+export interface DragData {
+  type: "column" | "task";
+  taskId?: string;
   columnId: string;
-  title: string;
   order: number;
 }
