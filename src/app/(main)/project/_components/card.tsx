@@ -83,7 +83,7 @@ export function CardDisplay({
         <CardShadow dragging={state.dragging} />
       ) : null}
       <div
-        className={`rounded-md border bg-white p-4 min-h-30 border-gray-300 text-gray-700 ${innerStyles[state.type]}`}
+        className={`rounded-md border bg-white p-4 min-h-30 text-gray-700 ${innerStyles[state.type]}`}
         ref={innerRef}
         style={
           state.type === 'preview'
