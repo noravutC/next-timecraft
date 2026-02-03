@@ -6,6 +6,7 @@ export interface Column {
   name: string;
   color?: string;
   wipLimit: number;
+  totalTasks: number;
   order: number;
   createdAt: Date;
   updatedAt: Date;
