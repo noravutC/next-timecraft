@@ -10,9 +10,12 @@ import {
 class TaskService {
   private client = apiClient;
 
-  async getTasksByColumnId(columnId: string): Promise<APIGet<Task>> {
+  async getTasksByColumnId(
+    columnId: string,
+    options?: { skip?: number; limit?: number; archived?: boolean },
+  ): Promise<APIGet<Task>> {
     return this.client
-      .get(`/task/look-up/column/${columnId}/`)
+      .get(`/task/look-up/column/${columnId}/`, { params: options })
       .then((response) => response.data as APIGet<Task>)
       .catch((error) => {
         throw (

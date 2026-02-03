@@ -25,6 +25,14 @@ export async function GET(
     }
   try {
     const { columnId } = await params;
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const skipParam = searchParams.get("skip");
+    const archivedParam = searchParams.get("archived");
+    const limit = limitParam ? Math.max(0, Number.parseInt(limitParam, 10)) : undefined;
+    const skip = skipParam ? Math.max(0, Number.parseInt(skipParam, 10)) : 0;
+    const archived =
+      archivedParam === null ? undefined : archivedParam === "true";
 
     if (!columnId) {
       return NextResponse.json(
@@ -36,9 +44,19 @@ export async function GET(
       );
     }
     await connectDB();
-    const response  = await TasksModel.find({
+    const query: Record<string, unknown> = {
       columnId: new ObjectId(columnId),
-    }).lean<Task>().exec();
+    };
+    if (archived !== undefined) {
+      query.archived = archived;
+    }
+    let dbQuery = TasksModel.find(query).sort({ createdAt: -1 });
+    if (typeof limit === "number" && limit > 0) {
+      dbQuery = dbQuery.skip(skip).limit(limit);
+    } else if (skip > 0) {
+      dbQuery = dbQuery.skip(skip);
+    }
+    const response = await dbQuery.lean<Task>().exec();
 
     return NextResponse.json(
       {

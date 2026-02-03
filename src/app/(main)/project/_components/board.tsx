@@ -144,10 +144,15 @@ export function Board({ initial }: { initial: TBoard }) {
             const nextDestinationCards = [...destinationColumn.cards];
             nextDestinationCards.splice(insertIndex, 0, dragging.card);
             const nextColumns = [...data.columns];
-            nextColumns[homeColumnIndex] = { ...home, cards: nextHomeCards };
+            nextColumns[homeColumnIndex] = {
+              ...home,
+              cards: nextHomeCards,
+              totalTasks: Math.max(0, home.totalTasks - 1),
+            };
             nextColumns[destinationColumnIndex] = {
               ...destinationColumn,
               cards: nextDestinationCards,
+              totalTasks: destinationColumn.totalTasks + 1,
             };
             syncBoard({ ...data, columns: nextColumns });
             if (projectId) {
@@ -216,10 +221,15 @@ export function Board({ initial }: { initial: TBoard }) {
             const nextHomeCards = home.cards.filter((card) => card.id !== dragging.card.id);
             const nextDestinationCards = [...destinationColumn.cards, dragging.card];
             const nextColumns = [...data.columns];
-            nextColumns[homeColumnIndex] = { ...home, cards: nextHomeCards };
+            nextColumns[homeColumnIndex] = {
+              ...home,
+              cards: nextHomeCards,
+              totalTasks: Math.max(0, home.totalTasks - 1),
+            };
             nextColumns[destinationColumnIndex] = {
               ...destinationColumn,
               cards: nextDestinationCards,
+              totalTasks: destinationColumn.totalTasks + 1,
             };
             syncBoard({ ...data, columns: nextColumns });
             if (projectId) {
