@@ -66,6 +66,7 @@ export function columnMapFromBoard(
       ...prevColumn,
       name: column.title ?? prevColumn.name,
       order: columnIndex,
+      totalTasks: column.totalTasks,
       taskInColumn,
     };
   });

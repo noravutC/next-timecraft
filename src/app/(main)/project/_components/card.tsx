@@ -95,7 +95,7 @@ export function CardDisplay({
             : undefined
         }
       >
-        <div className='text-sm'>{card.description}</div>
+        <div className='text-sm'>{card.title}</div>
         <div className='mb-4'></div>
         <BarColumn taskAtColumnId={card.columnId} taskId={card.id} />
         <div className='mb-4'></div>
