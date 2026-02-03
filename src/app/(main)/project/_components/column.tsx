@@ -236,7 +236,7 @@ export function Column({ column }: { column: TColumn }) {
           <div className={cn("flex flex-row items-center justify-between p-2 mb-1")} style={backgroundStyle} ref={headerRef}>
             <div className="pl-2 font-semibold leading-4 text-sm">{column.title}</div>
             <div className='w-fit flex items-center gap-2 justify-end'>
-              <Badge variant={'outline'} className='bg-white rounded-full'>{column.cards.length} task</Badge>
+              <Badge variant={'outline'} className='bg-white rounded-full'>{column.totalTasks} task</Badge>
               <Button
                 type="button"
                 size={'xs'}

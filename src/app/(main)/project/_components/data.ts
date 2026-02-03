@@ -11,6 +11,7 @@ export type TColumn = {
   id: ColumnMapTask['_id'];
   title: ColumnMapTask['name'];
   color?: string;
+  totalTasks: number;
   cards: TCard[];
 };
 
@@ -27,6 +28,7 @@ export function boardFromColumnMap(columnMap: Record<string, ColumnMapTask>): TB
       id: column._id,
       title: column.name,
       color: column.color,
+      totalTasks: column.totalTasks,
       cards: Object.values(column.taskInColumn ?? {})
         .sort(byOrder)
         .map((task) => ({

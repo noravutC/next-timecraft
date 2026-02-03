@@ -92,12 +92,12 @@ async function main() {
     console.log('✅ Connected!');
 
     // *** ค่า ColumnId ที่คุณต้องการ ***
-    const TARGET_COLUMN_ID = "6964e2a9ec4eed5590a31490";
+    const TARGET_COLUMN_ID = "6964e2a9ec4eed5590a31491";
     
     const DUMMY_USER_ID = new mongoose.Types.ObjectId(); 
 
     const tasks = [];
-    const TOTAL_TASKS = 5;
+    const TOTAL_TASKS = 60;
 
     console.log(`Generating ${TOTAL_TASKS} tasks for Column: ${TARGET_COLUMN_ID}...`);
 

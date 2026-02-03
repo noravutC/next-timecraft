@@ -8,7 +8,6 @@ import { authOptions } from "@/auth";
 import { ColumnMapTask } from "@/types/column-map";
 import { TaskCache } from "@/types/task";
 
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ Id: string }> }
@@ -50,7 +49,7 @@ export async function GET(
           from: "tasks",
           localField: "_id",
           foreignField: "columnId",
-          as: "tasks",
+          as: "tasksInfo", // เปลี่ยนชื่อจาก tasks เป็น tasksInfo เพื่อรองรับ structure ใหม่จาก facet
           pipeline: [
             {
               $match: {
@@ -58,41 +57,58 @@ export async function GET(
               },
             },
             {
-              $sort: { createdAt: -1 },
-            },
-            {
-              $limit: taskLimit,
-            },
-            {
-                $project: {
-                    title: 1,
-                    columnId: 1,
-                    projectId: 1,
-                    description: 1,
-                    assignees: 1,
-                    order: 1,
-                    priority: 1,
-                    dueDate: 1,
-                    tags: 1,
-                    archived: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    // timeTracking: 1, // ถ้า Interface Task ไม่มี field นี้ อาจจะไม่ต้องส่ง หรือต้องเพิ่มใน Interface
-                }
+              // ใช้ $facet เพื่อแยกการทำงานเป็น 2 ส่วน: ดึงข้อมูล และ นับจำนวน
+              $facet: {
+                // ส่วนที่ 1: ดึงข้อมูล Tasks (เหมือนเดิม)
+                data: [
+                  { $sort: { createdAt: -1 } },
+                  { $limit: taskLimit },
+                  {
+                    $project: {
+                      title: 1,
+                      columnId: 1,
+                      projectId: 1,
+                      description: 1,
+                      assignees: 1,
+                      order: 1,
+                      priority: 1,
+                      dueDate: 1,
+                      tags: 1,
+                      archived: 1,
+                      createdAt: 1,
+                      updatedAt: 1,
+                    },
+                  },
+                ],
+                totalCount: [
+                  { $count: "count" }
+                ]
+              }
             }
           ],
         },
       },
+      // Optional: Unwind array tasksInfo เพราะ lookup จะคืนค่ามาเป็น array เสมอ
+      {
+        $unwind: {
+            path: "$tasksInfo",
+            preserveNullAndEmptyArrays: true // เผื่อกรณีไม่มี task เลย
+        }
+      }
     ]);
 
     const formattedData: ColumnMapTask[] = rawColumns.map((col) => {
-      
       const taskMap: { [key: string]: TaskCache } = {};
+      
+      // ดึง data จาก facet (structure จะเป็น col.tasksInfo.data)
+      const tasksList = col.tasksInfo?.data || [];
+      // ดึง count จาก facet (structure จะเป็น col.tasksInfo.totalCount[0].count)
+      const totalTasksCount = col.tasksInfo?.totalCount?.[0]?.count || 0;
 
-      if (col.tasks && Array.isArray(col.tasks)) {
-        col.tasks.forEach((task: any) => {
+      if (tasksList && Array.isArray(tasksList)) {
+        tasksList.forEach((task: any) => {
           const taskId = task._id.toString();
-          
+
           taskMap[taskId] = {
             _id: taskId,
             projectId: task.projectId?.toString(),
@@ -123,6 +139,7 @@ export async function GET(
         updatedAt: new Date(col.updatedAt),
         timestamp: Date.now(),
         taskInColumn: taskMap,
+        totalTasks: totalTasksCount, // เพิ่ม field นี้ส่งกลับไป
       };
     });
 
