@@ -1,53 +1,73 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { hexToRgba } from "@/helper/utils";
-import { sortObjArray } from "@/helper/utils/sort";
-import { useBoardMapStore } from "@/hooks/store";
-import { cn } from "@/lib/utils";
-import React from "react";
+import React, { useMemo } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { hexToRgba } from '@/helper/utils';
+import { cn } from '@/lib/utils';
+import { useColumnStore } from '@/store/use-column.store';
+import { useProjectStore } from '@/store/use-project.store';
 
 interface BarColumnProps {
-    taskAtColumnId: string;
-    taskId: string;
+  taskAtColumnId: string;
+  taskId: string;
 }
-export const BarColumn = React.memo(({
-    taskAtColumnId,
-    taskId,
-}: BarColumnProps) => {
-    const { columnMap } = useBoardMapStore();
-    const cols = Object.values(columnMap).map((col) => ({ id: col._id, name: col.name, color: col.color, order: col.order }));
-    const sortedCols = sortObjArray(cols, 'order', 'asc');
-    // const isActive = columnMap[taskId]?._id;
-    const countCol = sortedCols.length;
-    const classGridCols = `grid grid-cols-${countCol}`;
-    const colActive = columnMap[taskAtColumnId];
-    if (!colActive) return null;
-    const targetOpacity = 0.75;
-    const backgroundStyle = colActive.color ? { background: hexToRgba(colActive.color, targetOpacity) } : {};
-    return (
-        <div className={cn("w-full max-h-3.5 h-3.5 border bg-gray-100 rounded-full overflow-hidden", countCol > 0 ? classGridCols : '')}>
-            {sortedCols.map((col, index) => {
-                // const isActive = taskAtColumnId === col.id;
-                const isLast = index === countCol - 1;
-                const isHilight = col.order <= colActive.order;
 
-                return (
-                    <Tooltip key={col.id}>
-                        <TooltipTrigger asChild className="cursor-pointer">
-                            <div
-                                className={cn(
-                                    "h-full w-full overflow-hidden transition-colors duration-200",
-                                    !isLast && "border-r border-gray-300"
-                                )}
-                                style={isHilight ? backgroundStyle : undefined}
-                            />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{col.name}</p>
-                        </TooltipContent>
-                    </Tooltip>
+const byOrderFraction = (
+  a: { orderFraction?: string | null },
+  b: { orderFraction?: string | null },
+) => (a.orderFraction ?? '').localeCompare(b.orderFraction ?? '');
 
-                );
-            })}
-        </div>
-    );
+export const BarColumn = React.memo(function BarColumn({ taskAtColumnId }: BarColumnProps) {
+  const columns = useColumnStore((state) => state.columns);
+  const projectId = useProjectStore((state) => state.projectIsUsing);
+
+  const sortedCols = useMemo(
+    () =>
+      Object.values(columns)
+        .filter((column) => !projectId || column.projectId === projectId)
+        .sort(byOrderFraction)
+        .map((column) => ({
+          id: column.id,
+          name: column.name,
+          color: column.color,
+          orderFraction: column.orderFraction,
+        })),
+    [columns, projectId],
+  );
+
+  const activeIndex = sortedCols.findIndex((column) => column.id === taskAtColumnId);
+  if (activeIndex === -1 || sortedCols.length === 0) return null;
+
+  const activeColumn = sortedCols[activeIndex];
+  const targetOpacity = 0.75;
+  const backgroundStyle = activeColumn.color
+    ? { background: hexToRgba(activeColumn.color, targetOpacity) }
+    : {};
+
+  return (
+    <div
+      className={cn('w-full max-h-3.5 h-3.5 border bg-gray-100 rounded-full overflow-hidden grid')}
+      style={{ gridTemplateColumns: `repeat(${sortedCols.length}, minmax(0, 1fr))` }}
+    >
+      {sortedCols.map((column, index) => {
+        const isLast = index === sortedCols.length - 1;
+        const isHighlight = index <= activeIndex;
+
+        return (
+          <Tooltip key={column.id}>
+            <TooltipTrigger asChild className="cursor-pointer">
+              <div
+                className={cn(
+                  'h-full w-full overflow-hidden transition-colors duration-200',
+                  !isLast && 'border-r border-gray-300',
+                )}
+                style={isHighlight ? backgroundStyle : undefined}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{column.name}</p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
 });

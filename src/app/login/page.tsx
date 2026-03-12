@@ -12,6 +12,8 @@ export default function Login() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [showButton, setShowButton] = useState(false);
+  const organizationId = session?.user?.organizationId?.trim() ?? "";
+  const canCreateOrg = session?.user?.canCreateOrg ?? false;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -22,14 +24,21 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      if (session?.user?.canCreateOrg) {
-        router.push('/organization/create');
-      } else {
-        router.push('/project');
-      }
+    if (status !== "authenticated" || !session) {
+      return;
     }
-  }, [session, router]);
+
+    if (organizationId) {
+      router.replace('/project');
+      return;
+    }
+
+    if (canCreateOrg) {
+      router.replace('/organization/create');
+    } else {
+      router.replace('/project');
+    }
+  }, [status, session, organizationId, canCreateOrg, router]);
 
   if (status === 'unauthenticated') {
     return (

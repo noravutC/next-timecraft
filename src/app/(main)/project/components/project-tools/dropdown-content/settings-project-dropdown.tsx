@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LoaderCircle, PlusSquareIcon, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { useProjectStore } from "@/hooks"
+// import { useProjectStore } from "@/hooks"
 import { Project, ProjectCache } from "@/types"
 import { Dispatch, SetStateAction, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface SettingsProjectDropDownProps {
-    activeProject?: ProjectCache | undefined;
+    activeProject?: ProjectCache | null;
     setSubmenuOpen: Dispatch<SetStateAction<"new-project" | "settings" | null>>
 }
 export const SettingsProjectDropDown = ({

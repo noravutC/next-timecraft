@@ -62,7 +62,7 @@ export const useBoardMapStore = create<BoardMapStore>((set, get) => ({
                     ...newColumnMap,
                 },
             }))
-            console.log("Fetched column map tasks:", response);
+            // console.log("Fetched column map tasks:", response);
         } catch (error) {
             console.error("Error fetching board columns:", error);
             toast.error("An unexpected error occurred.");

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const ProjectSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  coverImage: z.string().optional().nullable(),
   ownerId: z.string().min(1),
   members: z.array(z.object({
     userId: z.string(),

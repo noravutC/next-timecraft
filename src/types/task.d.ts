@@ -1,22 +1,18 @@
-// types/task.type.ts
-export interface Task {
-  _id: string;
-  projectId: string;
-  columnId: string;
-  title: string;
-  description?: string;
-  assignees: string[];
-  priority?: "low" | "medium" | "high";
-  dueDate?: Date;
-  tags?: string[];
-  order: number;
-  archived: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { tasksTable } from "@/db/schema";
+
+export type TaskRow = InferSelectModel<typeof tasksTable>;
+export type NewTaskRow = InferInsertModel<typeof tasksTable>;
+
+export type TaskPriority = TaskRow["priority"];
+export type Task = TaskRow;
+
+export type CreateTaskPayload = Pick<NewTaskRow, "columnId" | "title" | "description" | "orderFraction" | "tags" | "priority" | "dueDate">;
+
+export type UpdateTaskPayload = Pick<NewTaskRow, "id" | "columnId" | "title" | "description" | "orderFraction" | "tags" | "priority" | "dueDate">;
 
 export interface TaskCache extends Task {
-  timestamp?: number;
+  timestamp: number;
 }
 
 export interface PayloadMoveTask {
