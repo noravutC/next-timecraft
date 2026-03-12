@@ -1,58 +1,83 @@
-// app/api/member-ship/[userId]/route.ts
-
-import { connectDB } from "@/lib/mongodb";
-import { NextResponse } from "next/server";
-import { MembershipModel } from "@/model/group-user/member-ship";
-import { type Membership as MembershipProps  } from "@/types";
-import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
-import { Types } from "mongoose";
+import { connectDB } from "@/lib/mongodb";
+import { MembershipModel } from "@/model/group-user/member-ship";
+import { getServerSession } from "next-auth/next";
+import { NextResponse } from "next/server";
+
+const normalizeMembership = (membership: any) => ({
+  _id: membership._id.toString(),
+  userId: membership.userId?.toString?.() ?? membership.userId,
+  organizationId:
+    membership.organizationId?.toString?.() ?? membership.organizationId,
+  role: membership.role,
+  createdAt: membership.createdAt,
+  updatedAt: membership.updatedAt,
+});
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session) {
+  const sessionUserId = session?.user?.id;
+
+  if (!sessionUserId) {
     return NextResponse.json(
       {
-        success: false,
-        message: "Not  authenticated",
         data: [],
+        message: "Not authenticated",
+        status: 401,
       },
       { status: 401 }
     );
   }
-  try {
-    const { userId } = await params;
 
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User ID is required",
-        },
-        { status: 400 }
-      );
-    }
-    await connectDB();
-    const userObjectId = new Types.ObjectId(userId); // แปลงเป็น ObjectId
-    const membership: MembershipProps[] = await MembershipModel.find({ userId: userObjectId });
+  const { userId } = await params;
+
+  if (!userId) {
     return NextResponse.json(
       {
-        success: true,
-        message: "Get membership by user id success",
-        data: membership,
+        data: [],
+        message: "userId is required",
+        status: 400,
+      },
+      { status: 400 }
+    );
+  }
+
+  if (userId !== sessionUserId) {
+    return NextResponse.json(
+      {
+        data: [],
+        message: "Forbidden",
+        status: 403,
+      },
+      { status: 403 }
+    );
+  }
+
+  try {
+    await connectDB();
+
+    const memberships = await MembershipModel.find({ userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json(
+      {
+        data: memberships.map(normalizeMembership),
+        message: "Get memberships success",
+        status: 200,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log("Error get membership by ID:", error);
+    console.error("Failed to fetch memberships:", error);
     return NextResponse.json(
       {
-        success: false,
-        message: "Failed to get membership by ID",
-        error: error,
+        data: [],
+        message: "Failed to fetch memberships",
+        status: 500,
       },
       { status: 500 }
     );

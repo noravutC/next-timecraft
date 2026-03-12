@@ -1,74 +1,127 @@
-// project/components/create-first-project.tsx
-
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ArrowLeft, ArrowRight, LoaderCircle, Sparkles, Upload, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTemplateColumnsStore } from '@/hooks/useTemplateColumn.hook';
-import { ArrowRight, Layout, ListTodo, Plus, Sparkles, Columns, FileQuestion, ArrowLeft, LoaderCircle } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useProjectStore } from "@/store";
+import { PROJECT_TEMPLATES } from "@/helper/default-project";
+import { useColumnStore } from "@/store/use-column.store";
 
-const icons = [
-    <Columns key="icon-1" />,
-    <ListTodo key="icon-2" />,
-    <Layout key="icon-2" />
+const MAX_PROJECT_COVER_FILE_SIZE = 2 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
 ];
-const colors = [
-    'bg-blue-100 text-blue-600',
-    'bg-emerald-100 text-emerald-600'
-]
+
+const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+    });
 
 export const CreateFirstProject = () => {
-    const {
-        fetchTemplateColumns,
-        templateColumns,
-        applyBoardTemplateIntoProject, // สมมติว่าฟังก์ชันนี้ใช้เปลี่ยน status หรือ save
-        status,
-    } = useTemplateColumnsStore(useShallow((state) => ({
-        fetchTemplateColumns: state.fetchTemplateColumns,
-        templateColumns: state.templateColumns,
-        applyBoardTemplateIntoProject: state.applyBoardTemplateIntoProject,
-        status: state.status,
-    })));
-    const [projectName, setProjectName] = useState<string>('');
-    const [choosedTem, setChoosedTem] = useState<string>('');
-
-    useEffect(() => {
-        fetchTemplateColumns();
-    }, [fetchTemplateColumns])
-
-    const columnTemplates = Object.values(templateColumns).map((t, i) => ({
-        ...t,
-        icon: icons[i] || <FileQuestion size={24} />,
-        color: colors[i],
-    }));
-
-    // Animation Variants เพื่อความสะอาดของโค้ด
-    const slideLeftExit = {
-        initial: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -100, transition: { duration: 0.3 } } // หายไปทางซ้าย
+    const { createProject, status, projects, setNeedCreateProject } = useProjectStore();
+    const { createColumns } = useColumnStore();
+    const [projectName, setProjectName] = useState("");
+    const [coverImage, setCoverImage] = useState<string | null>(null);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [direction, setDirection] = useState<1 | -1>(1);
+    const projectLength = Object.keys(projects).length;
+    const slideVariants = {
+        enter: (dir: 1 | -1) => ({
+            opacity: 0,
+            x: dir > 0 ? 80 : -80,
+        }),
+        center: {
+            opacity: 1,
+            x: 0,
+            transition: { duration: 0.25 },
+        },
+        exit: (dir: 1 | -1) => ({
+            opacity: 0,
+            x: dir > 0 ? -80 : 80,
+            transition: { duration: 0.25 },
+        }),
     };
+    const selectedTemplate = useMemo(
+        () => PROJECT_TEMPLATES.find((template) => template.id === selectedTemplateId) ?? null,
+        [selectedTemplateId],
+    );
 
-    const handleApplyTemplateAndNewProject = async () => {
-        const templateValues = templateColumns[choosedTem];
-        if (!templateValues || !projectName || projectName === '') {
-            toast.error('Please enter project name!!!');
+    const onCoverFileChange = async (file: File | null) => {
+        if (!file) {
+            setCoverImage(null);
             return;
         }
-        await applyBoardTemplateIntoProject({
-            projectName: projectName,
-            template: templateValues,
-        });
-        // toast.success('Apply success.');
-    }
-    // console.log('status: ', status);
+
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+            toast.error("Please upload JPG, PNG, WEBP, GIF, or AVIF.");
+            return;
+        }
+
+        if (file.size > MAX_PROJECT_COVER_FILE_SIZE) {
+            toast.error("Project image must be 2MB or less.");
+            return;
+        }
+
+        try {
+            const dataUrl = await fileToDataUrl(file);
+            setCoverImage(dataUrl);
+        } catch (error) {
+            console.error("Unable to read project image:", error);
+            toast.error("Unable to read selected image.");
+        }
+    };
+
+    const onCreateProject = async () => {
+        if (!selectedTemplate) {
+            toast.error("Please choose a template.");
+            return;
+        }
+
+        const name = projectName.trim();
+        if (!name) {
+            toast.error("Please enter project name.");
+            return;
+        }
+
+        try {
+            const createdProject = await createProject({
+                name,
+                coverImage,
+                // templateColumns: selectedTemplate.columns,
+            });
+
+            if (!createdProject) {
+                toast.error("Unable to create project.");
+                return;
+            }
+            const payloadColumns = selectedTemplate.columns.map((col) => ({
+                ...col,
+                projectId: createdProject.id,
+                orderFraction: "",
+            }));
+
+            await createColumns(payloadColumns);
+
+            toast.success("Project created successfully.");
+        } catch (error) {
+            console.error("Create project failed:", error);
+            toast.error("Unable to create project.");
+        }
+    };
 
     return (
         <div className='w-full flex items-center justify-center pt-10 overflow-hidden'>
 
-            <div className='flex flex-col justify-center items-center max-w-[1000px] w-full px-4'>
+            <div className='flex flex-col justify-center items-center max-w-[1200px] w-full px-4'>
                 <div className="mb-10 flex flex-col items-center text-center">
                     <div className="w-fit flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold mb-6">
                         <Sparkles size={16} />
@@ -85,23 +138,24 @@ export const CreateFirstProject = () => {
                     </p>
                 </div>
 
-                <div className='w-full min-h-[400px]'> {/* กำหนด min-h เพื่อไม่ให้ layout กระตุกเวลาเปลี่ยน view */}
-
-                    {/* Header เล็กๆ เปลี่ยนตาม Status */}
+                <div className='w-full min-h-[400px]'>
                     <div className="flex items-center justify-center gap-4 mb-8">
-                        <div className="h-px w-26 bg-gray-200"></div>
-                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                            {!templateColumns[choosedTem] ? 'Choose a popular template' : 'Setup Project Details'}
+                        <div className="h-px w-1/2 bg-gray-200"></div>
+                        <span className="text-xs min-w-max text-gray-400 font-semibold uppercase tracking-wider">
+                            {!selectedTemplate ? 'Choose a popular template' : 'Setup Project Details'}
                         </span>
-                        <div className="h-px w-26 bg-gray-200"></div>
+                        <div className="h-px w-1/2 bg-gray-200"></div>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                        {templateColumns[choosedTem] ? (
+                    <AnimatePresence mode="wait" custom={direction}>
+                        {selectedTemplate ? (
                             <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.3 }}
+                                key="project-details"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
                                 className='w-full w-full flex flex-col items-center'
                             >
                                 <div className='max-w-100 w-full flex h-fit items-end gap-4'>
@@ -113,17 +167,60 @@ export const CreateFirstProject = () => {
                                                 placeholder='Enter project name'
                                                 onChange={(e) => setProjectName(e.target.value)}
                                             />
+                                        </div>
+                                        <div className="mt-4">
+                                            <Label className='text-gray-600/90 font-semibold mb-2 block'>Project image</Label>
+                                            {coverImage ? (
+                                                <div className="relative h-32 w-full overflow-hidden rounded-xl border border-gray-200">
+                                                    <img src={coverImage} alt="Project cover preview" className="h-full w-full object-cover" />
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="icon"
+                                                        className="absolute right-2 top-2 size-7"
+                                                        onClick={() => setCoverImage(null)}
+                                                    >
+                                                        <X className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600">
+                                                    <Upload className="size-4" />
+                                                    Upload project image (max 2MB)
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(event) => onCoverFileChange(event.target.files?.[0] ?? null)}
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-6 flex gap-3">
                                             <Button
-                                                className='h-10'
-                                                type='button'
-                                                disabled={status === 'updating'}
-                                                onClick={handleApplyTemplateAndNewProject}
+                                                variant="outline"
+                                                className="flex-1"
+                                                onClick={() => {
+                                                    setDirection(-1);
+                                                    setSelectedTemplateId(null);
+                                                }}
                                             >
-                                                {status === 'updating' && (
-                                                    <LoaderCircle className="animate-spin size-4 text-blue-500" />
-                                                )}
-                                                {status === 'none' && (
-                                                    <ArrowRight />
+                                                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                                            </Button>
+                                            <Button
+                                                className="flex-1"
+                                                disabled={status === "creating" || projectName.trim().length === 0}
+                                                onClick={onCreateProject}
+                                            >
+
+                                                {(status === "creating") ? (
+                                                    <LoaderCircle className="animate-spin size-4" />
+                                                ) : (
+                                                    <>
+                                                        Create Project
+                                                        {/* <ArrowRight className="size-4" /> */}
+                                                    </>
                                                 )}
                                             </Button>
                                         </div>
@@ -133,16 +230,35 @@ export const CreateFirstProject = () => {
                         ) : (
                             <motion.div
                                 key="template-grid"
-                                variants={slideLeftExit}
-                                initial="initial"
-                                animate="initial"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
                                 exit="exit"
-                                className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left"
+                                className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 text-left"
                             >
-                                {columnTemplates.map((template) => (
+                                {projectLength > 0 && (
                                     <button
-                                        key={template._id}
-                                        onClick={() => setChoosedTem(template._id)}
+                                        // key={template.id}
+                                        onClick={() => setNeedCreateProject(false)}
+                                        className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
+                                    >
+                                        <div className={`w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                                            <ArrowLeft className="text-gray-500" />
+                                        </div>
+                                        <div className='flex flex-col items-start w-full mb-4'>
+                                            <p className='text-md font-semibold text-gray-900'>{'Back to Projects'}</p>
+                                            <p className='text-xs text-gray-500'>Return to your existing projects</p>
+                                        </div>
+                                    </button>
+                                )}
+                                {PROJECT_TEMPLATES.map((template) => (
+                                    <button
+                                        key={template.id}
+                                        onClick={() => {
+                                            setDirection(1);
+                                            setSelectedTemplateId(template.id);
+                                        }}
                                         className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
                                     >
                                         <div className={`w-12 h-12 rounded-xl ${template.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
@@ -150,20 +266,12 @@ export const CreateFirstProject = () => {
                                         </div>
                                         <div className='flex flex-col items-start w-full mb-4'>
                                             <p className='text-md font-semibold text-gray-900'>{template.name}</p>
-                                            <p className='text-xs text-gray-500'>{template.description}</p>
+                                            <p className='text-start text-xs text-gray-500'>{template.description}</p>
                                         </div>
                                         <div className="flex items-center text-blue-600 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
                                             Use Template <ArrowRight size={16} className="ml-1" />
                                         </div>
                                     </button>
-                                ))}
-
-                                {[1, 2].map((item) => (
-                                    <div key={item} className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-gray-500/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full opacity-60`}>
-                                        <div className='flex flex-col items-center justify-center w-full h-full'>
-                                            <p className='text-lg font-semibold text-gray-600'>Incoming...</p>
-                                        </div>
-                                    </div>
                                 ))}
                             </motion.div>
 
@@ -173,8 +281,8 @@ export const CreateFirstProject = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
 interface LabelInputProps {
     title: string;

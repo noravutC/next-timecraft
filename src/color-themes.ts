@@ -1,0 +1,7 @@
+export const THEMES = [
+  { id: 'ocean', bg: 'bg-blue-500', ring: 'ring-blue-500', light: 'bg-blue-50', text: 'text-blue-600', name: 'Ocean' },
+  { id: 'berry', bg: 'bg-pink-500', ring: 'ring-pink-500', light: 'bg-pink-50', text: 'text-pink-600', name: 'Berry' },
+  { id: 'forest', bg: 'bg-emerald-500', ring: 'ring-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-600', name: 'Forest' },
+  { id: 'sunset', bg: 'bg-orange-500', ring: 'ring-orange-500', light: 'bg-orange-50', text: 'text-orange-600', name: 'Sunset' },
+  { id: 'royal', bg: 'bg-purple-500', ring: 'ring-purple-500', light: 'bg-purple-50', text: 'text-purple-600', name: 'Royal' },
+];

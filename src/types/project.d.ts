@@ -1,22 +1,19 @@
-// types/projects.type.ts
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { projectMembersTable, projectsTable } from "@/db/schema";
 
-export interface Project {
-  _id: string;
-  name: string;
-  description?: string;
-  ownerId: string;
+export type ProjectRow = InferSelectModel<typeof projectsTable>;
+export type NewProjectRow = InferInsertModel<typeof projectsTable>;
+
+export type ProjectMemberRow = InferSelectModel<typeof projectMembersTable>;
+export type NewProjectMemberRow = InferInsertModel<typeof projectMembersTable>;
+
+export type ProjectRole = ProjectMemberRow["role"];
+
+export type Member = Pick<ProjectMemberRow, "userId" | "role" | "joinedAt">;
+
+export type Project = ProjectRow & {
   members: Member[];
-  tags?: string[];
-  archived: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Member {
-  userId: string; // ObjectId
-  role: "owner" | "admin" | "editor" | "viewer";
-  joinedAt: Date;
-}
+};
 
 export interface ProjectCache extends Project {
   timestamp: number;

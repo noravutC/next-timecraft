@@ -35,7 +35,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-, "src/app/(main)/project/_components/board-operations.ts"  ],
+, "src/app/(main)/project/_components/board-operations.ts", "src/components/menu-bar/sidebar-menu.backup"  ],
   "exclude": [
     "node_modules"
   ]

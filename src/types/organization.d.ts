@@ -1,11 +1,10 @@
-// types/organization.type.ts
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { organizationsTable } from "@/db/schema";
 
-export interface Organizations {
-  _id: string;
-  name: string;
-  description?: string;
-  createdBy: string;
+export type Organizations = InferSelectModel<typeof organizationsTable>;
+export type NewOrganizationRow = InferInsertModel<typeof organizationsTable>;
+export type CreateOrganizationPayload = Pick<NewOrganizationRow, "name" | "description">;
 
-  createdAt: Date;
-  updatedAt: Date;
+export interface OrganizationCache extends Organizations {
+  timestamp: number;
 }

@@ -10,30 +10,24 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Bolt, PlusSquareIcon } from "lucide-react"
 import { ProjectSelector } from "../../selector/project-selector"
-import { useProjectStore } from "@/hooks"
-import { Dispatch, SetStateAction, useState } from "react"
+// import { useProjectStore } from "@/hooks"
+import { useState } from "react"
 import { CreateProjectDropdown } from "./create-project-dropdown"
 import { SettingsProjectDropDown } from "./settings-project-dropdown";
+import { ProjectCache } from "@/types";
+import { useProjectStore } from "@/store";
 
 interface GeneralDropdownContentProps {
-    // setMenuOption: Dispatch<SetStateAction<{
-    //     newProject: boolean;
-    //     settings: boolean;
-    // }>>
+    currentProject: ProjectCache | null;
 }
 
 export const GeneralDropdownContent = ({
-    // setMenuOption,
+    currentProject,
 }: GeneralDropdownContentProps) => {
+    const { projects, setProjectIsUsing } = useProjectStore();
     const [submenuOpen, setSubmenuOpen] = useState<'new-project' | 'settings' | null>(null);
-    const {
-        projects,
-        projectIdActivate,
-        getProjectById,
-        setActivateProject,
-    } = useProjectStore();
-    const currentProjects = Object.values(projects);
-    const activeProject = getProjectById(projectIdActivate ?? '');
+
+    const projectsList = Object.values(projects);
     switch (submenuOpen) {
         case 'new-project':
             return (
@@ -43,10 +37,11 @@ export const GeneralDropdownContent = ({
             )
         case 'settings':
             return (
-                <SettingsProjectDropDown
-                    activeProject={activeProject}
-                    setSubmenuOpen={setSubmenuOpen}
-                />
+                <></>
+                // <SettingsProjectDropDown
+                //     activeProject={currentProject}
+                //     setSubmenuOpen={setSubmenuOpen}
+                // />
             )
         // case null:
 
@@ -56,14 +51,14 @@ export const GeneralDropdownContent = ({
                     <DropdownMenuLabel className="text-xs font-normal text-gray-500">Switch your project</DropdownMenuLabel>
                     <DropdownMenuGroup className="p-1">
                         <ProjectSelector
-                            options={currentProjects}
+                            options={projectsList}
                             optionKeys={{
-                                value: '_id',
+                                value: 'id',
                                 label: 'name',
                                 description: 'description',
                             }}
-                            value={projectIdActivate ?? null}
-                            onChange={setActivateProject}
+                            value={currentProject?.id ?? null}
+                            onChange={setProjectIsUsing}
                             placeholder={"Select project"}
                             placeholderKeyword={"project"}
                         />
@@ -88,7 +83,7 @@ export const GeneralDropdownContent = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             className="cursor-pointer"
-                            disabled={!activeProject}
+                            disabled={!currentProject}
                             onSelect={(event) => {
                                 event.preventDefault();
                                 setSubmenuOpen('settings');

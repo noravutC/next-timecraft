@@ -14,7 +14,7 @@ export const TabProject = () => {
     ];
     return (
         <div
-            className="absolute bottom-4 left-0 right-0 max-w-[450px] 
+            className="absolute bottom-4 left-0 right-0 max-w-[450px] min-w-[450px]
                 mx-auto h-[45px] min-h-[45px] rounded-md border flex items-center justify-between text-sm gap-2 p-1 bg-white"
         >
             {/* <Columns3 /> */}

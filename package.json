@@ -6,7 +6,11 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate --config src/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config src/drizzle.config.ts",
+    "db:push": "drizzle-kit push --config src/drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config src/drizzle.config.ts"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
@@ -37,7 +41,9 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "^8.6.0",
+    "fractional-indexing": "^3.2.0",
     "framer-motion": "^12.25.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.486.0",
@@ -46,8 +52,10 @@
     "next": "^16.0.7",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
+    "postgres": "^3.4.8",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0",
+    "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.1.0",
     "shadcn": "^2.5.0",
@@ -66,6 +74,7 @@
     "@types/node": "^20",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "drizzle-kit": "^0.31.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

@@ -4,8 +4,8 @@ import {
   draggable,
   dropTargetForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Copy, Ellipsis, LoaderCircle, Plus } from 'lucide-react';
-import { memo, useCallback, useContext, useEffect, useRef, useState, type UIEvent } from 'react';
+import { Ellipsis, Plus } from 'lucide-react';
+import { memo, useContext, useEffect, useRef, useState } from 'react';
 import invariant from 'tiny-invariant';
 
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
@@ -33,7 +33,6 @@ import { cn } from '@/lib/utils';
 import { hexToRgba } from '@/helper/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useBoardMapStore } from '@/hooks/store';
 
 type TColumnState =
   | {
@@ -75,33 +74,7 @@ export function Column({ column }: { column: TColumn }) {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const { settings } = useContext(SettingsContext);
-  const fetchMoreTasksByColumnId = useBoardMapStore((state) => state.fetchMoreTasksByColumnId);
-  const isLoadingMore = useBoardMapStore(
-    (state) => Boolean(state.loadingMoreByColumnId[column.id]),
-  );
   const [state, setState] = useState<TColumnState>(idle);
-  const hasMore = column.cards.length < column.totalTasks;
-  const loadBatchSize = 20;
-  const scrollThreshold = 120;
-  const handleScroll = useCallback(
-    (event: UIEvent<HTMLDivElement>) => {
-      if (!hasMore || isLoadingMore) {
-        return;
-      }
-      const { scrollTop, clientHeight, scrollHeight } = event.currentTarget;
-      if (scrollTop + clientHeight >= scrollHeight - scrollThreshold) {
-        void fetchMoreTasksByColumnId(column.id, { limit: loadBatchSize });
-      }
-    },
-    [
-      column.id,
-      fetchMoreTasksByColumnId,
-      hasMore,
-      isLoadingMore,
-      loadBatchSize,
-      scrollThreshold,
-    ],
-  );
 
   const targetOpacity = 0.6;
   const backgroundStyle = column.color ? { background: hexToRgba(column.color, targetOpacity) } : {};
@@ -277,17 +250,11 @@ export function Column({ column }: { column: TColumn }) {
           <div
             className="flex flex-col overflow-y-auto [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]"
             ref={scrollableRef}
-            onScroll={handleScroll}
           >
             <CardList column={column} />
             {state.type === 'is-card-over' && !state.isOverChildCard ? (
               <div className="flex-shrink-0 px-3 py-1">
                 <CardShadow dragging={state.dragging} />
-              </div>
-            ) : null}
-            {isLoadingMore ? (
-              <div className="px-3 py-2 text-xs text-gray-500 flex items-center justify-center">
-                 <LoaderCircle className="animate-spin size-4 text-blue-500" />
               </div>
             ) : null}
           </div>

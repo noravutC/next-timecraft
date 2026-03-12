@@ -1,21 +1,16 @@
-// types/columns.type.ts
-import { TaskCache, Task } from './task';
-export interface Column {
-  _id: string;
-  projectId: string;
-  name: string;
-  color?: string;
-  wipLimit: number;
-  totalTasks: number;
-  order: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { columnsTable } from "@/db/schema";
+import type { Task } from "./task";
+
+export type ColumnRow = InferSelectModel<typeof columnsTable>;
+export type NewColumnRow = InferInsertModel<typeof columnsTable>;
+
+export type Column = ColumnRow;
+
+export type CreateColumnPayload = Pick<NewColumnRow, "name" | "projectId" | "color" | "orderFraction" |"wipLimit">;
+
+export type UpdateColumnPayload = Pick<NewColumnRow, "id" | "name" | "color" | "wipLimit" | "orderFraction">;
 
 export interface ColumnCache extends Column {
-  timestamp?: number;
-}
-
-export interface CombineColumnTask extends Column {
-  tasks: Task[];
+  timestamp: number;
 }

@@ -97,7 +97,7 @@ async function main() {
     const DUMMY_USER_ID = new mongoose.Types.ObjectId(); 
 
     const tasks = [];
-    const TOTAL_TASKS = 60;
+    const TOTAL_TASKS = 300;
 
     console.log(`Generating ${TOTAL_TASKS} tasks for Column: ${TARGET_COLUMN_ID}...`);
 
