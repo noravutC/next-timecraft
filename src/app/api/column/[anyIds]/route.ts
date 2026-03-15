@@ -1,6 +1,6 @@
 import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { columnsTable, projectMembersTable, tasksTable } from "@/db/schema";
+import { columnsTable, projectMembersTable } from "@/db/schema";
 import { hasPermission } from "@/db/uniq-query/project/project-utils";
 import { UpdateColumnPayload } from "@/types";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
@@ -71,18 +71,13 @@ export async function GET(
     const columns = await db
       .select()
       .from(columnsTable)
-      .innerJoin(
-        projectMembersTable,
-        eq(projectMembersTable.projectId, columnsTable.projectId),
-      )
       .where(
         and(
           inArray(columnsTable.projectId, projectIds),
-          eq(projectMembersTable.userId, sessionUserId),
           eq(columnsTable.isDeleted, false),
         ),
       )
-      .orderBy(asc(columnsTable.projectId), asc(columnsTable.orderFraction));
+      .orderBy(asc(columnsTable.orderFraction));
 
     return NextResponse.json(
       {

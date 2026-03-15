@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { pusherClient } from "@/lib/pusher-client";
-import { useTaskStore } from "@/hooks";
+import { useTaskStore } from '@/store/use-task.store';
 import { Task } from "@/types";
 
 export const useRealtimeBoard = (projectId?: string | null) => {
@@ -15,7 +15,7 @@ export const useRealtimeBoard = (projectId?: string | null) => {
         const channel = pusherClient.subscribe(channelName);
 
         channel.bind('task-updated', (updatedTask: Task) => {
-            console.log(`Pusher Event: Task ${updatedTask._id} updated in project ${projectId}`);
+            console.log(`Pusher Event: Task ${updatedTask.id} updated in project ${projectId}`);
             updateTaskFromRealtime(updatedTask);
         });
 
