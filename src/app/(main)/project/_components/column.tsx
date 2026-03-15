@@ -25,10 +25,14 @@ import { isSafari } from './is-safari';
 import { isShallowEqual } from './is-shallow-equal';
 import { Card, CardShadow } from './card';
 import { SettingsContext } from '@/context/kanban/setting-provider';
+import { useTaskStore } from '@/store/use-task.store';
 import { cn } from '@/lib/utils';
 import { hexToRgba } from '@/helper/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useShallow } from 'zustand/react/shallow';
+import { useColumnStore } from '@/store/use-column.store';
 
 type TColumnState =
   | { type: 'idle' }
@@ -59,8 +63,16 @@ export const Column = ({ column }: { column: TColumn }) => {
   columnRef.current = column;
 
   const { settings } = useContext(SettingsContext);
+  const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
+  const columnsLoader = useColumnStore(useShallow((s) => s.columnsLoader));
+  const isLoading = columnsLoader[column.id] ?? false;
   const [state, setState] = useState<TColumnState>(idle);
   const backgroundStyle = column.color ? { background: hexToRgba(column.color, 0.6) } : {};
+
+  // fetch tasks ของ column นี้เมื่อ mount
+  useEffect(() => {
+    fetchTasksByColumns([column.id], 50).catch(() => {});
+  }, [column.id, fetchTasksByColumns]);
 
   useEffect(() => {
     const outer = outerFullHeightRef.current;
@@ -142,9 +154,9 @@ export const Column = ({ column }: { column: TColumn }) => {
   }, [settings]);
 
   return (
-    <div className="flex w-72 flex-shrink-0 select-none flex-col" ref={outerFullHeightRef}>
+    <div className={cn("flex w-72 flex-shrink-0 select-none flex-col")} ref={outerFullHeightRef}>
       <div
-        className={`flex max-h-160 flex-col rounded-md text-gray-800 border overflow-hidden ${stateStyles[state.type]}`}
+        className={cn(`flex max-h-160 flex-col rounded-md text-gray-800 border overflow-hidden ${stateStyles[state.type]}`)}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
       >
@@ -153,16 +165,24 @@ export const Column = ({ column }: { column: TColumn }) => {
             <div className="pl-2 font-semibold leading-4 text-sm">{column.title}</div>
             <div className="w-fit flex items-center gap-2 justify-end">
               <Badge variant="outline" className="bg-white rounded-full">{column.totalTasks} task</Badge>
-              <Button type="button" size="xs" className="cursor-pointer bg-gray-700/40 hover:bg-gray-700/60" aria-label="More actions">
+              {/* <Button type="button" size="xs" className="cursor-pointer bg-gray-700/40 hover:bg-gray-700/60" aria-label="More actions">
                 <Ellipsis size={16} />
-              </Button>
+              </Button> */}
             </div>
           </div>
           <div
-            className="flex flex-col overflow-y-auto [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]"
+            className={"flex flex-col overflow-y-auto [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]"}
             ref={scrollableRef}
           >
-            <CardList column={column} />
+            {isLoading ? (
+              <div className="flex flex-col gap-2 p-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-25 w-full rounded-md" />
+                ))}
+              </div>
+            ) : (
+              <CardList column={column} />
+            )}
             {state.type === 'is-card-over' && !state.isOverChildCard && (
               <div className="flex-shrink-0 px-3 py-1">
                 <CardShadow dragging={state.dragging} />
