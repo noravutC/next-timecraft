@@ -16,6 +16,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTaskStore } from '@/store/use-task.store';
 import { LoaderCircle } from 'lucide-react';
 import { formatDateToString } from '@/helper/utils';
+import { cn } from '@/lib/utils';
 
 type TCardState =
   | { type: 'idle' }
@@ -53,7 +54,7 @@ export function CardDisplay({
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
   return (
-    <div ref={outerRef} className={`flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`}>
+    <div ref={outerRef} className={cn(`flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`, isLoading && 'pointer-events-none')}>
       {state.type === 'is-over' && state.closestEdge === 'top' && <CardShadow dragging={state.dragging} />}
       <div
         ref={innerRef}
