@@ -12,6 +12,10 @@ import { getCardData, getCardDropTargetData, isCardData, isDraggingACard, TCard 
 import { isShallowEqual } from './is-shallow-equal';
 import { isSafari } from './is-safari';
 import { BarColumn } from './bar-column';
+import { useShallow } from 'zustand/react/shallow';
+import { useTaskStore } from '@/store/use-task.store';
+import { LoaderCircle } from 'lucide-react';
+import { formatDateToString } from '@/helper/utils';
 
 type TCardState =
   | { type: 'idle' }
@@ -46,6 +50,8 @@ export function CardDisplay({
   outerRef?: React.RefObject<HTMLDivElement | null>;
   innerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
+  const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
+  const isLoading = tasksLoader[card.id] ?? false;
   return (
     <div ref={outerRef} className={`flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`}>
       {state.type === 'is-over' && state.closestEdge === 'top' && <CardShadow dragging={state.dragging} />}
@@ -62,6 +68,12 @@ export function CardDisplay({
         <div className="mb-4" />
         <BarColumn taskAtColumnId={card.columnId} />
         <div className="mb-4" />
+        <div className='flex items-center justify-between'>
+          <div className='text-xs text-gray-500'>
+            {formatDateToString((formatDateToString(card.createdAt) ?? '-'))}
+          </div>
+          {isLoading && <LoaderCircle className="animate-spin size-4" />}
+        </div>
       </div>
       {state.type === 'is-over' && state.closestEdge === 'bottom' && <CardShadow dragging={state.dragging} />}
     </div>
@@ -73,10 +85,15 @@ export function Card({ card, columnId }: { card: TCard; columnId: string }) {
   const innerRef = useRef<HTMLDivElement | null>(null);
   const [state, setState] = useState<TCardState>(idle);
 
+  const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
+  const isLoading = tasksLoader[card.id] ?? false;
+
   useEffect(() => {
     const outer = outerRef.current;
     const inner = innerRef.current;
     invariant(outer && inner);
+
+    if (isLoading) return;
 
     // ใช้ร่วมกันระหว่าง onDragEnter และ onDrag
     const updateIsOver = (
@@ -125,7 +142,7 @@ export function Card({ card, columnId }: { card: TCard; columnId: string }) {
         onDrop: () => setState(idle),
       }),
     );
-  }, [card, columnId]);
+  }, [card, columnId, isLoading]);
 
   return (
     <>

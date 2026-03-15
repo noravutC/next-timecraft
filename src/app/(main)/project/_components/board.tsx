@@ -36,35 +36,26 @@ export const Board = () => {
   const fetchColumns = useColumnStore((s) => s.fetchColumns);
   const updateColumns = useColumnStore((s) => s.updateColumns);
   const tasks = useTaskStore(useShallow((s) => s.tasks));
-  const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
   const updateTasks = useTaskStore((s) => s.updateTasks);
-  // invariant(colsLength === 0 || tasksLength > 0, "Columns exist but no tasks found. Data integrity issue.");
-
-  // Realtime sync ผ่าน Pusher → store อัปเดต → board re-derives อัตโนมัติ
   useRealtimeBoard(projectId);
 
-  // โหลดข้อมูลลง store ครั้งแรก
+  // โหลดข้อมูล columns ลง store ครั้งแรก (tasks โหลดใน Column แต่ละตัวเอง)
   useEffect(() => {
     let active = true;
     if (!projectId) return;
 
     (async () => {
       try {
-        const cols = await fetchColumns(projectId);
+        await fetchColumns(projectId);
         if (!active) return;
-        const colIds = cols.map((c) => c.id);
-        if (colIds.length > 0) {
-          await fetchTasksByColumns(colIds, Math.max(2000, colIds.length * 200));
-        }
       } catch {
         toast.error('Failed to load board data.');
       }
     })();
 
     return () => { active = false; };
-  }, [fetchColumns, fetchTasksByColumns, projectId]);
+  }, [fetchColumns, projectId]);
 
-  // Derive board view จาก store + pending DnD — ไม่มี local copy ของข้อมูล
   const board = useMemo(
     () => deriveBoardView(columns, tasks, projectId, pendingMove),
     [columns, tasks, projectId, pendingMove],

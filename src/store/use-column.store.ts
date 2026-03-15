@@ -10,6 +10,9 @@ type ColumnStore = {
   columns: {
     [columnId: string]: ColumnCache;
   };
+  columnsLoader: {
+    [columnId: string]: boolean;
+  };
   createColumns: (payload: CreateColumnPayload[]) => Promise<ColumnCache[] | null>;
   updateColumns: (colIds: string[], payload: UpdateColumnPayload[]) => Promise<ColumnCache[] | null>;
   deleteColumns: (colIds: string[]) => Promise<void>;
@@ -22,6 +25,7 @@ type ColumnStore = {
 export const useColumnStore = create<ColumnStore>((set) => ({
   status: "none",
   columns: {},
+  columnsLoader: {},
   createColumns: async (payload) => {
     if (payload.length === 0) {
         toast.error("No columns to create");
@@ -58,6 +62,9 @@ export const useColumnStore = create<ColumnStore>((set) => ({
       return null;
     }
     set({ status: "updating" });
+    colIds.forEach((columnId) => {
+      set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: true } }));
+    });
     try {
       const response = await columnServices.updateColumns(colIds, payload);
       const updatedColumns = response.updated;
@@ -79,7 +86,15 @@ export const useColumnStore = create<ColumnStore>((set) => ({
       return updatedColumns;
     } catch (error) {
       set({ status: "error" });
+      colIds.forEach((columnId) => {
+      set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: false } }));
+    });
       throw error;
+    } finally {
+      set({ status: "none" });
+      colIds.forEach((columnId) => {
+        set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: false } }));
+      });
     }
   },
   deleteColumns: async (colIds) => {
