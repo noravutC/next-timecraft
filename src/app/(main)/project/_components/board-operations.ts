@@ -1,189 +1,107 @@
 import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
-import {
-  isCardDropTargetData,
-  isColumnData,
-  type TBoardState,
-  type TCard,
-  type TColumn,
-} from './data';
+import { isCardDropTargetData, isColumnData, type TCard, type TColumn } from './data';
 
 type DropData = Record<string | symbol, unknown>;
 
-export type MoveCardResult = {
-  nextBoard: TBoardState;
-  movedCard: TCard;
+export type CardMoveResult = {
+  taskId: string;
+  fromColumnId: string;
   toColumnId: string;
+  newOrderFraction: string;
 };
 
-export type MoveColumnResult = {
-  nextBoard: TBoardState;
-  movedColumn: TColumn;
+export type ColumnMoveResult = {
+  columnId: string;
+  newOrderFraction: string;
 };
 
-const rebuildTaskPositions = (
-  taskPosById: TBoardState['taskPosById'],
-  columnId: string,
-  taskIds: string[],
-) => {
-  taskIds.forEach((taskId, index) => {
-    taskPosById[taskId] = { columnId, index };
-  });
-};
-
-const rebuildColumnPositions = (columnOrder: string[]) => {
-  const columnPosById: Record<string, number> = {};
-  columnOrder.forEach((columnId, index) => {
-    columnPosById[columnId] = index;
-  });
-  return columnPosById;
-};
-
-// O(1) lookup by id/position maps; only touched columns are rebuilt.
-export const moveCardWithFraction = (
-  board: TBoardState,
+/**
+ * Computes where a card lands and what its new orderFraction should be.
+ * Works directly with the sorted TColumn[] from the derived board view.
+ */
+export const computeCardMove = (
+  columns: TColumn[],
   dragging: { card: TCard; columnId: string },
   dropData: DropData,
-): MoveCardResult | null => {
-  const taskId = dragging.card.id;
-  const sourcePos = board.taskPosById[taskId];
-  if (!sourcePos) return null;
-
-  const sourceColumnId = sourcePos.columnId;
-  const sourceIndex = sourcePos.index;
-  const sourceOrder = board.taskOrderByColumnId[sourceColumnId];
-  if (!sourceOrder) return null;
+): CardMoveResult | null => {
+  const sourceCol = columns.find((c) => c.id === dragging.columnId);
+  if (!sourceCol) return null;
+  const sourceIndex = sourceCol.cards.findIndex((c) => c.id === dragging.card.id);
+  if (sourceIndex === -1) return null;
 
   let destinationColumnId = '';
   let insertIndex = -1;
 
   if (isCardDropTargetData(dropData)) {
-    const targetPos = board.taskPosById[dropData.card.id];
-    if (!targetPos) return null;
-
     const edge = extractClosestEdge(dropData);
     if (!edge) return null;
-
-    destinationColumnId = targetPos.columnId;
-    insertIndex = edge === 'bottom' ? targetPos.index + 1 : targetPos.index;
+    const destCol = columns.find((c) => c.id === dropData.columnId);
+    if (!destCol) return null;
+    const cardIdx = destCol.cards.findIndex((c) => c.id === dropData.card.id);
+    if (cardIdx === -1) return null;
+    destinationColumnId = destCol.id;
+    insertIndex = edge === 'bottom' ? cardIdx + 1 : cardIdx;
   } else if (isColumnData(dropData)) {
     destinationColumnId = dropData.column.id;
-    insertIndex = (board.taskOrderByColumnId[destinationColumnId] ?? []).length;
+    insertIndex = (columns.find((c) => c.id === destinationColumnId)?.cards.length) ?? 0;
   } else {
     return null;
   }
 
-  if (!destinationColumnId) return null;
-
+  // Adjust for same-column move
   let finalIndex = insertIndex;
-  if (sourceColumnId === destinationColumnId && sourceIndex < insertIndex) {
-    finalIndex -= 1;
-  }
-  if (sourceColumnId === destinationColumnId && finalIndex === sourceIndex) {
-    return null;
+  if (dragging.columnId === destinationColumnId) {
+    if (sourceIndex < insertIndex) finalIndex -= 1;
+    if (finalIndex === sourceIndex) return null; // no-op
   }
 
-  const nextTaskOrderByColumnId = { ...board.taskOrderByColumnId };
-  const nextSourceOrder = [...sourceOrder];
-  nextSourceOrder.splice(sourceIndex, 1);
+  const destCol = columns.find((c) => c.id === destinationColumnId)!;
+  // Neighbor cards: for same-column, exclude the dragged card first
+  const neighborCards =
+    dragging.columnId === destinationColumnId
+      ? destCol.cards.filter((c) => c.id !== dragging.card.id)
+      : destCol.cards;
 
-  const nextDestinationOrder =
-    sourceColumnId === destinationColumnId
-      ? nextSourceOrder
-      : [...(board.taskOrderByColumnId[destinationColumnId] ?? [])];
-  nextDestinationOrder.splice(finalIndex, 0, taskId);
-
-  nextTaskOrderByColumnId[sourceColumnId] = nextSourceOrder;
-  nextTaskOrderByColumnId[destinationColumnId] = nextDestinationOrder;
-
-  const prevTaskId = nextDestinationOrder[finalIndex - 1];
-  const nextTaskId = nextDestinationOrder[finalIndex + 1];
-  const prevOrder = prevTaskId ? board.tasksById[prevTaskId]?.orderFraction ?? null : null;
-  const nextOrder = nextTaskId ? board.tasksById[nextTaskId]?.orderFraction ?? null : null;
-  const orderFraction = generateFractionBetween(prevOrder, nextOrder);
-
-  const currentTask = board.tasksById[taskId];
-  if (!currentTask) return null;
-  const movedCard: TCard = { ...currentTask, columnId: destinationColumnId, orderFraction };
-
-  const nextTasksById = { ...board.tasksById, [taskId]: movedCard };
-  const nextColumnsById = { ...board.columnsById };
-  if (sourceColumnId !== destinationColumnId) {
-    const sourceColumn = nextColumnsById[sourceColumnId];
-    const destinationColumn = nextColumnsById[destinationColumnId];
-    if (sourceColumn) {
-      nextColumnsById[sourceColumnId] = {
-        ...sourceColumn,
-        totalTasks: Math.max(0, sourceColumn.totalTasks - 1),
-      };
-    }
-    if (destinationColumn) {
-      nextColumnsById[destinationColumnId] = {
-        ...destinationColumn,
-        totalTasks: destinationColumn.totalTasks + 1,
-      };
-    }
-  }
-
-  const nextTaskPosById = { ...board.taskPosById };
-  rebuildTaskPositions(nextTaskPosById, sourceColumnId, nextSourceOrder);
-  if (sourceColumnId !== destinationColumnId) {
-    rebuildTaskPositions(nextTaskPosById, destinationColumnId, nextDestinationOrder);
-  }
+  const prevOrder = neighborCards[finalIndex - 1]?.orderFraction ?? null;
+  const nextOrder = neighborCards[finalIndex]?.orderFraction ?? null;
 
   return {
-    nextBoard: {
-      ...board,
-      columnsById: nextColumnsById,
-      taskOrderByColumnId: nextTaskOrderByColumnId,
-      tasksById: nextTasksById,
-      taskPosById: nextTaskPosById,
-    },
-    movedCard,
+    taskId: dragging.card.id,
+    fromColumnId: dragging.columnId,
     toColumnId: destinationColumnId,
+    newOrderFraction: generateFractionBetween(prevOrder, nextOrder),
   };
 };
 
-// O(1) source/target index lookup via columnPosById.
-export const moveColumnWithFraction = (
-  board: TBoardState,
+/**
+ * Computes a column's new orderFraction after being dropped to a new position.
+ */
+export const computeColumnMove = (
+  columns: TColumn[],
   dragging: { column: TColumn },
   dropData: DropData,
-): MoveColumnResult | null => {
+): ColumnMoveResult | null => {
   if (!isColumnData(dropData)) return null;
 
-  const sourceIndex = board.columnPosById[dragging.column.id];
-  const destinationIndex = board.columnPosById[dropData.column.id];
-  if (sourceIndex === undefined || destinationIndex === undefined || sourceIndex === destinationIndex) {
-    return null;
-  }
+  const sourceIdx = columns.findIndex((c) => c.id === dragging.column.id);
+  const destIdx = columns.findIndex((c) => c.id === dropData.column.id);
+  if (sourceIdx === -1 || destIdx === -1 || sourceIdx === destIdx) return null;
 
-  const nextColumnOrder = [...board.columnOrder];
-  const [movedColumnId] = nextColumnOrder.splice(sourceIndex, 1);
-  if (!movedColumnId) return null;
+  // Simulate the reorder
+  const newOrder = columns.map((c) => c.id);
+  newOrder.splice(sourceIdx, 1);
+  newOrder.splice(destIdx, 0, dragging.column.id);
 
-  nextColumnOrder.splice(destinationIndex, 0, movedColumnId);
-  const prevColumnId = nextColumnOrder[destinationIndex - 1];
-  const nextColumnId = nextColumnOrder[destinationIndex + 1];
-  const prevOrder = prevColumnId ? board.columnsById[prevColumnId]?.orderFraction ?? null : null;
-  const nextOrder = nextColumnId ? board.columnsById[nextColumnId]?.orderFraction ?? null : null;
-  const orderFraction = generateFractionBetween(prevOrder, nextOrder);
-
-  const currentColumn = board.columnsById[movedColumnId];
-  if (!currentColumn) return null;
-  const movedColumn: TColumn = { ...currentColumn, orderFraction, cards: [] };
-  const nextColumnsById = {
-    ...board.columnsById,
-    [movedColumnId]: { ...currentColumn, orderFraction },
-  };
+  const prevOrder = newOrder[destIdx - 1]
+    ? (columns.find((c) => c.id === newOrder[destIdx - 1])?.orderFraction ?? null)
+    : null;
+  const nextOrder = newOrder[destIdx + 1]
+    ? (columns.find((c) => c.id === newOrder[destIdx + 1])?.orderFraction ?? null)
+    : null;
 
   return {
-    nextBoard: {
-      ...board,
-      columnOrder: nextColumnOrder,
-      columnPosById: rebuildColumnPositions(nextColumnOrder),
-      columnsById: nextColumnsById,
-    },
-    movedColumn,
+    columnId: dragging.column.id,
+    newOrderFraction: generateFractionBetween(prevOrder, nextOrder),
   };
 };

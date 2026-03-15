@@ -1,20 +1,15 @@
 'use client';
 
-import {
-  draggable,
-  dropTargetForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Ellipsis, Plus } from 'lucide-react';
-import { memo, useContext, useEffect, useRef, useState } from 'react';
-import invariant from 'tiny-invariant';
-
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { DragLocationHistory } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { Card, CardShadow } from './card';
+import { DragLocationHistory } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { Ellipsis, Plus } from 'lucide-react';
+import { memo, useContext, useEffect, useRef, useState } from 'react';
+import invariant from 'tiny-invariant';
 import {
   getColumnData,
   isCardData,
@@ -28,6 +23,7 @@ import {
 import { blockBoardPanningAttr } from './data-attributes';
 import { isSafari } from './is-safari';
 import { isShallowEqual } from './is-shallow-equal';
+import { Card, CardShadow } from './card';
 import { SettingsContext } from '@/context/kanban/setting-provider';
 import { cn } from '@/lib/utils';
 import { hexToRgba } from '@/helper/utils';
@@ -35,192 +31,115 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 type TColumnState =
-  | {
-    type: 'is-card-over';
-    isOverChildCard: boolean;
-    dragging: DOMRect;
-  }
-  | {
-    type: 'is-column-over';
-  }
-  | {
-    type: 'idle';
-  }
-  | {
-    type: 'is-dragging';
-  };
+  | { type: 'idle' }
+  | { type: 'is-dragging' }
+  | { type: 'is-column-over' }
+  | { type: 'is-card-over'; isOverChildCard: boolean; dragging: DOMRect };
 
-const stateStyles: { [Key in TColumnState['type']]: string } = {
+const stateStyles: Record<TColumnState['type'], string> = {
   idle: 'cursor-grab',
   'is-card-over': 'outline outline-2 outline-neutral-50',
   'is-dragging': 'opacity-40',
   'is-column-over': 'bg-gray-200',
 };
 
-const idle = { type: 'idle' } satisfies TColumnState;
+const idle: TColumnState = { type: 'idle' };
 
-/**
- * A memoized component for rendering out the card.
- *
- * Created so that state changes to the column don't require all cards to be rendered
- */
 const CardList = memo(function CardList({ column }: { column: TColumn }) {
   return column.cards.map((card) => <Card key={card.id} card={card} columnId={column.id} />);
 });
 
-export function Column({ column }: { column: TColumn }) {
+export const Column = ({ column }: { column: TColumn }) => {
   const scrollableRef = useRef<HTMLDivElement | null>(null);
   const outerFullHeightRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+  // ref เก็บ column ล่าสุด ป้องกัน effect re-run ทุกครั้งที่ card เปลี่ยน
+  const columnRef = useRef(column);
+  columnRef.current = column;
+
   const { settings } = useContext(SettingsContext);
   const [state, setState] = useState<TColumnState>(idle);
-
-  const targetOpacity = 0.6;
-  const backgroundStyle = column.color ? { background: hexToRgba(column.color, targetOpacity) } : {};
+  const backgroundStyle = column.color ? { background: hexToRgba(column.color, 0.6) } : {};
 
   useEffect(() => {
     const outer = outerFullHeightRef.current;
     const scrollable = scrollableRef.current;
     const header = headerRef.current;
     const inner = innerRef.current;
-    invariant(outer);
-    invariant(scrollable);
-    invariant(header);
-    invariant(inner);
+    invariant(outer && scrollable && header && inner);
 
-    const data = getColumnData({ column });
+    const getColData = () => getColumnData({ column: columnRef.current });
 
-    function setIsCardOver({ data, location }: { data: TCardData; location: DragLocationHistory }) {
-      const innerMost = location.current.dropTargets[0];
-      const isOverChildCard = Boolean(innerMost && isCardDropTargetData(innerMost.data));
+    const setIsCardOver = ({ data, location }: { data: TCardData; location: DragLocationHistory }) => {
+      const isOverChildCard = Boolean(
+        location.current.dropTargets[0] && isCardDropTargetData(location.current.dropTargets[0].data),
+      );
+      const proposed: TColumnState = { type: 'is-card-over', dragging: data.rect, isOverChildCard };
+      setState((cur) => (isShallowEqual(proposed, cur) ? cur : proposed));
+    };
 
-      const proposed: TColumnState = {
-        type: 'is-card-over',
-        dragging: data.rect,
-        isOverChildCard,
-      };
-      // optimization - don't update state if we don't need to.
-      setState((current) => {
-        if (isShallowEqual(proposed, current)) {
-          return current;
-        }
-        return proposed;
-      });
-    }
+    const scrollConfig = { maxScrollSpeed: settings.columnScrollSpeed };
+    const canCardScroll = ({ source }: { source: { data: Record<string | symbol, unknown> } }) =>
+      settings.isOverElementAutoScrollEnabled && isDraggingACard({ source });
 
     return combine(
       draggable({
         element: header,
-        getInitialData: () => data,
+        getInitialData: getColData,
         onGenerateDragPreview({ source, location, nativeSetDragImage }) {
-          const data = source.data;
-          invariant(isColumnData(data));
+          invariant(isColumnData(source.data));
           setCustomNativeDragPreview({
             nativeSetDragImage,
             getOffset: preserveOffsetOnSource({ element: header, input: location.current.input }),
             render({ container }) {
-              // Simple drag preview generation: just cloning the current element.
-              // Not using react for this.
               const rect = inner.getBoundingClientRect();
-              const preview = inner.cloneNode(true);
-              invariant(preview instanceof HTMLElement);
+              const preview = inner.cloneNode(true) as HTMLElement;
               preview.style.width = `${rect.width}px`;
               preview.style.height = `${rect.height}px`;
-
-              // rotation of native drag previews does not work in safari
-              if (!isSafari()) {
-                preview.style.transform = 'rotate(4deg)';
-              }
-
+              if (!isSafari()) preview.style.transform = 'rotate(4deg)';
               container.appendChild(preview);
             },
           });
         },
-        onDragStart() {
-          setState({ type: 'is-dragging' });
-        },
-        onDrop() {
-          setState(idle);
-        },
+        onDragStart: () => setState({ type: 'is-dragging' }),
+        onDrop: () => setState(idle),
       }),
       dropTargetForElements({
         element: outer,
-        getData: () => data,
-        canDrop({ source }) {
-          return isDraggingACard({ source }) || isDraggingAColumn({ source });
-        },
+        getData: getColData,
+        canDrop: ({ source }) => isDraggingACard({ source }) || isDraggingAColumn({ source }),
         getIsSticky: () => true,
         onDragStart({ source, location }) {
-          if (isCardData(source.data)) {
-            setIsCardOver({ data: source.data, location });
-          }
+          if (isCardData(source.data)) setIsCardOver({ data: source.data, location });
         },
         onDragEnter({ source, location }) {
-          if (isCardData(source.data)) {
-            setIsCardOver({ data: source.data, location });
-            return;
-          }
-          if (isColumnData(source.data) && source.data.column.id !== column.id) {
+          if (isCardData(source.data)) { setIsCardOver({ data: source.data, location }); return; }
+          if (isColumnData(source.data) && source.data.column.id !== columnRef.current.id) {
             setState({ type: 'is-column-over' });
           }
         },
         onDropTargetChange({ source, location }) {
-          if (isCardData(source.data)) {
-            setIsCardOver({ data: source.data, location });
-            return;
-          }
+          if (isCardData(source.data)) setIsCardOver({ data: source.data, location });
         },
         onDragLeave({ source }) {
-          if (isColumnData(source.data) && source.data.column.id === column.id) {
-            return;
-          }
+          if (isColumnData(source.data) && source.data.column.id === columnRef.current.id) return;
           setState(idle);
         },
-        onDrop() {
-          setState(idle);
-        },
+        onDrop: () => setState(idle),
       }),
-      autoScrollForElements({
-        canScroll({ source }) {
-          if (!settings.isOverElementAutoScrollEnabled) {
-            return false;
-          }
-
-          return isDraggingACard({ source });
-        },
-        getConfiguration: () => ({ maxScrollSpeed: settings.columnScrollSpeed }),
-        element: scrollable,
-      }),
+      autoScrollForElements({ element: scrollable, getConfiguration: () => scrollConfig, canScroll: canCardScroll }),
       unsafeOverflowAutoScrollForElements({
         element: scrollable,
-        getConfiguration: () => ({ maxScrollSpeed: settings.columnScrollSpeed }),
-        canScroll({ source }) {
-          if (!settings.isOverElementAutoScrollEnabled) {
-            return false;
-          }
-
-          if (!settings.isOverflowScrollingEnabled) {
-            return false;
-          }
-
-          return isDraggingACard({ source });
-        },
-        getOverflow() {
-          return {
-            fromTopEdge: {
-              top: 1000,
-              left: 1000,
-              right: 1000,
-            },
-            forBottomEdge: {
-              bottom: 1000,
-            },
-          };
-        },
+        getConfiguration: () => scrollConfig,
+        canScroll: ({ source }) => canCardScroll({ source }) && settings.isOverflowScrollingEnabled,
+        getOverflow: () => ({
+          fromTopEdge: { top: 1000, left: 1000, right: 1000 },
+          forBottomEdge: { bottom: 1000 },
+        }),
       }),
     );
-  }, [column, settings]);
+  }, [settings]);
 
   return (
     <div className="flex w-72 flex-shrink-0 select-none flex-col" ref={outerFullHeightRef}>
@@ -229,20 +148,12 @@ export function Column({ column }: { column: TColumn }) {
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
       >
-        {/* Extra wrapping element to make it easy to toggle visibility of content when a column is dragging over */}
-        <div
-          className={`flex max-h-full bg-white flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}
-        >
-          <div className={cn("flex flex-row items-center justify-between p-2 mb-1")} style={backgroundStyle} ref={headerRef}>
+        <div className={`flex max-h-full bg-white flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}>
+          <div className={cn('flex flex-row items-center justify-between p-2 mb-1')} style={backgroundStyle} ref={headerRef}>
             <div className="pl-2 font-semibold leading-4 text-sm">{column.title}</div>
-            <div className='w-fit flex items-center gap-2 justify-end'>
-              <Badge variant={'outline'} className='bg-white rounded-full'>{column.totalTasks} task</Badge>
-              <Button
-                type="button"
-                size={'xs'}
-                className="cursor-pointer bg-gray-700/40 hover:bg-gray-700/60"
-                aria-label="More actions"
-              >
+            <div className="w-fit flex items-center gap-2 justify-end">
+              <Badge variant="outline" className="bg-white rounded-full">{column.totalTasks} task</Badge>
+              <Button type="button" size="xs" className="cursor-pointer bg-gray-700/40 hover:bg-gray-700/60" aria-label="More actions">
                 <Ellipsis size={16} />
               </Button>
             </div>
@@ -252,11 +163,11 @@ export function Column({ column }: { column: TColumn }) {
             ref={scrollableRef}
           >
             <CardList column={column} />
-            {state.type === 'is-card-over' && !state.isOverChildCard ? (
+            {state.type === 'is-card-over' && !state.isOverChildCard && (
               <div className="flex-shrink-0 px-3 py-1">
                 <CardShadow dragging={state.dragging} />
               </div>
-            ) : null}
+            )}
           </div>
           <div className="flex flex-row gap-2 p-2">
             <button
@@ -271,4 +182,4 @@ export function Column({ column }: { column: TColumn }) {
       </div>
     </div>
   );
-}
+};
