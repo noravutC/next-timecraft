@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { ProjectCache } from "@/types";
-import { LoaderStatus } from "@/hooks/hook.type";
-import { CreateProjectPayload, projectServices } from "@/services/projects.service";
+import { LoaderStatus } from "@/types/global/types";
+import {
+  CreateProjectPayload,
+  projectServices,
+} from "@/services/projects.service";
 import { toRecord } from "@/helper/utils/object";
 
 type ProjectStore = {
@@ -13,7 +16,9 @@ type ProjectStore = {
   };
   setProjectIsUsing: (projectId: string | null) => void;
   setNeedCreateProject: (needCreateProject: boolean) => void;
-  createProject: (payload: CreateProjectPayload) => Promise<ProjectCache | null>;
+  createProject: (
+    payload: CreateProjectPayload,
+  ) => Promise<ProjectCache | null>;
   fetchProjects: (
     projectIds: string[],
     fetchAll?: boolean,

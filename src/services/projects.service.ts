@@ -20,7 +20,10 @@ export type CreateProjectPayload = {
 class ProjectService {
   private client = apiClient;
 
-  async getProjects(projectIds: string[], fetchAll: boolean = false): Promise<APIGet<ProjectCache[]>> {
+  async getProjects(
+    projectIds: string[],
+    fetchAll: boolean = false,
+  ): Promise<APIGet<ProjectCache[]>> {
     return this.client
       .post("/project", { projectIds: projectIds.join(","), fetchAll })
       .then((response) => response.data as APIGet<ProjectCache[]>)
@@ -29,7 +32,9 @@ class ProjectService {
       });
   }
 
-  async createProject(payload: CreateProjectPayload): Promise<APIPost<ProjectCache>> {
+  async createProject(
+    payload: CreateProjectPayload,
+  ): Promise<APIPost<ProjectCache>> {
     return this.client
       .post("/project", {
         mode: "create",

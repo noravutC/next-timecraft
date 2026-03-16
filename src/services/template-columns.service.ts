@@ -1,5 +1,5 @@
 // src/lib/services/template-columns.service.ts
-import apiClient from "../axios";
+import apiClient from "@/lib/axios";
 import { TemplateColumn, Project, Column, APIGet, APIPut } from "@/types";
 
 class TemplateColumnsService {
@@ -20,7 +20,7 @@ class TemplateColumnsService {
     projectIdOrParams:
       | string
       | { projectId?: string; projectName?: string; template: TemplateColumn },
-    templateArg?: TemplateColumn
+    templateArg?: TemplateColumn,
   ): Promise<
     APIPut<{
       projectId: string;
@@ -43,7 +43,7 @@ class TemplateColumnsService {
           response.data as APIPut<{
             projectId: string;
             columns: Column[];
-          }>
+          }>,
       )
       .catch((error) => {
         throw (

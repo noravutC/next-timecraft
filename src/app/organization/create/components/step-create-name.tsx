@@ -14,12 +14,16 @@ type StepCreateNameProps = {
   };
 };
 
-export function StepCreateName({
-  model,
-  actions,
-}: StepCreateNameProps) {
+export function StepCreateName({ model, actions }: StepCreateNameProps) {
   return (
-    <motion.div key="step0" variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
+    <motion.div
+      key="step0"
+      variants={slideVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.25 }}
+    >
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">
           Let&apos;s set up your workspace
@@ -37,9 +41,13 @@ export function StepCreateName({
         className="mb-6"
       />
 
-      <Button onClick={actions.onNext} disabled={!model.orgName.trim()} className="w-full">
+      <Button
+        onClick={actions.onNext}
+        disabled={!model.orgName.trim()}
+        className="w-full"
+      >
         Next <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
-    </ motion.div>
+    </motion.div>
   );
 }

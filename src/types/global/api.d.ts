@@ -1,40 +1,40 @@
 export interface APIGet<T> {
-    data: T[];
-    message: string;
-    status: number;
+  data: T[];
+  message: string;
+  status: number;
 }
 
 export interface APISingleGet<T> {
-    data: T | null;
-    message: string;
-    status: number;
+  data: T | null;
+  message: string;
+  status: number;
 }
 
 export interface APIPost<T> {
-    created : T | null;
-    message: string;
-    status: number;
+  created: T | null;
+  message: string;
+  status: number;
 }
 
 export interface APIPut<T> {
-    updated : T | null;
-    message: string;
-    status: number;
+  updated: T | null;
+  message: string;
+  status: number;
 }
 
 export interface APIPatch<T> {
-    updated : T | null;
-    message: string;
-    status: number;
+  updated: T | null;
+  message: string;
+  status: number;
 }
 
 export interface APIDelete<T> {
-    deleted : T | null;
-    message: string;
-    status: number;
+  deleted: T | null;
+  message: string;
+  status: number;
 }
 
 export interface APIError {
-    message: string;
-    status: number;
+  message: string;
+  status: number;
 }

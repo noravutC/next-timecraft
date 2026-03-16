@@ -12,9 +12,14 @@ export const taskAssigneesTable = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
-    taskUserUnique: uniqueIndex("task_assignees_task_user_unique").on(table.taskId, table.userId),
-  })
+    taskUserUnique: uniqueIndex("task_assignees_task_user_unique").on(
+      table.taskId,
+      table.userId,
+    ),
+  }),
 );

@@ -11,21 +11,21 @@ export function insertIndexTo<T>(
     oldValue?: T[keyof T];
     newValue: T[keyof T];
   },
-  insertData?: T
+  insertData?: T,
 ): T[] {
-  const sortedList = sortObjArray(dataList, config.orderKey, 'asc');
+  const sortedList = sortObjArray(dataList, config.orderKey, "asc");
 
   if (params.oldValue) {
     const oldIndex = sortedList.findIndex(
-      (t) => t[config.keyFindIndex] === params.oldValue
+      (t) => t[config.keyFindIndex] === params.oldValue,
     );
     const newIndex = sortedList.findIndex(
-      (t) => t[config.keyFindIndex] === params.newValue
+      (t) => t[config.keyFindIndex] === params.newValue,
     );
 
     if (oldIndex === -1 || newIndex === -1) {
-        console.warn("Index not found in insertIndexTo");
-        return sortedList; 
+      console.warn("Index not found in insertIndexTo");
+      return sortedList;
     }
 
     const [movedItem] = sortedList.splice(oldIndex, 1);
@@ -42,10 +42,10 @@ export function insertIndexTo<T>(
     }
 
     const newIndex = sortedList.findIndex(
-      (t) => t[config.keyFindIndex] === params.newValue
+      (t) => t[config.keyFindIndex] === params.newValue,
     );
     const safeIndex = newIndex === -1 ? sortedList.length : newIndex;
-    
+
     sortedList.splice(safeIndex, 0, insertData);
   }
 

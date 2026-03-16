@@ -1,5 +1,5 @@
 // src/lib/services/organization.service.ts
-import apiClient from "../axios";
+import apiClient from "@/lib/axios";
 import {
   Membership,
   APIGet,
@@ -17,19 +17,17 @@ class MembershipService {
       .get(`/member-ship/${userId}`)
       .then((response) => response.data as APIGet<Membership>)
       .catch((error) => {
-        throw (
-          error?.response?.data || new Error("Failed to fetch membership")
-        );
+        throw error?.response?.data || new Error("Failed to fetch membership");
       });
   }
-  async createMemberShip(data: Partial<Membership>): Promise<APIPost<Membership>> {
+  async createMemberShip(
+    data: Partial<Membership>,
+  ): Promise<APIPost<Membership>> {
     return this.client
       .post(`/member-ship/`, data)
       .then((response) => response.data as APIPost<Membership>)
       .catch((error) => {
-        throw (
-          error?.response?.data || new Error("Failed to create membership")
-        );
+        throw error?.response?.data || new Error("Failed to create membership");
       });
   }
 }

@@ -1,4 +1,11 @@
-import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { projectsTable } from "./project.table";
 
 export const columnsTable = pgTable("columns", {
@@ -13,6 +20,10 @@ export const columnsTable = pgTable("columns", {
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   purgeAt: timestamp("purge_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });

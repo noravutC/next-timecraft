@@ -21,14 +21,20 @@ type StepCreateInviteProps = {
   };
 };
 
-export function StepCreateInvite({
-  model,
-  actions,
-}: StepCreateInviteProps) {
+export function StepCreateInvite({ model, actions }: StepCreateInviteProps) {
   return (
-    <motion.div key="step1" variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
+    <motion.div
+      key="step1"
+      variants={slideVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.25 }}
+    >
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Invite your team</h2>
+        <h2 className="text-xl font-semibold text-foreground">
+          Invite your team
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Add teammate emails before you start.
         </p>
@@ -60,7 +66,10 @@ export function StepCreateInvite({
                 className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground"
               >
                 {email}
-                <button type="button" onClick={() => actions.onRemoveEmail(email)}>
+                <button
+                  type="button"
+                  onClick={() => actions.onRemoveEmail(email)}
+                >
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -73,7 +82,11 @@ export function StepCreateInvite({
         <Button variant="outline" onClick={actions.onBack} className="flex-1">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={actions.onFinish} disabled={model.preparing} className="flex-1">
+        <Button
+          onClick={actions.onFinish}
+          disabled={model.preparing}
+          className="flex-1"
+        >
           {model.preparing ? "Preparing..." : "Finish"}
         </Button>
       </div>

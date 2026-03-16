@@ -11,7 +11,9 @@ import { NextResponse } from "next/server";
 
 type CreateColumnBody = Array<CreateColumnPayload>;
 
-const normalizeCreateInput = (item: CreateColumnBody[number]): CreateColumnPayload => {
+const normalizeCreateInput = (
+  item: CreateColumnBody[number],
+): CreateColumnPayload => {
   const projectId = item.projectId?.trim() ?? "";
   const name = item.name?.trim() ?? "";
 
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
         message: "Not authenticated",
         status: 401,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -76,12 +78,14 @@ export async function POST(request: Request) {
           message: "Payload must be a non-empty array",
           status: 400,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const normalizedBody = body.map(normalizeCreateInput);
-    const projectIds = [...new Set(normalizedBody.map((item) => item.projectId))];
+    const projectIds = [
+      ...new Set(normalizedBody.map((item) => item.projectId)),
+    ];
     if (projectIds.length === 0) {
       return NextResponse.json(
         {
@@ -89,11 +93,15 @@ export async function POST(request: Request) {
           message: "projectId is required",
           status: 400,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const permission = await hasPermission(sessionUserId, projectIds, "column:create");
+    const permission = await hasPermission(
+      sessionUserId,
+      projectIds,
+      "column:create",
+    );
     if (!permission) {
       return NextResponse.json(
         {
@@ -101,7 +109,7 @@ export async function POST(request: Request) {
           message: "Forbidden",
           status: 403,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -114,8 +122,8 @@ export async function POST(request: Request) {
       .where(
         and(
           inArray(columnsTable.projectId, projectIds),
-          eq(columnsTable.isDeleted, false)
-        )
+          eq(columnsTable.isDeleted, false),
+        ),
       );
 
     const lastOrderByProject = new Map<string, string>();
@@ -137,7 +145,7 @@ export async function POST(request: Request) {
       const rowsWithIndexes = assignBulkIndexes(
         items.map((item) => ({ ...item, orderFraction: undefined })),
         prevOrder,
-        null
+        null,
       );
 
       rowsWithIndexes.forEach((item) => {
@@ -165,14 +173,16 @@ export async function POST(request: Request) {
         message: "Create columns success",
         status: 201,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     const message =
-      error instanceof Error && error.message === "projectId and name are required"
+      error instanceof Error &&
+      error.message === "projectId and name are required"
         ? error.message
         : "Failed to create columns";
-    const statusCode = message === "projectId and name are required" ? 400 : 500;
+    const statusCode =
+      message === "projectId and name are required" ? 400 : 500;
 
     if (statusCode === 500) {
       console.error("Failed to create columns:", error);
@@ -184,7 +194,7 @@ export async function POST(request: Request) {
         message,
         status: statusCode,
       },
-      { status: statusCode }
+      { status: statusCode },
     );
   }
 }

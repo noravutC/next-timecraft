@@ -12,7 +12,7 @@ const MemberSchema = new Schema(
     },
     joinedAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ProjectsSchema = new Schema(
@@ -24,7 +24,7 @@ const ProjectsSchema = new Schema(
     tags: { type: [String], default: [] },
     archived: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const ProjectsModel =

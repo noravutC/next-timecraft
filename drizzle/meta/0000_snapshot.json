@@ -156,12 +156,8 @@
           "name": "organizations_created_by_users_id_fk",
           "tableFrom": "organizations",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -246,12 +242,8 @@
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -259,12 +251,8 @@
           "name": "memberships_organization_id_organizations_id_fk",
           "tableFrom": "memberships",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -351,12 +339,8 @@
           "name": "projects_organization_id_organizations_id_fk",
           "tableFrom": "projects",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -364,12 +348,8 @@
           "name": "projects_owner_id_users_id_fk",
           "tableFrom": "projects",
           "tableTo": "users",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -461,12 +441,8 @@
           "name": "project_members_project_id_projects_id_fk",
           "tableFrom": "project_members",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -474,12 +450,8 @@
           "name": "project_members_user_id_users_id_fk",
           "tableFrom": "project_members",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -574,12 +546,8 @@
           "name": "columns_project_id_projects_id_fk",
           "tableFrom": "columns",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -689,12 +657,8 @@
           "name": "tasks_column_id_columns_id_fk",
           "tableFrom": "tasks",
           "tableTo": "columns",
-          "columnsFrom": [
-            "column_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["column_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -764,12 +728,8 @@
           "name": "task_assignees_task_id_tasks_id_fk",
           "tableFrom": "task_assignees",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -777,12 +737,8 @@
           "name": "task_assignees_user_id_users_id_fk",
           "tableFrom": "task_assignees",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -852,12 +808,8 @@
           "name": "task_dependencies_task_id_tasks_id_fk",
           "tableFrom": "task_dependencies",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -865,12 +817,8 @@
           "name": "task_dependencies_depends_on_task_id_tasks_id_fk",
           "tableFrom": "task_dependencies",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "depends_on_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["depends_on_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -886,31 +834,17 @@
     "public.membership_role": {
       "name": "membership_role",
       "schema": "public",
-      "values": [
-        "owner",
-        "admin",
-        "member",
-        "guest"
-      ]
+      "values": ["owner", "admin", "member", "guest"]
     },
     "public.project_member_role": {
       "name": "project_member_role",
       "schema": "public",
-      "values": [
-        "owner",
-        "admin",
-        "editor",
-        "viewer"
-      ]
+      "values": ["owner", "admin", "editor", "viewer"]
     },
     "public.task_priority": {
       "name": "task_priority",
       "schema": "public",
-      "values": [
-        "low",
-        "medium",
-        "high"
-      ]
+      "values": ["low", "medium", "high"]
     }
   },
   "schemas": {},

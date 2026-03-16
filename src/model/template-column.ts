@@ -14,7 +14,7 @@ const TemplateColumnSchema = new Schema(
     ],
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const TemplateColumnModel =

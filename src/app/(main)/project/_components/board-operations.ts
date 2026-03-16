@@ -1,6 +1,11 @@
-import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
-import { isCardDropTargetData, isColumnData, type TCard, type TColumn } from './data';
+import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
+import {
+  isCardDropTargetData,
+  isColumnData,
+  type TCard,
+  type TColumn,
+} from "./data";
 
 type DropData = Record<string | symbol, unknown>;
 
@@ -27,10 +32,12 @@ export const computeCardMove = (
 ): CardMoveResult | null => {
   const sourceCol = columns.find((c) => c.id === dragging.columnId);
   if (!sourceCol) return null;
-  const sourceIndex = sourceCol.cards.findIndex((c) => c.id === dragging.card.id);
+  const sourceIndex = sourceCol.cards.findIndex(
+    (c) => c.id === dragging.card.id,
+  );
   if (sourceIndex === -1) return null;
 
-  let destinationColumnId = '';
+  let destinationColumnId = "";
   let insertIndex = -1;
 
   if (isCardDropTargetData(dropData)) {
@@ -41,10 +48,11 @@ export const computeCardMove = (
     const cardIdx = destCol.cards.findIndex((c) => c.id === dropData.card.id);
     if (cardIdx === -1) return null;
     destinationColumnId = destCol.id;
-    insertIndex = edge === 'bottom' ? cardIdx + 1 : cardIdx;
+    insertIndex = edge === "bottom" ? cardIdx + 1 : cardIdx;
   } else if (isColumnData(dropData)) {
     destinationColumnId = dropData.column.id;
-    insertIndex = (columns.find((c) => c.id === destinationColumnId)?.cards.length) ?? 0;
+    insertIndex =
+      columns.find((c) => c.id === destinationColumnId)?.cards.length ?? 0;
   } else {
     return null;
   }
@@ -94,10 +102,12 @@ export const computeColumnMove = (
   newOrder.splice(destIdx, 0, dragging.column.id);
 
   const prevOrder = newOrder[destIdx - 1]
-    ? (columns.find((c) => c.id === newOrder[destIdx - 1])?.orderFraction ?? null)
+    ? (columns.find((c) => c.id === newOrder[destIdx - 1])?.orderFraction ??
+      null)
     : null;
   const nextOrder = newOrder[destIdx + 1]
-    ? (columns.find((c) => c.id === newOrder[destIdx + 1])?.orderFraction ?? null)
+    ? (columns.find((c) => c.id === newOrder[destIdx + 1])?.orderFraction ??
+      null)
     : null;
 
   return {

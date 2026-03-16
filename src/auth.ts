@@ -47,8 +47,8 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, email: string) => {
     .where(
       and(
         eq(membershipsTable.userId, dbUser.id),
-        eq(membershipsTable.role, "owner")
-      )
+        eq(membershipsTable.role, "owner"),
+      ),
     )
     .limit(1);
 
@@ -67,7 +67,8 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, email: string) => {
   token.providerId = dbUser.providerId;
   token.name = dbUser.fullName;
   token.picture = dbUser.avatar ?? null;
-  token.organizationId = ownedMembership?.organizationId ?? memberShip?.organizationId;
+  token.organizationId =
+    ownedMembership?.organizationId ?? memberShip?.organizationId;
   token.systemRole = ownedMembership ? "owner" : "user";
   token.canCreateOrg = !Boolean(ownedMembership);
 

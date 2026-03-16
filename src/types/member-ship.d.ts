@@ -8,4 +8,4 @@ export interface Membership {
   role?: MembershipRole;
   createdAt?: Date;
   updatedAt?: Date;
-};
+}

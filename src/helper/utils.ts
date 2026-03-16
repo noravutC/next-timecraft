@@ -10,10 +10,13 @@ export function formatDateToString(date: string | Date): string {
 
 export function hexToRgba(hex: string, alpha: number): string {
   // Remove the # if present
-  let c = hex.replace('#', '');
+  let c = hex.replace("#", "");
 
   if (c.length === 3) {
-    c = c.split('').map(char => char + char).join('');
+    c = c
+      .split("")
+      .map((char) => char + char)
+      .join("");
   }
 
   // Parse the r, g, b values

@@ -15,13 +15,16 @@ type StepCreateLogoProps = {
   };
 };
 
-export function StepCreateLogo({
-  model,
-  actions,
-}: StepCreateLogoProps) {
+export function StepCreateLogo({ model, actions }: StepCreateLogoProps) {
   return (
-    <motion.div key="step1" variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
-
+    <motion.div
+      key="step1"
+      variants={slideVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.25 }}
+    >
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">Add a logo</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -47,7 +50,9 @@ export function StepCreateLogo({
         <input
           type="file"
           accept="image/*"
-          onChange={(event) => actions.onFileChange(event.target.files?.[0] ?? null)}
+          onChange={(event) =>
+            actions.onFileChange(event.target.files?.[0] ?? null)
+          }
           className="hidden"
         />
       </label>

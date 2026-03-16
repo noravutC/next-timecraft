@@ -18,7 +18,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response Interceptor
@@ -30,7 +30,7 @@ apiClient.interceptors.response.use(
       // Optional: Add logic to handle unauthorized requests
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
