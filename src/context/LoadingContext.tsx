@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 
 type LoadingContextType = {
   isLoading: boolean;
@@ -10,15 +10,18 @@ const LoadingContext = createContext<LoadingContextType>({
   setIsLoading: () => {},
 });
 
-export const LoadingProvider = ({ children }: { children: React.ReactNode }) => {
+export const LoadingProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
-    console.log('LoadingProvider mounted');
+    console.log("LoadingProvider mounted");
     return () => {
-      console.log('LoadingProvider unmounted');
+      console.log("LoadingProvider unmounted");
     };
-  }
-  , [isLoading]);
+  }, [isLoading]);
   return (
     <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
       {children}

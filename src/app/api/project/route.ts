@@ -1,10 +1,7 @@
 // app/api/project/route.ts
 
 import { db } from "@/db";
-import {
-  projectMembersTable,
-  projectsTable,
-} from "@/db/schema";
+import { projectMembersTable, projectsTable } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
@@ -29,7 +26,8 @@ type CreateProjectRequestBody = {
 
 type ProjectRequestBody = FetchProjectsRequestBody | CreateProjectRequestBody;
 
-const DATA_URL_IMAGE_PATTERN = /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
+const DATA_URL_IMAGE_PATTERN =
+  /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
 const HTTP_URL_PATTERN = /^https?:\/\/\S+$/i;
 const MAX_PROJECT_COVER_IMAGE_LENGTH = 2_900_000;
 

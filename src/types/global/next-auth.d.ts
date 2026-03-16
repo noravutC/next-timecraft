@@ -1,5 +1,5 @@
 import { DefaultSession } from "next-auth";
-import type { User as AppUser } from "./user";
+import type { User as AppUser } from "../user";
 
 type SystemRole = "owner" | "admin" | "member" | "guest" | "user";
 

@@ -53,7 +53,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const tasks = await db.select().from(tasksTable).where(inArray(tasksTable.columnId, colIds)).orderBy(asc(tasksTable.orderFraction)).limit(limit);
+    const tasks = await db
+      .select()
+      .from(tasksTable)
+      .where(inArray(tasksTable.columnId, colIds))
+      .orderBy(asc(tasksTable.orderFraction))
+      .limit(limit);
 
     return NextResponse.json(
       {

@@ -1,14 +1,27 @@
 'use client';
 
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import {
+  draggable,
+  dropTargetForElements,
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import {
+  attachClosestEdge,
+  extractClosestEdge,
+  type Edge,
+} from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import invariant from 'tiny-invariant';
-import { getCardData, getCardDropTargetData, isCardData, isDraggingACard, TCard } from './data';
+import {
+  getCardData,
+  getCardDropTargetData,
+  isCardData,
+  isDraggingACard,
+  TCard,
+} from './data';
 import { isShallowEqual } from './is-shallow-equal';
 import { isSafari } from './is-safari';
 import { BarColumn } from './bar-column';
@@ -37,7 +50,12 @@ const outerStyles: Partial<Record<TCardState['type'], string>> = {
 };
 
 export function CardShadow({ dragging }: { dragging: DOMRect }) {
-  return <div className="flex-shrink-0 rounded-md bg-gray-200" style={{ height: dragging.height }} />;
+  return (
+    <div
+      className="flex-shrink-0 rounded-md bg-gray-200"
+      style={{ height: dragging.height }}
+    />
+  );
 }
 
 export function CardDisplay({
@@ -54,14 +72,26 @@ export function CardDisplay({
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
   return (
-    <div ref={outerRef} className={cn(`flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`, isLoading && 'pointer-events-none')}>
-      {state.type === 'is-over' && state.closestEdge === 'top' && <CardShadow dragging={state.dragging} />}
+    <div
+      ref={outerRef}
+      className={cn(
+        `flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`,
+        isLoading && 'pointer-events-none',
+      )}
+    >
+      {state.type === 'is-over' && state.closestEdge === 'top' && (
+        <CardShadow dragging={state.dragging} />
+      )}
       <div
         ref={innerRef}
-        className={`rounded-md border bg-white p-4 min-h-30 text-gray-700 ${innerStyles[state.type] ?? ''}`}
+        className={`min-h-30 rounded-md border bg-white p-4 text-gray-700 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
-            ? { width: state.dragging.width, height: state.dragging.height, transform: !isSafari() ? 'rotate(4deg)' : undefined }
+            ? {
+                width: state.dragging.width,
+                height: state.dragging.height,
+                transform: !isSafari() ? 'rotate(4deg)' : undefined,
+              }
             : undefined
         }
       >
@@ -69,14 +99,16 @@ export function CardDisplay({
         <div className="mb-4" />
         <BarColumn taskAtColumnId={card.columnId} />
         <div className="mb-4" />
-        <div className='flex items-center justify-between'>
-          <div className='text-xs text-gray-500'>
-            {formatDateToString((formatDateToString(card.createdAt) ?? '-'))}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500">
+            {formatDateToString(formatDateToString(card.createdAt) ?? '-')}
           </div>
-          {isLoading && <LoaderCircle className="animate-spin size-4" />}
+          {isLoading && <LoaderCircle className="size-4 animate-spin" />}
         </div>
       </div>
-      {state.type === 'is-over' && state.closestEdge === 'bottom' && <CardShadow dragging={state.dragging} />}
+      {state.type === 'is-over' && state.closestEdge === 'bottom' && (
+        <CardShadow dragging={state.dragging} />
+      )}
     </div>
   );
 }
@@ -104,21 +136,37 @@ export function Card({ card, columnId }: { card: TCard; columnId: string }) {
       if (!isCardData(source.data) || source.data.card.id === card.id) return;
       const closestEdge = extractClosestEdge(selfData);
       if (!closestEdge) return;
-      const proposed: TCardState = { type: 'is-over', dragging: source.data.rect, closestEdge };
+      const proposed: TCardState = {
+        type: 'is-over',
+        dragging: source.data.rect,
+        closestEdge,
+      };
       setState((cur) => (isShallowEqual(proposed, cur) ? cur : proposed));
     };
 
     return combine(
       draggable({
         element: inner,
-        getInitialData: ({ element }) => getCardData({ card, columnId, rect: element.getBoundingClientRect() }),
+        getInitialData: ({ element }) =>
+          getCardData({
+            card,
+            columnId,
+            rect: element.getBoundingClientRect(),
+          }),
         onGenerateDragPreview({ nativeSetDragImage, location, source }) {
           invariant(isCardData(source.data));
           setCustomNativeDragPreview({
             nativeSetDragImage,
-            getOffset: preserveOffsetOnSource({ element: inner, input: location.current.input }),
+            getOffset: preserveOffsetOnSource({
+              element: inner,
+              input: location.current.input,
+            }),
             render({ container }) {
-              setState({ type: 'preview', container, dragging: inner.getBoundingClientRect() });
+              setState({
+                type: 'preview',
+                container,
+                dragging: inner.getBoundingClientRect(),
+              });
             },
           });
         },
@@ -130,7 +178,11 @@ export function Card({ card, columnId }: { card: TCard; columnId: string }) {
         getIsSticky: () => true,
         canDrop: isDraggingACard,
         getData: ({ element, input }) =>
-          attachClosestEdge(getCardDropTargetData({ card, columnId }), { element, input, allowedEdges: ['top', 'bottom'] }),
+          attachClosestEdge(getCardDropTargetData({ card, columnId }), {
+            element,
+            input,
+            allowedEdges: ['top', 'bottom'],
+          }),
         onDragEnter: ({ source, self }) => updateIsOver(source, self.data),
         onDrag: ({ source, self }) => updateIsOver(source, self.data),
         onDragLeave({ source }) {
@@ -147,8 +199,17 @@ export function Card({ card, columnId }: { card: TCard; columnId: string }) {
 
   return (
     <>
-      <CardDisplay outerRef={outerRef} innerRef={innerRef} state={state} card={card} />
-      {state.type === 'preview' && createPortal(<CardDisplay state={state} card={card} />, state.container)}
+      <CardDisplay
+        outerRef={outerRef}
+        innerRef={innerRef}
+        state={state}
+        card={card}
+      />
+      {state.type === 'preview' &&
+        createPortal(
+          <CardDisplay state={state} card={card} />,
+          state.container,
+        )}
     </>
   );
 }

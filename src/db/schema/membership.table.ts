@@ -14,13 +14,17 @@ export const membershipsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
     role: organizationMembershipRoleEnum("role").notNull().default("member"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
     userOrganizationUnique: uniqueIndex("memberships_user_org_unique").on(
       table.userId,
-      table.organizationId
+      table.organizationId,
     ),
-  })
+  }),
 );

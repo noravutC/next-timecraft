@@ -33,9 +33,8 @@ export const CreateOrganization = () => {
   const [emails, setEmails] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [preparing, setPreparing] = useState(false);
-  const [preparedData, setPreparedData] = useState<PreparedOrganizationData | null>(
-    null
-  );
+  const [preparedData, setPreparedData] =
+    useState<PreparedOrganizationData | null>(null);
 
   useEffect(() => {
     if (!logoFile) {
@@ -118,7 +117,6 @@ export const CreateOrganization = () => {
     <div className="w-full max-w-md">
       <CreateOrganizationProgress step={step} labels={STEP_LABELS} />
       <AnimatePresence mode="wait">
-
         {step === 0 && (
           <StepCreateName
             model={{ orgName }}
@@ -164,4 +162,4 @@ export const CreateOrganization = () => {
       </AnimatePresence>
     </div>
   );
-}
+};

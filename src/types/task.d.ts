@@ -7,9 +7,28 @@ export type NewTaskRow = InferInsertModel<typeof tasksTable>;
 export type TaskPriority = TaskRow["priority"];
 export type Task = TaskRow;
 
-export type CreateTaskPayload = Pick<NewTaskRow, "columnId" | "title" | "description" | "orderFraction" | "tags" | "priority" | "dueDate">;
+export type CreateTaskPayload = Pick<
+  NewTaskRow,
+  | "columnId"
+  | "title"
+  | "description"
+  | "orderFraction"
+  | "tags"
+  | "priority"
+  | "dueDate"
+>;
 
-export type UpdateTaskPayload = Pick<NewTaskRow, "id" | "columnId" | "title" | "description" | "orderFraction" | "tags" | "priority" | "dueDate">;
+export type UpdateTaskPayload = Pick<
+  NewTaskRow,
+  | "id"
+  | "columnId"
+  | "title"
+  | "description"
+  | "orderFraction"
+  | "tags"
+  | "priority"
+  | "dueDate"
+>;
 
 export interface TaskCache extends Task {
   timestamp: number;

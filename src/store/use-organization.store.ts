@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { CreateOrganizationPayload, OrganizationCache } from "@/types";
-import { LoaderStatus } from "@/hooks/hook.type";
+import { LoaderStatus } from "@/types/global/types";
 import { organizationServices } from "@/services/organization.service";
 
 type OrganizationStore = {
@@ -8,7 +8,7 @@ type OrganizationStore = {
   organization: OrganizationCache | null;
   fetchUserOrganization: (orgId: string) => Promise<OrganizationCache | null>;
   createOrganization: (
-    payload: CreateOrganizationPayload
+    payload: CreateOrganizationPayload,
   ) => Promise<OrganizationCache | null>;
 };
 
@@ -20,9 +20,10 @@ export const useOrganizationStore = create<OrganizationStore>((set) => ({
     try {
       const response = await organizationServices.getOrganizations();
       const organizations = response.data ?? [];
-      const organization = organizations.find(
-        (currentOrganization) => currentOrganization.id === orgId
-      ) ?? null;
+      const organization =
+        organizations.find(
+          (currentOrganization) => currentOrganization.id === orgId,
+        ) ?? null;
       set({ organization, status: "none" });
       return organization;
     } catch (error) {

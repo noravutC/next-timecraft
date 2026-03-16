@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { createContext, ReactNode, useMemo, useState } from 'react';
-import { fields, TFields, TSettings } from './settings';
+import { createContext, ReactNode, useMemo, useState } from "react";
+import { fields, TFields, TSettings } from "./settings";
 
 export type TSettingsContext = {
   fields: TFields;
@@ -13,8 +13,8 @@ export type TSettingsContext = {
 const defaultSettings: TSettings = {
   isBoardMoreObvious: false,
   isOverElementAutoScrollEnabled: true,
-  boardScrollSpeed: 'fast',
-  columnScrollSpeed: 'standard',
+  boardScrollSpeed: "fast",
+  columnScrollSpeed: "standard",
   isFPSPanelEnabled: false,
   isCPUBurnEnabled: false,
   isOverflowScrollingEnabled: true,
@@ -44,5 +44,9 @@ export function SettingsContextProvider({ children }: { children: ReactNode }) {
     };
   }, [settings]);
 
-  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
+  return (
+    <SettingsContext.Provider value={value}>
+      {children}
+    </SettingsContext.Provider>
+  );
 }

@@ -37,7 +37,10 @@ export const CollapsButton = ({
     const parsed = stored ? JSON.parse(stored) : [];
 
     // Move to front, remove duplicates, limit to 5
-    const updated = [link, ...parsed.filter((item: string) => item !== link)].slice(0, 5);
+    const updated = [
+      link,
+      ...parsed.filter((item: string) => item !== link),
+    ].slice(0, 5);
 
     localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(updated));
   };
@@ -53,14 +56,19 @@ export const CollapsButton = ({
           {mainIcon}
           {mainLabel}
         </div>
-        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        {isOpen ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
       </Button>
 
       {isOpen && (
         <div className="flex flex-col mt-2">
           {menuOptions.map((option, i) => {
             const isActive = pathname === option.link;
-            return ( // Only take first 3
+            return (
+              // Only take first 3
               <React.Fragment key={i}>
                 {option.view && (
                   <div
@@ -70,14 +78,14 @@ export const CollapsButton = ({
                       addRecentProject(option.link);
                       router.push(option.link);
                     }}
-                  // onClick={() => router.push(option.link)}
+                    // onClick={() => router.push(option.link)}
                   >
                     {option.icon}
                     {option.label}
                   </div>
                 )}
               </React.Fragment>
-            )
+            );
           })}
         </div>
       )}

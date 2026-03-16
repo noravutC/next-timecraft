@@ -1,6 +1,6 @@
 import { projectMembershipRoleEnum } from "@/db/schema/enums";
 
-export type ProjectRole = typeof projectMembershipRoleEnum.enumValues[number];
+export type ProjectRole = (typeof projectMembershipRoleEnum.enumValues)[number];
 export type Permission =
   | "project:view"
   | "project:update"
@@ -59,7 +59,5 @@ export const ROLE_PERMISSIONS: Record<ProjectRole, Permission[]> = {
     "task:delete",
     "task:comment",
   ],
-  viewer: [
-    "project:view",
-  ],
+  viewer: ["project:view"],
 };

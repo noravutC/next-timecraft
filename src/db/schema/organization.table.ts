@@ -8,6 +8,10 @@ export const organizationsTable = pgTable("organizations", {
   createdBy: uuid("created_by")
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });

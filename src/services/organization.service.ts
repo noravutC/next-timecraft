@@ -1,7 +1,11 @@
 // src/services/organization.service.ts
 import apiClient from "@/lib/axios";
-import { APIGet, APIPost, CreateOrganizationPayload, OrganizationCache } from "@/types";
-
+import {
+  APIGet,
+  APIPost,
+  CreateOrganizationPayload,
+  OrganizationCache,
+} from "@/types";
 
 class OrganizationService {
   private client = apiClient;
@@ -18,7 +22,7 @@ class OrganizationService {
   }
 
   async createOrganization(
-    payload: CreateOrganizationPayload
+    payload: CreateOrganizationPayload,
   ): Promise<APIPost<OrganizationCache>> {
     return this.client
       .post(`/organization`, payload)

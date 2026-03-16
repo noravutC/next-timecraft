@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
-const MONGODB_DB = "TimeCraft"; 
+const MONGODB_DB = "TimeCraft";
 
 if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable");
@@ -18,10 +18,12 @@ export async function connectDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      dbName: MONGODB_DB,
-      bufferCommands: false,
-    }).then((mongoose) => mongoose);
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        dbName: MONGODB_DB,
+        bufferCommands: false,
+      })
+      .then((mongoose) => mongoose);
   }
   cached.conn = await cached.promise;
   return cached.conn;

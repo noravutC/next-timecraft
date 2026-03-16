@@ -14,14 +14,20 @@ export const projectMembersTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
     role: projectMembershipRoleEnum("role").notNull().default("viewer"),
-    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
     projectUserUnique: uniqueIndex("project_members_project_user_unique").on(
       table.projectId,
-      table.userId
+      table.userId,
     ),
-  })
+  }),
 );

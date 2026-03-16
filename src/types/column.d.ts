@@ -7,9 +7,15 @@ export type NewColumnRow = InferInsertModel<typeof columnsTable>;
 
 export type Column = ColumnRow;
 
-export type CreateColumnPayload = Pick<NewColumnRow, "name" | "projectId" | "color" | "orderFraction" |"wipLimit">;
+export type CreateColumnPayload = Pick<
+  NewColumnRow,
+  "name" | "projectId" | "color" | "orderFraction" | "wipLimit"
+>;
 
-export type UpdateColumnPayload = Pick<NewColumnRow, "id" | "name" | "color" | "wipLimit" | "orderFraction">;
+export type UpdateColumnPayload = Pick<
+  NewColumnRow,
+  "id" | "name" | "color" | "wipLimit" | "orderFraction"
+>;
 
 export interface ColumnCache extends Column {
   timestamp: number;

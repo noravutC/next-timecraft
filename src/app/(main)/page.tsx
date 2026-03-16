@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -14,7 +14,7 @@ export default function RootPage() {
   const canCreateOrg = session?.user?.canCreateOrg ?? false;
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === "unauthenticated") {
       router.replace("/login");
       return;
     }
@@ -34,17 +34,17 @@ export default function RootPage() {
     }
   }, [status, organizationId, canCreateOrg, router]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <LogoAnimationLoop />
       </div>
-    )
+    );
   } else {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <LogoAnimation />
       </div>
-    )
+    );
   }
 }

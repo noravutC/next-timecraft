@@ -33,7 +33,7 @@ export async function GET() {
         message: "Not authenticated",
         status: 401,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -45,13 +45,13 @@ export async function GET() {
       .from(membershipsTable)
       .innerJoin(
         organizationsTable,
-        eq(membershipsTable.organizationId, organizationsTable.id)
+        eq(membershipsTable.organizationId, organizationsTable.id),
       )
       .where(eq(membershipsTable.userId, sessionUserId))
       .orderBy(desc(organizationsTable.createdAt));
 
     const organizations = joinedOrganizations.map((row) =>
-      toOrganizationCache(row.organization)
+      toOrganizationCache(row.organization),
     );
 
     return NextResponse.json(
@@ -60,7 +60,7 @@ export async function GET() {
         message: "Get organizations success",
         status: 200,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Failed to fetch organizations:", error);
@@ -70,7 +70,7 @@ export async function GET() {
         message: "Failed to fetch organizations",
         status: 500,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         message: "Not authenticated",
         status: 401,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           message: "Organization name is required",
           status: 400,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -112,8 +112,8 @@ export async function POST(request: Request) {
       .where(
         and(
           eq(membershipsTable.userId, sessionUserId),
-          eq(membershipsTable.role, "owner")
-        )
+          eq(membershipsTable.role, "owner"),
+        ),
       )
       .limit(1);
 
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           message: "User already has owned organization",
           status: 400,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
         message: "Create organization success",
         status: 201,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Failed to create organization:", error);
@@ -163,7 +163,7 @@ export async function POST(request: Request) {
         message: "Failed to create organization",
         status: 500,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

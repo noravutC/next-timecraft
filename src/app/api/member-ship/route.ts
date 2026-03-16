@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         message: "Not authenticated",
         status: 401,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
           message: "userId and organizationId are required",
           status: 400,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           message: "Forbidden",
           status: 403,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
           message: "Organization not found",
           status: 404,
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       {
         upsert: true,
         new: true,
-      }
+      },
     ).lean();
 
     if (!membership) {
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
           message: "Failed to create membership",
           status: 500,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         message: "Create membership success",
         status: 201,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Failed to create membership:", error);
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         message: "Failed to create membership",
         status: 500,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

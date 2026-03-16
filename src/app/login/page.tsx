@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -29,18 +29,18 @@ export default function Login() {
     }
 
     if (organizationId) {
-      router.replace('/project');
+      router.replace("/project");
       return;
     }
 
     if (canCreateOrg) {
-      router.replace('/organization/create');
+      router.replace("/organization/create");
     } else {
-      router.replace('/project');
+      router.replace("/project");
     }
   }, [status, session, organizationId, canCreateOrg, router]);
 
-  if (status === 'unauthenticated') {
+  if (status === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-between gap-10 min-h-screen">
         {/* <h1 className="text-2xl font-bold mb-4">Login</h1> */}
@@ -66,13 +66,13 @@ export default function Login() {
         {/* <LoaderPage ballSize={4} /> */}
         <LogoAnimationLoop />
       </div>
-    )
+    );
   } else {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         {/* <LoaderPage ballSize={4} /> */}
         <LogoAnimationLoop />
       </div>
-    )
+    );
   }
 }

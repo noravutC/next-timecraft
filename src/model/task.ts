@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 // SubSchemas
 const ChecklistSchema = new Schema(
   { text: { type: String }, done: { type: Boolean, default: false } },
-  { _id: false }
+  { _id: false },
 );
 
 const AttachmentSchema = new Schema(
@@ -12,7 +12,7 @@ const AttachmentSchema = new Schema(
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     uploadedAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const CommentSchema = new Schema(
@@ -21,7 +21,7 @@ const CommentSchema = new Schema(
     text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const TimeTrackingSchema = new Schema(
@@ -29,7 +29,7 @@ const TimeTrackingSchema = new Schema(
     estimated: { type: Number, default: 0 }, // ชั่วโมง
     logged: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const TasksSchema = new Schema(
@@ -66,8 +66,7 @@ const TasksSchema = new Schema(
     timeTracking: { type: TimeTrackingSchema, default: {} },
     dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 export const TasksModel = models.Tasks || model("Tasks", TasksSchema, "tasks");

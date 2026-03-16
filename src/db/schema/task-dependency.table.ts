@@ -11,12 +11,13 @@ export const taskDependenciesTable = pgTable(
     dependsOnTaskId: uuid("depends_on_task_id")
       .notNull()
       .references(() => tasksTable.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => ({
-    dependencyUnique: uniqueIndex("task_dependencies_task_depends_on_unique").on(
-      table.taskId,
-      table.dependsOnTaskId
-    ),
-  })
+    dependencyUnique: uniqueIndex(
+      "task_dependencies_task_depends_on_unique",
+    ).on(table.taskId, table.dependsOnTaskId),
+  }),
 );

@@ -14,4 +14,8 @@ export const projectMembershipRoleEnum = pgEnum("project_member_role", [
   "viewer",
 ]);
 
-export const taskPriorityLevelEnum = pgEnum("task_priority", ["low", "medium", "high"]);
+export const taskPriorityLevelEnum = pgEnum("task_priority", [
+  "low",
+  "medium",
+  "high",
+]);

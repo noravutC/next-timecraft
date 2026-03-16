@@ -8,7 +8,7 @@ const UserSchema = new Schema(
     provider: { type: String, default: "google" },
     providerId: { type: String, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const UsersModel = models.User || model("User", UserSchema, "users");

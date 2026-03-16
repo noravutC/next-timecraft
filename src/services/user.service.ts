@@ -1,5 +1,5 @@
 // src/lib/services/columns.service.ts
-import apiClient from "../axios";
+import apiClient from "@/lib/axios";
 import {
   User,
   APIGet,
@@ -13,13 +13,14 @@ import {
 class UserService {
   private client = apiClient;
 
-  async getUserOrganization():  Promise<APIGet<User>> {
+  async getUserOrganization(): Promise<APIGet<User>> {
     return this.client
       .get(`/user/`)
       .then((response) => response.data as APIGet<User>)
       .catch((error) => {
         throw (
-          error?.response?.data || new Error("Failed to fetch users organization")
+          error?.response?.data ||
+          new Error("Failed to fetch users organization")
         );
       });
   }

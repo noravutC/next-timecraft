@@ -34,13 +34,9 @@ export const SchemaTask = z.object({
 
   assignees: z.array(objectId).default([]),
 
-  priority: z
-    .enum(["low", "medium", "high", "urgent"])
-    .default("medium"),
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
 
-  status: z
-    .enum(["active", "archived", "done"])
-    .default("active"),
+  status: z.enum(["active", "archived", "done"]).default("active"),
 
   dueDate: z.date().optional(),
   startDate: z.date().optional(),

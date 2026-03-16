@@ -97,7 +97,9 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] &
     },
   ];
 
-  const templates: ProjectTemplate[] = seeds.map((template) => createProjectTemplate(template));
+  const templates: ProjectTemplate[] = seeds.map((template) =>
+    createProjectTemplate(template),
+  );
 
   return Object.assign(templates, {
     template_1: templates[0],

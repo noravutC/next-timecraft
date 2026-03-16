@@ -7,4 +7,3 @@ export interface ColumnMapTask extends ColumnCache {
     [taskId: string]: TaskCache;
   };
 }
-

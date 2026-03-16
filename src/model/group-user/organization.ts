@@ -7,7 +7,7 @@ const OrganizationSchema = new Schema(
 
     createdBy: { type: Types.ObjectId, ref: "User", required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const OrganizationsModel =

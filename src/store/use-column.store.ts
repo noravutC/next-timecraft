@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { CreateColumnPayload, ColumnCache, UpdateColumnPayload } from "@/types";
-import { LoaderStatus } from "@/hooks/hook.type";
+import { LoaderStatus } from "@/types/global/types";
 import { columnServices } from "@/services/columns.service";
 import { toRecord } from "@/helper/utils/object";
 import { toast } from "sonner";
@@ -13,8 +13,13 @@ type ColumnStore = {
   columnsLoader: {
     [columnId: string]: boolean;
   };
-  createColumns: (payload: CreateColumnPayload[]) => Promise<ColumnCache[] | null>;
-  updateColumns: (colIds: string[], payload: UpdateColumnPayload[]) => Promise<ColumnCache[] | null>;
+  createColumns: (
+    payload: CreateColumnPayload[],
+  ) => Promise<ColumnCache[] | null>;
+  updateColumns: (
+    colIds: string[],
+    payload: UpdateColumnPayload[],
+  ) => Promise<ColumnCache[] | null>;
   deleteColumns: (colIds: string[]) => Promise<void>;
   fetchColumns: (
     projectId: string,
@@ -28,7 +33,7 @@ export const useColumnStore = create<ColumnStore>((set) => ({
   columnsLoader: {},
   createColumns: async (payload) => {
     if (payload.length === 0) {
-        toast.error("No columns to create");
+      toast.error("No columns to create");
       return null;
     }
     set({ status: "creating" });
@@ -58,12 +63,14 @@ export const useColumnStore = create<ColumnStore>((set) => ({
   },
   updateColumns: async (colIds, payload) => {
     if (colIds.length === 0 || payload.length === 0) {
-        toast.error("No columns to update");
+      toast.error("No columns to update");
       return null;
     }
     set({ status: "updating" });
     colIds.forEach((columnId) => {
-      set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: true } }));
+      set((state) => ({
+        columnsLoader: { ...state.columnsLoader, [columnId]: true },
+      }));
     });
     try {
       const response = await columnServices.updateColumns(colIds, payload);
@@ -87,19 +94,23 @@ export const useColumnStore = create<ColumnStore>((set) => ({
     } catch (error) {
       set({ status: "error" });
       colIds.forEach((columnId) => {
-      set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: false } }));
-    });
+        set((state) => ({
+          columnsLoader: { ...state.columnsLoader, [columnId]: false },
+        }));
+      });
       throw error;
     } finally {
       set({ status: "none" });
       colIds.forEach((columnId) => {
-        set((state) => ({ columnsLoader: { ...state.columnsLoader, [columnId]: false } }));
+        set((state) => ({
+          columnsLoader: { ...state.columnsLoader, [columnId]: false },
+        }));
       });
     }
   },
   deleteColumns: async (colIds) => {
     if (colIds.length === 0) {
-        toast.error("No columns to delete");
+      toast.error("No columns to delete");
       return;
     }
     set({ status: "deleting" });
@@ -131,7 +142,10 @@ export const useColumnStore = create<ColumnStore>((set) => ({
 
     set({ status: "fetching" });
     try {
-      const response = await columnServices.getColumnsByProjectId(projectId, limitTasks);
+      const response = await columnServices.getColumnsByProjectId(
+        projectId,
+        limitTasks,
+      );
       const columnsData = response.data;
       const columnsMap = toRecord(columnsData, "id");
       set((state) => ({

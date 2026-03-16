@@ -18,7 +18,7 @@ const ColumnsSchema = new Schema(
     // Auto-delete after X days (30 or 60 days)
     purgeAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const ColumnsModel =

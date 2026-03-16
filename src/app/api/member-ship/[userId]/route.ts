@@ -16,7 +16,7 @@ const normalizeMembership = (membership: any) => ({
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ userId: string }> },
 ) {
   const session = await getServerSession(authOptions);
   const sessionUserId = session?.user?.id;
@@ -28,7 +28,7 @@ export async function GET(
         message: "Not authenticated",
         status: 401,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -41,7 +41,7 @@ export async function GET(
         message: "userId is required",
         status: 400,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -52,7 +52,7 @@ export async function GET(
         message: "Forbidden",
         status: 403,
       },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -69,7 +69,7 @@ export async function GET(
         message: "Get memberships success",
         status: 200,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Failed to fetch memberships:", error);
@@ -79,7 +79,7 @@ export async function GET(
         message: "Failed to fetch memberships",
         status: 500,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
