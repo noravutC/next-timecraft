@@ -52,7 +52,7 @@ export const BarColumn = React.memo(function BarColumn({
       }}
     >
       {sortedCols.map((col, index) => (
-        <Tooltip key={col.id}>
+        <Tooltip key={col.id} delayDuration={500}>
           <TooltipTrigger asChild className="cursor-pointer">
             <div
               className={cn(

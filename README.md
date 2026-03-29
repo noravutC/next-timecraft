@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TimeCraft
+
+A real-time Kanban project management SaaS built with Next.js 16, React 19, and TypeScript.
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql)
+
+## Features
+
+- **Kanban Board** — Drag-and-drop columns and cards with smooth, conflict-free ordering
+- **Real-time Collaboration** — Changes sync instantly across all project members
+- **Optimistic UI** — Every action feels instant with automatic rollback on failure
+- **Project Settings** — Animated slide-in panel for managing name, appearance, and tags
+- **Multi-tenant** — Organizations with projects and members, each with role-based access control
+- **Google OAuth** — Secure sign-in with session management and organization context
+- **Soft Delete** — Safe column deletion with scheduled purge support
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19 |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS v4, shadcn/ui, Framer Motion |
+| State | Zustand 5 |
+| Database | PostgreSQL (Supabase) via Drizzle ORM |
+| Auth | NextAuth 4 — Google OAuth, JWT |
+| Real-time | Pusher WebSocket |
+| Drag & Drop | Atlaskit pragmatic-drag-and-drop |
+| Package Manager | pnpm |
+
+## Architecture
+
+```
+src/
+├── app/
+│   ├── (main)/        # Authenticated route group
+│   │   └── project/   # Kanban board + settings panel
+│   ├── api/           # REST API routes
+│   └── login/         # Google OAuth login
+├── store/             # Zustand global state
+├── services/          # API service layer
+├── db/                # Drizzle ORM schema & queries
+├── components/        # UI components (shadcn/ui)
+└── types/             # TypeScript type definitions
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- pnpm
+- Supabase PostgreSQL database
+- Google OAuth credentials
+- Pusher account
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+pnpm db:push
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+NEXTAUTH_SECRET=
+PUSHER_APP_ID=
+PUSHER_KEY=
+PUSHER_SECRET=
+PUSHER_CLUSTER=
+NEXT_PUBLIC_PUSHER_KEY=
+NEXT_PUBLIC_PUSHER_CLUSTER=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Commands
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev      # Start dev server (Turbopack)
+pnpm build    # Production build
+pnpm format   # Prettier + Tailwind class sorting
+```

@@ -1,7 +1,7 @@
 // src/services/project.service.ts
 import apiClient from "@/lib/axios";
 import { APIGet } from "@/types/global";
-import { APIPost, ProjectCache } from "@/types";
+import { APIDelete, APIPatch, APIPost, ProjectCache, ProjectRow } from "@/types";
 
 export type ProjectTemplateColumnInput = {
   name: string;
@@ -17,6 +17,14 @@ export type CreateProjectPayload = {
   // templateColumns?: ProjectTemplateColumnInput[];
 };
 
+export type UpdateProjectPayload = {
+  name?: string;
+  description?: string;
+  coverImage?: string | null;
+  tags?: string[];
+  archived?: boolean;
+};
+
 class ProjectService {
   private client = apiClient;
 
@@ -29,6 +37,27 @@ class ProjectService {
       .then((response) => response.data as APIGet<ProjectCache[]>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to fetch projects");
+      });
+  }
+
+  async updateProject(
+    projectId: string,
+    payload: UpdateProjectPayload,
+  ): Promise<APIPatch<ProjectRow>> {
+    return this.client
+      .patch(`/project/${projectId}`, payload)
+      .then((response) => response.data as APIPatch<ProjectRow>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to update project");
+      });
+  }
+
+  async deleteProject(projectId: string): Promise<APIDelete<ProjectRow>> {
+    return this.client
+      .delete(`/project/${projectId}`)
+      .then((response) => response.data as APIDelete<ProjectRow>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to delete project");
       });
   }
 

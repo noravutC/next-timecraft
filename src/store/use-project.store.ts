@@ -3,6 +3,7 @@ import { ProjectCache } from "@/types";
 import { LoaderStatus } from "@/types/global/types";
 import {
   CreateProjectPayload,
+  UpdateProjectPayload,
   projectServices,
 } from "@/services/projects.service";
 import { toRecord } from "@/helper/utils/object";
@@ -19,13 +20,19 @@ type ProjectStore = {
   createProject: (
     payload: CreateProjectPayload,
   ) => Promise<ProjectCache | null>;
+  updateProject: (
+    projectId: string,
+    payload: UpdateProjectPayload,
+  ) => Promise<void>;
+  removeProject: (projectId: string) => void;
   fetchProjects: (
     projectIds: string[],
     fetchAll?: boolean,
   ) => Promise<ProjectCache[]>;
+  viewProjectUsing: () => ProjectCache | null;
 };
 
-export const useProjectStore = create<ProjectStore>((set) => ({
+export const useProjectStore = create<ProjectStore>((set, get) => ({
   status: "none",
   projectIsUsing: null,
   needCreateProject: false,
@@ -69,6 +76,45 @@ export const useProjectStore = create<ProjectStore>((set) => ({
       throw error;
     }
   },
+  updateProject: async (projectId, payload) => {
+    set({ status: "updating" });
+    try {
+      const response = await projectServices.updateProject(projectId, payload);
+      const updated = response.updated;
+      if (!updated) {
+        set({ status: "none" });
+        return;
+      }
+      set((state) => ({
+        projects: {
+          ...state.projects,
+          [projectId]: {
+            ...state.projects[projectId],
+            ...updated,
+            timestamp: Date.now(),
+          },
+        },
+        status: "none",
+      }));
+    } catch (error) {
+      set({ status: "error" });
+      throw error;
+    }
+  },
+  removeProject: (projectId) => {
+    set((state) => {
+      const { [projectId]: _, ...rest } = state.projects;
+      const nextUsing =
+        state.projectIsUsing === projectId
+          ? (Object.keys(rest)[0] ?? null)
+          : state.projectIsUsing;
+      return {
+        projects: rest,
+        projectIsUsing: nextUsing,
+        needCreateProject: Object.keys(rest).length === 0,
+      };
+    });
+  },
   fetchProjects: async (projectIds, fetchAll = false) => {
     if (projectIds.length === 0 && !fetchAll) {
       return [];
@@ -92,5 +138,10 @@ export const useProjectStore = create<ProjectStore>((set) => ({
       set({ status: "error" });
       throw error;
     }
+  },
+  viewProjectUsing: () => {
+    const { projects, projectIsUsing } = get();
+    if (!projectIsUsing) return null;
+    return projects[projectIsUsing] ?? null;
   },
 }));
