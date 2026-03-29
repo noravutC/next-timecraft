@@ -1,16 +1,13 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 export default function RootLayout({
@@ -19,14 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full w-full overflow-hidden">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} h-full w-full overflow-hidden`}
-        style={{
-          fontFamily:
-            'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        }}
-      >
+    <html lang="en" className={`h-full w-full overflow-hidden ${openSans.variable}`}>
+      <body className="h-full w-full overflow-hidden font-sans">
         <AuthProvider>
           {children}
           <Toaster />

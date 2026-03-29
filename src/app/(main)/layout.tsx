@@ -1,11 +1,10 @@
-"use client";
-import React, { useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+'use client';
+import React, { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 // components
-import { HeaderMenu } from "@/components/menu-bar/header-menu";
-import { ProjectProvider } from "@/context/project-tab";
-import LogoAnimationLoop from "@/components/logo-space/logo-animation-loop";
+import { HeaderMenu } from '@/components/menu-bar/header-menu';
+import LogoAnimationLoop from '@/components/logo-space/logo-animation-loop';
 
 export default function RootLayout({
   children,
@@ -16,32 +15,32 @@ export default function RootLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login");
+    if (status === 'unauthenticated') {
+      router.replace('/login');
     }
   }, [status, router]);
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="flex h-full w-full items-center justify-center">
         <LogoAnimationLoop />
       </div>
     );
   }
 
-  if (status === "unauthenticated") {
+  if (status === 'unauthenticated') {
     return null;
   }
 
   return (
-    <div className="max-w-screen max-h-screen h-full w-full overflow-hidden">
-      <div className="flex flex-col h-full">
-        <div className="max-w-[100vw] min-h-max min-w-[100vw] border-b p-2">
+    <div className="h-full max-h-screen w-full max-w-screen overflow-hidden">
+      <div className="flex h-full flex-col">
+        <div className="min-h-max max-w-[100vw] min-w-[100vw] border-b p-2">
           <HeaderMenu />
         </div>
-        <div className="flex-1 flex max-h-screen h-full">
-          <div className="w-full p-2 h-full overflow-hidden">
-            <ProjectProvider>{children}</ProjectProvider>
+        <div className="flex h-full max-h-screen flex-1">
+          <div className="h-full w-full overflow-hidden">
+            {children}
           </div>
         </div>
       </div>

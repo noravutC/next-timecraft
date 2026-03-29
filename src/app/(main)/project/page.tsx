@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { ProjectToolsLayout } from "./project-layout";
-import { Board } from "./_components/board";
+import { Board } from './_components/board';
+import { ProjectToolsLayout } from './project-layout';
 
 export default function ProjectsContent() {
   return (

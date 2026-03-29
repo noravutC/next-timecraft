@@ -153,10 +153,31 @@ export async function POST(request: Request) {
             )
             .orderBy(desc(projectsTable.createdAt));
 
+    const allProjectIds = projects.map((p) => p.id);
+    const memberRows =
+      allProjectIds.length > 0
+        ? await db
+            .select({
+              projectId: projectMembersTable.projectId,
+              userId: projectMembersTable.userId,
+              role: projectMembersTable.role,
+              joinedAt: projectMembersTable.joinedAt,
+            })
+            .from(projectMembersTable)
+            .where(inArray(projectMembersTable.projectId, allProjectIds))
+        : [];
+
+    const membersByProject = memberRows.reduce<Record<string, typeof memberRows>>(
+      (acc, m) => {
+        (acc[m.projectId] ??= []).push(m);
+        return acc;
+      },
+      {},
+    );
+
     const data = projects.map((project) => ({
       ...project,
-      id: project.id,
-      members: [],
+      members: membersByProject[project.id] ?? [],
       timestamp: Date.now(),
     }));
 
