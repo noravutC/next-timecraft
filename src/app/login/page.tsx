@@ -12,6 +12,7 @@ export default function Login() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [showButton, setShowButton] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const organizationId = session?.user?.organizationId?.trim() ?? "";
   const canCreateOrg = session?.user?.canCreateOrg ?? false;
 
@@ -40,6 +41,11 @@ export default function Login() {
     }
   }, [status, session, organizationId, canCreateOrg, router]);
 
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+    await signIn("guest", { redirect: false });
+  };
+
   if (status === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-between gap-10 min-h-screen">
@@ -49,13 +55,20 @@ export default function Login() {
         </div>
         <div
           className={`
-    min-h-[100px] flex items-center justify-center
+    min-h-[100px] flex flex-col items-center justify-center gap-3
     transition-opacity duration-700
     ${showButton ? "opacity-100" : "opacity-0"}
   `}
         >
           <Button className="g_id_signin" onClick={() => signIn("google")}>
             Sign in with Google
+          </Button>
+          <Button
+            variant="outline"
+            disabled={guestLoading}
+            onClick={handleGuestLogin}
+          >
+            {guestLoading ? "Loading..." : "Continue as Guest"}
           </Button>
         </div>
       </div>
