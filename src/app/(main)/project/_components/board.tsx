@@ -16,6 +16,7 @@ import type { UpdateColumnPayload, UpdateTaskPayload } from "@/types";
 import { useRealtimeBoard } from "@/store/sync-live-data/useRealtimeBoard";
 import { computeCardMove, computeColumnMove } from "./board-operations";
 import { Column } from "./column";
+import { useSpacebarPan } from "./use-spacebar-pan";
 import {
   deriveBoardView,
   isCardData,
@@ -178,12 +179,14 @@ export const Board = () => {
     );
   }, [settings, updateColumns, updateTasks]);
 
+  const panCursor = useSpacebarPan(scrollableRef);
+
   const boardCls = settings.isBoardMoreObvious ? "px-32 py-20" : "";
   const scrollCls = `flex h-full flex-row gap-3 overflow-x-auto p-3 [scrollbar-color:theme(colors.sky.600)_theme(colors.sky.800)] [scrollbar-width:thin] ${settings.isBoardMoreObvious ? "rounded border-2 border-dashed" : ""}`;
 
   return (
     <div className={`flex h-full flex-col ${boardCls}`}>
-      <div ref={scrollableRef} className={scrollCls}>
+      <div ref={scrollableRef} className={scrollCls} style={{ cursor: panCursor !== "default" ? panCursor : undefined }}>
         {board.columns.map((column) => (
           <Column key={column.id} column={column} />
         ))}
