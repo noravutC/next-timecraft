@@ -1,10 +1,60 @@
 // src/auth.ts
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
 import { and, eq, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { membershipsTable, usersTable } from "@/db/schema";
+import { membershipsTable, organizationsTable, usersTable } from "@/db/schema";
+
+const GUEST_EMAIL = "guest@timecraft.demo";
+const GUEST_NAME = "Guest User";
+
+const provisionGuestAccount = async () => {
+  const [guestUser] = await db
+    .insert(usersTable)
+    .values({
+      fullName: GUEST_NAME,
+      email: GUEST_EMAIL,
+      avatar: null,
+      provider: "guest",
+      providerId: "guest",
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: usersTable.email,
+      set: { updatedAt: new Date() },
+    })
+    .returning({ id: usersTable.id });
+
+  let [existingOrg] = await db
+    .select({ id: organizationsTable.id })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.createdBy, guestUser.id))
+    .limit(1);
+
+  if (!existingOrg) {
+    [existingOrg] = await db
+      .insert(organizationsTable)
+      .values({
+        name: "Demo Organization",
+        description: "Guest demo workspace",
+        createdBy: guestUser.id,
+      })
+      .returning({ id: organizationsTable.id });
+  }
+
+  await db
+    .insert(membershipsTable)
+    .values({
+      userId: guestUser.id,
+      organizationId: existingOrg.id,
+      role: "owner",
+    })
+    .onConflictDoNothing();
+
+  return { id: guestUser.id, name: GUEST_NAME, email: GUEST_EMAIL, image: null };
+};
 
 export interface TimeCraftJWT extends Record<string, unknown> {
   id?: string;
@@ -81,6 +131,14 @@ export const authOptions: AuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    CredentialsProvider({
+      id: "guest",
+      name: "Guest",
+      credentials: {},
+      async authorize() {
+        return provisionGuestAccount();
+      },
+    }),
   ],
   session: {
     strategy: "jwt" as const, // fix type here
@@ -88,6 +146,11 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
+      // Guest account is already provisioned in authorize()
+      if (account?.provider === "guest") {
+        return true;
+      }
+
       if (!user.email) {
         return false;
       }
