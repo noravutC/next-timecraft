@@ -8,6 +8,13 @@
       "when": 1771767220397,
       "tag": "0000_young_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774793840148,
+      "tag": "0001_awesome_absorbing_man",
+      "breakpoints": true
     }
   ]
 }

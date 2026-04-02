@@ -1,5 +1,7 @@
 import { relations } from "drizzle-orm";
 import { columnsTable } from "./column.table";
+import { cronJobsTable } from "./cron-job.table";
+import { jobQueueTable } from "./job-queue.table";
 import { membershipsTable } from "./membership.table";
 import { organizationsTable } from "./organization.table";
 import { projectMembersTable } from "./project-member.table";
@@ -127,3 +129,25 @@ export const taskDependenciesTableRelations = relations(
     }),
   }),
 );
+
+export const cronJobsTableRelations = relations(
+  cronJobsTable,
+  ({ one, many }) => ({
+    organization: one(organizationsTable, {
+      fields: [cronJobsTable.organizationId],
+      references: [organizationsTable.id],
+    }),
+    jobs: many(jobQueueTable),
+  }),
+);
+
+export const jobQueueTableRelations = relations(jobQueueTable, ({ one }) => ({
+  cronJob: one(cronJobsTable, {
+    fields: [jobQueueTable.cronJobId],
+    references: [cronJobsTable.id],
+  }),
+  createdBy: one(usersTable, {
+    fields: [jobQueueTable.createdBy],
+    references: [usersTable.id],
+  }),
+}));
