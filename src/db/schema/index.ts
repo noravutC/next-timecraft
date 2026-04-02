@@ -8,4 +8,6 @@ export * from "./column.table";
 export * from "./task.table";
 export * from "./task-assignee.table";
 export * from "./task-dependency.table";
+export * from "./cron-job.table";
+export * from "./job-queue.table";
 export * from "./relations";
