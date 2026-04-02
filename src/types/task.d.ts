@@ -28,6 +28,7 @@ export type UpdateTaskPayload = Pick<
   | "tags"
   | "priority"
   | "dueDate"
+  | "archived"
 >;
 
 export interface TaskCache extends Task {

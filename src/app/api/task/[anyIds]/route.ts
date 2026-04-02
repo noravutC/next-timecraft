@@ -169,6 +169,7 @@ export async function PATCH(
             tags: item.tags,
             priority: item.priority,
             dueDate: item.dueDate,
+            archived: item.archived,
             updatedAt: new Date(),
           })
           .where(eq(tasksTable.id, taskId))

@@ -1,9 +1,7 @@
 import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { columnsTable, projectMembersTable, tasksTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { UpdateColumnPayload } from "@/types";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { tasksTable } from "@/db/schema";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -56,7 +54,7 @@ export async function POST(request: Request) {
     const tasks = await db
       .select()
       .from(tasksTable)
-      .where(inArray(tasksTable.columnId, colIds))
+      .where(and(inArray(tasksTable.columnId, colIds), eq(tasksTable.archived, false)))
       .orderBy(asc(tasksTable.orderFraction))
       .limit(limit);
 

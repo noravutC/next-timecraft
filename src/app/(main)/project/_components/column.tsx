@@ -10,7 +10,7 @@ import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { preserveOffsetOnSource } from "@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
-import { Ellipsis, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";
 import {
@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShallow } from "zustand/react/shallow";
 import { useColumnStore } from "@/store/use-column.store";
+import { AddCardInline } from "./add-card-inline";
 
 type TColumnState =
   | { type: "idle" }
@@ -72,6 +73,7 @@ export const Column = ({ column }: { column: TColumn }) => {
   const columnsLoader = useColumnStore(useShallow((s) => s.columnsLoader));
   const isLoading = columnsLoader[column.id] ?? false;
   const [state, setState] = useState<TColumnState>(idle);
+  const [isAdding, setIsAdding] = useState(false);
   const backgroundStyle = column.color
     ? { background: hexToRgba(column.color, 0.6) }
     : {};
@@ -251,15 +253,24 @@ export const Column = ({ column }: { column: TColumn }) => {
               </div>
             )}
           </div>
-          <div className="flex flex-row gap-2 p-2">
-            <button
-              type="button"
-              className="flex cursor-pointer flex-grow justify-start flex-row gap-2 rounded hover:bg-gray-100 active:bg-gray-100 text-sm text-gray-700 p-2 py-3"
-            >
-              <Plus size={16} />
-              <div className="leading-4 font-semibold">Add a card</div>
-            </button>
-          </div>
+          {isAdding ? (
+            <AddCardInline
+              columnId={column.id}
+              lastOrderFraction={column.cards.at(-1)?.orderFraction ?? null}
+              onClose={() => setIsAdding(false)}
+            />
+          ) : (
+            <div className="flex flex-row gap-2 p-2">
+              <button
+                type="button"
+                onClick={() => setIsAdding(true)}
+                className="flex cursor-pointer flex-grow justify-start flex-row gap-2 rounded hover:bg-gray-100 active:bg-gray-100 text-sm text-gray-700 p-2 py-3"
+              >
+                <Plus size={16} />
+                <div className="leading-4 font-semibold">Add a card</div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

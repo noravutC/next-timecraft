@@ -30,6 +30,7 @@ import { useTaskStore } from '@/store/use-task.store';
 import { LoaderCircle } from 'lucide-react';
 import { formatDateToString } from '@/helper/utils';
 import { cn } from '@/lib/utils';
+import { CardActionsMenu } from './card-actions-menu';
 
 type TCardState =
   | { type: 'idle' }
@@ -71,6 +72,7 @@ export function CardDisplay({
 }) {
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
+
   return (
     <div
       ref={outerRef}
@@ -84,7 +86,7 @@ export function CardDisplay({
       )}
       <div
         ref={innerRef}
-        className={`min-h-30 rounded-md border bg-white p-4 text-gray-700 ${innerStyles[state.type] ?? ''}`}
+        className={`group relative min-h-30 rounded-md border bg-white p-4 text-gray-700 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
             ? {
@@ -95,7 +97,10 @@ export function CardDisplay({
             : undefined
         }
       >
-        <div className="text-sm">{card.title}</div>
+        <div className="flex">
+          <div className="line-clamp-3 flex-1 text-sm">{card.title}</div>
+          <CardActionsMenu card={card} />
+        </div>
         <div className="mb-4" />
         <BarColumn taskAtColumnId={card.columnId} />
         <div className="mb-4" />

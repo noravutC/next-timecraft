@@ -74,6 +74,7 @@ export function deriveBoardView(
 
   for (const task of Object.values(tasksMap)) {
     if (!buckets[task.columnId]) continue;
+    if (task.archived) continue;
     if (pendingMove?.type === "card" && task.id === pendingMove.taskId)
       continue;
     buckets[task.columnId].push({
