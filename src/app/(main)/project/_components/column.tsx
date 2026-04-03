@@ -205,7 +205,7 @@ export const Column = ({ column }: { column: TColumn }) => {
     >
       <div
         className={cn(
-          `flex max-h-160 flex-col rounded-md text-gray-800 border overflow-hidden ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-14rem)] min-h-60 flex-col rounded-md text-gray-800 border overflow-hidden ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
