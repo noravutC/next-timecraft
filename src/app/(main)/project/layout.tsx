@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -6,7 +6,7 @@ import { useNavStore, useProjectStore, useUserStore } from '@/store';
 import LogoAnimationLoop from '@/components/logo-space/logo-animation-loop';
 import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
-import { ProjectSettingsPanel } from './settings/project-settings-panel';
+import { BoardSettingsPanel } from './settings/board-settings-panel';
 import { BottomBarProject } from '@/components/bottom-menu/bottom-bar-project';
 
 export default function ProjectLayout({
@@ -14,8 +14,13 @@ export default function ProjectLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { projects, status, needCreateProject, setProjectIsUsing, fetchProjects } =
-    useProjectStore();
+  const {
+    projects,
+    status,
+    needCreateProject,
+    setProjectIsUsing,
+    fetchProjects,
+  } = useProjectStore();
   const { fetchUsers } = useUserStore();
   const { view } = useNavStore();
 
@@ -35,7 +40,7 @@ export default function ProjectLayout({
   }, [needCreateProject, projects]);
 
   return (
-    <div className="relative flex h-full w-full max-w-full flex-col overflow-x-hidden">
+    <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden">
       <BottomBarProject />
       {needCreateProject ? (
         <CreateFirstProject />
@@ -49,14 +54,12 @@ export default function ProjectLayout({
                 <motion.div
                   key="settings"
                   initial={{ width: 0 }}
-                  animate={{ width: 500 }}
+                  animate={{ width: 340 }}
                   exit={{ width: 0 }}
                   transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-                  className="shrink-0 overflow-hidden border-r "
+                  className="h-full shrink-0 overflow-hidden border-r"
                 >
-                  <div className="h-full max-w-[500px] w-full">
-                    <ProjectSettingsPanel />
-                  </div>
+                  <BoardSettingsPanel />
                 </motion.div>
               )}
             </AnimatePresence>

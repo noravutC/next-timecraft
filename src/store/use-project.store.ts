@@ -24,6 +24,7 @@ type ProjectStore = {
     projectId: string,
     payload: UpdateProjectPayload,
   ) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
   removeProject: (projectId: string) => void;
   fetchProjects: (
     projectIds: string[],
@@ -114,6 +115,28 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         needCreateProject: Object.keys(rest).length === 0,
       };
     });
+  },
+  deleteProject: async (projectId) => {
+    set({ status: "deleting" });
+    try {
+      await projectServices.deleteProject(projectId);
+      set((state) => {
+        const { [projectId]: _, ...rest } = state.projects;
+        const nextUsing =
+          state.projectIsUsing === projectId
+            ? (Object.keys(rest)[0] ?? null)
+            : state.projectIsUsing;
+        return {
+          projects: rest,
+          projectIsUsing: nextUsing,
+          needCreateProject: Object.keys(rest).length === 0,
+          status: "none",
+        };
+      });
+    } catch (error) {
+      set({ status: "error" });
+      throw error;
+    }
   },
   fetchProjects: async (projectIds, fetchAll = false) => {
     if (projectIds.length === 0 && !fetchAll) {

@@ -38,7 +38,7 @@ export default function RootLayout({
         <div className="min-h-max max-w-[100vw] min-w-[100vw] border-b p-2">
           <HeaderMenu />
         </div>
-        <div className="flex h-full max-h-screen flex-1">
+        <div className="flex min-h-0 flex-1">
           <div className="h-full w-full overflow-hidden">
             {children}
           </div>
