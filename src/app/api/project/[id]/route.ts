@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { projectMembersTable, projectsTable } from "@/db/schema";
 import { hasPermission } from "@/db/uniq-query/project/project-utils";
+import { projectSettingsSchema } from "@/types/project-settings";
 import { and, eq } from "drizzle-orm";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
@@ -61,6 +62,7 @@ export async function PATCH(
       coverImage?: string | null;
       tags?: string[];
       archived?: boolean;
+      settings?: unknown;
     };
 
     const name = body.name?.trim();
@@ -83,6 +85,22 @@ export async function PATCH(
       );
     }
 
+    const settingsResult =
+      body.settings !== undefined
+        ? projectSettingsSchema.safeParse(body.settings)
+        : undefined;
+
+    if (settingsResult && !settingsResult.success) {
+      return NextResponse.json(
+        {
+          updated: null,
+          message: `Invalid project settings: ${settingsResult.error.issues[0]?.message ?? "validation failed"}`,
+          status: 400,
+        },
+        { status: 400 },
+      );
+    }
+
     const updatePayload: Partial<typeof projectsTable.$inferInsert> = {
       updatedAt: new Date(),
     };
@@ -93,6 +111,8 @@ export async function PATCH(
     if (Array.isArray(body.tags)) updatePayload.tags = body.tags;
     if (typeof body.archived === "boolean")
       updatePayload.archived = body.archived;
+    if (settingsResult?.success)
+      updatePayload.settings = settingsResult.data;
 
     const [updated] = await db
       .update(projectsTable)

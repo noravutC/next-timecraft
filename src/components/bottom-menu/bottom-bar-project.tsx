@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
+import { Layers, LucideIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavStore, useProjectStore, viewMeta } from '@/store';
-import { LucideIcon, Plus } from 'lucide-react';
-import { DropdownMenuSwitchProject } from './dropdown-menu-switch-project';
+import { ProjectSwitcherPanel } from './project-switcher-panel';
 
 export const BottomBarProject = () => {
   const { setNeedCreateProject } = useProjectStore();
   const { view, setView } = useNavStore();
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const tabs = (['board', 'settings'] as const).map((k) => ({
     key: k,
@@ -16,30 +18,55 @@ export const BottomBarProject = () => {
   }));
 
   return (
-    <div className="absolute right-0 bottom-4 left-0 z-50 mx-auto flex h-11 w-fit min-w-100 items-center gap-0.5 rounded-md border border-gray-200 bg-background p-1 shadow-sm">
-      {/* Tab items: Board, Settings */}
-      {tabs.map((tab) => (
-        <MenuBottomNav
-          key={tab.key}
-          label={tab.label}
-          Icon={tab.icon}
-          iconClass={tab.iconClass}
-          isActive={view === tab.key}
-          onSetView={() => setView(tab.key)}
-        />
-      ))}
+    <>
+      <ProjectSwitcherPanel
+        open={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+      />
 
-      {/* Separator */}
-      <div className="mx-1 h-5 w-px shrink-0 bg-gray-200" />
+      <div className="absolute right-0 bottom-4 left-0 z-50 mx-auto flex h-11 w-fit min-w-100 items-center gap-0.5 rounded-md border border-gray-200 bg-background p-1 shadow-sm">
+        {/* Tab items: Board, Settings */}
+        {tabs.map((tab) => (
+          <MenuBottomNav
+            key={tab.key}
+            label={tab.label}
+            Icon={tab.icon}
+            iconClass={tab.iconClass}
+            isActive={view === tab.key}
+            onSetView={() => setView(tab.key)}
+          />
+        ))}
 
-      {/* Switch Boards Dropdown */}
-      <DropdownMenuSwitchProject />
+        {/* Separator */}
+        <div className="mx-1 h-5 w-px shrink-0 bg-gray-200" />
 
-      {/* New / Add Dropdown */}
-      <Button size="sm" className="h-full rounded-md px-2.5" onClick={() => setNeedCreateProject(true)}>
-        <Plus className="size-4" />
-      </Button>
-    </div>
+        {/* Switch Boards toggle */}
+        <div
+          onClick={() => setSwitcherOpen((v) => !v)}
+          aria-pressed={switcherOpen}
+          className={cn(
+            'relative h-full w-full max-w-30 min-w-max cursor-pointer overflow-hidden rounded-md text-muted-foreground duration-200 select-none',
+            'hover:bg-foreground/10 hover:text-foreground/80',
+            switcherOpen &&
+              'bg-muted-foreground/20 text-foreground hover:bg-muted-foreground/20 hover:text-foreground',
+          )}
+        >
+          <span className="flex h-full w-full items-center justify-center gap-1.5 px-3 text-sm font-semibold">
+            <Layers className="size-3.5 shrink-0" />
+            Switch Boards
+          </span>
+        </div>
+
+        {/* New / Add */}
+        <Button
+          size="sm"
+          className="h-full rounded-md px-2.5"
+          onClick={() => setNeedCreateProject(true)}
+        >
+          <Plus className="size-4" />
+        </Button>
+      </div>
+    </>
   );
 };
 

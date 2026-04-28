@@ -1,8 +1,16 @@
 // db/schema/project.table.ts
 import { sql } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { organizationsTable } from "./organization.table";
 import { usersTable } from "./user.table";
+import type { ProjectSettings } from "@/types/project-settings";
 
 export const projectsTable = pgTable("projects", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -23,6 +31,10 @@ export const projectsTable = pgTable("projects", {
     .array()
     .notNull()
     .default(sql`ARRAY[]::text[]`),
+  settings: jsonb("settings")
+    .$type<ProjectSettings>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

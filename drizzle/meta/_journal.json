@@ -15,6 +15,13 @@
       "when": 1774793840148,
       "tag": "0001_awesome_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777293259855,
+      "tag": "0002_minor_clea",
+      "breakpoints": true
     }
   ]
 }

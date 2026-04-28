@@ -1,7 +1,14 @@
 // src/services/project.service.ts
 import apiClient from "@/lib/axios";
 import { APIGet } from "@/types/global";
-import { APIDelete, APIPatch, APIPost, ProjectCache, ProjectRow } from "@/types";
+import {
+  APIDelete,
+  APIPatch,
+  APIPost,
+  ProjectCache,
+  ProjectRow,
+} from "@/types";
+import type { ProjectSettings } from "@/types/project-settings";
 
 export type ProjectTemplateColumnInput = {
   name: string;
@@ -23,6 +30,7 @@ export type UpdateProjectPayload = {
   coverImage?: string | null;
   tags?: string[];
   archived?: boolean;
+  settings?: ProjectSettings;
 };
 
 class ProjectService {
