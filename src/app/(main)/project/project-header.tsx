@@ -1,16 +1,8 @@
 'use client';
 
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
-import {
-  Folder,
-  Globe,
-  Star,
-} from 'lucide-react';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { Globe, Star } from 'lucide-react';
+import { ProjectAvatar } from '@/components/project/project-avatar';
 import {
   Tooltip,
   TooltipContent,
@@ -55,15 +47,13 @@ export const ProjectHeader = () => {
             </>
           ) : (
             <>
-              <Avatar className="shrink-0 rounded text-xs text-primary">
-                <AvatarImage
-                  src={projectValue?.coverImage ?? undefined}
-                  alt={projectValue?.name}
+              {projectValue && (
+                <ProjectAvatar
+                  project={projectValue}
+                  size="size-6"
+                  rounded="rounded"
                 />
-                <AvatarFallback className="shrink-0 rounded text-xs text-primary">
-                  <Folder className="size-4" />
-                </AvatarFallback>
-              </Avatar>
+              )}
               <span className="text-md rounded px-1 py-0.5 font-semibold text-foreground transition-colors">
                 {projectValue?.name ?? '—'}
               </span>

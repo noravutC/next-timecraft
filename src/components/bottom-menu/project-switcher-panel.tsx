@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Archive, Columns3, Folder, Plus, Users } from 'lucide-react';
+import { Archive, Columns3, Plus, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/store';
 import { useColumnStore } from '@/store/use-column.store';
 import { useOrganizationStore } from '@/store/use-organization.store';
 import { useUserStore } from '@/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProjectAvatar } from '@/components/project/project-avatar';
 import type { ProjectCache } from '@/types';
 import { withSettingsDefaults } from '@/types/project-settings';
-import { ICON_OPTIONS } from '@/lib/project-settings/constants';
 import {
   hashTagColor,
   paletteFor,
@@ -63,7 +63,7 @@ export const ProjectSwitcherPanel = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute right-0 bottom-20 left-0 z-50 mx-auto w-fit"
+            className="absolute right-0 bottom-20 left-70 z-50 mx-auto w-fit"
           >
             <div className="flex h-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-background shadow-2xl">
               <OrgRail orgName={orgName} orgInitial={orgInitial} />
@@ -88,43 +88,6 @@ export const ProjectSwitcherPanel = ({
   );
 };
 
-// ─── Project avatar (icon emoji or coverImage, tinted by settings.color) ──
-
-const ProjectAvatar = ({
-  project,
-  size,
-  rounded,
-}: {
-  project: ProjectCache;
-  size: string;
-  rounded: string;
-}) => {
-  const settings = withSettingsDefaults(project.settings);
-  const iconOption = ICON_OPTIONS.find((i) => i.id === settings.icon);
-  const tint = settings.color;
-
-  return (
-    <Avatar
-      className={cn('shrink-0', size, rounded)}
-      style={{ backgroundColor: `${tint}1a` }}
-    >
-      {project.coverImage && (
-        <AvatarImage src={project.coverImage} alt={project.name} />
-      )}
-      <AvatarFallback
-        className={cn('text-base', rounded)}
-        style={{ backgroundColor: `${tint}1a`, color: tint }}
-      >
-        {iconOption ? (
-          <span aria-hidden="true">{iconOption.emoji}</span>
-        ) : (
-          <Folder className="size-4" />
-        )}
-      </AvatarFallback>
-    </Avatar>
-  );
-};
-
 // ─── Left rail ─────────────────────────────────────────────────────────────
 
 const OrgRail = ({
@@ -136,7 +99,7 @@ const OrgRail = ({
 }) => (
   <div className="flex w-14 flex-col items-center gap-2 border-r border-gray-200 bg-muted/30 py-4">
     <Avatar className="size-9 rounded-xl" aria-label={orgName}>
-      <AvatarFallback className="rounded-xl bg-foreground text-xs font-semibold text-background">
+      <AvatarFallback className="rounded-xl bg-foreground !text-sm font-semibold text-background">
         {orgInitial}
       </AvatarFallback>
     </Avatar>
