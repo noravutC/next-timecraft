@@ -23,7 +23,7 @@ export const SectionCard = ({
 }: SectionCardProps) => (
   <section
     className={cn(
-      'rounded-xl border bg-card p-4 shadow-sm',
+      'rounded-xl border bg-card p-5.5 shadow-sm',
       tone === 'danger'
         ? 'border-destructive/30 bg-destructive/[0.03]'
         : 'border-border',
@@ -62,7 +62,7 @@ export const SectionCard = ({
 );
 
 export const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-sm font-semibold text-foreground">{children}</p>
+  <p className="text-xs font-semibold text-foreground">{children}</p>
 );
 
 export const SettingSwitch = ({

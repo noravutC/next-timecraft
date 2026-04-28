@@ -11,7 +11,11 @@ import { useUserStore } from '@/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { ProjectCache } from '@/types';
 import { withSettingsDefaults } from '@/types/project-settings';
-import { ICON_OPTIONS } from '@/app/(main)/project/settings/_lib/constants';
+import { ICON_OPTIONS } from '@/lib/project-settings/constants';
+import {
+  hashTagColor,
+  paletteFor,
+} from '@/lib/project-settings/tag-palette';
 
 interface ProjectSwitcherPanelProps {
   open: boolean;
@@ -243,6 +247,7 @@ const ProjectDetailsColumn = ({
   }
 
   const members = project.members ?? [];
+  const settings = withSettingsDefaults(project.settings);
 
   return (
     <div className="flex w-80 flex-col bg-background">
@@ -329,14 +334,28 @@ const ProjectDetailsColumn = ({
           </p>
           {project.tags && project.tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs text-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
+              {project.tags.map((tag) => {
+                const tagPalette = paletteFor(
+                  settings.tagColors[tag] ?? hashTagColor(tag),
+                );
+                return (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                    style={{
+                      backgroundColor: tagPalette.bg,
+                      borderColor: tagPalette.border,
+                      color: tagPalette.text,
+                    }}
+                  >
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: tagPalette.value }}
+                    />
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">No tags</p>

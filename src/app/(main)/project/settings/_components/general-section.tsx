@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { ProjectSettings } from '@/types/project-settings';
-import { ICON_OPTIONS, ACCENT_COLORS } from '../_lib/constants';
+import { ICON_OPTIONS, ACCENT_COLORS } from '@/lib/project-settings/constants';
 import { FieldLabel, SectionCard, SettingSwitch } from './section-card';
 
 interface GeneralSectionProps {
@@ -70,7 +70,7 @@ export const GeneralSection = ({
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             }}
             placeholder="GuardianFlow"
-            className="text-sm"
+            className="!text-sm shadow-sm p-2"
           />
         </div>
 
@@ -81,7 +81,7 @@ export const GeneralSection = ({
             onChange={(e) => setDescription(e.target.value)}
             onBlur={persistDescription}
             placeholder="What is this board tracking?"
-            className="min-h-[72px] resize-none text-sm leading-relaxed"
+            className="resize-none text-sm leading-relaxed shadow-sm p-2"
           />
         </div>
 
@@ -129,7 +129,7 @@ export const GeneralSection = ({
                       aria-label={option.label}
                       aria-pressed={isActive}
                       className={cn(
-                        'relative flex size-7 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110',
+                        'relative flex size-5 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110',
                         isActive &&
                           'ring-2 ring-foreground ring-offset-2 ring-offset-card',
                       )}
@@ -137,8 +137,8 @@ export const GeneralSection = ({
                     >
                       {isActive && (
                         <Check
-                          className="size-4 text-white drop-shadow-sm"
-                          strokeWidth={3}
+                          className="size-3.5 text-white drop-shadow-sm"
+                          strokeWidth={2}
                         />
                       )}
                     </button>
@@ -156,7 +156,7 @@ export const GeneralSection = ({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold leading-tight">Private board</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Only invited members
             </p>
           </div>

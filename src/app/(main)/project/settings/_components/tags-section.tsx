@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ProjectSettings } from '@/types/project-settings';
-import { TAG_LIMIT, TAG_PALETTE } from '../_lib/constants';
-import { hashTagColor, paletteFor } from '../_lib/tag-palette';
+import { TAG_LIMIT, TAG_PALETTE } from '@/lib/project-settings/constants';
+import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { SectionCard } from './section-card';
 
 interface TagsSectionProps {
@@ -155,7 +155,7 @@ export const TagsSection = ({
                 onClick={() => updateSettings({ nextTagColor: option.value })}
                 aria-pressed={isActive}
                 className={cn(
-                  'size-6 rounded-full transition-transform duration-150 hover:scale-110',
+                  'size-5 rounded-full transition-transform duration-150 hover:scale-110',
                   isActive &&
                     'ring-2 ring-foreground ring-offset-2 ring-offset-card',
                 )}

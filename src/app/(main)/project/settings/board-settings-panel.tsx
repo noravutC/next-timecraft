@@ -155,7 +155,7 @@ const BoardSettingsContent = ({
   }, [projectId, updateProject]);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto bg-muted/40 [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]">
+    <div className="flex h-full w-full flex-col overflow-y-auto [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]">
       <div className="flex flex-col gap-4 p-4">
         <GeneralSection
           projectName={projectName}
