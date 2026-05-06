@@ -1,63 +1,33 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { CreateTaskPayload, NewTaskRow } from "@/types";
+import { createHandle } from "@/lib/api/handle";
+import { NotFoundError } from "@/lib/api/errors";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
+import { NewTaskRow } from "@/types";
 import { inArray } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-type CreateTaskBody = Array<CreateTaskPayload>;
+const createTaskSchema = z
+  .array(
+    z.object({
+      columnId: z.string().trim().min(1),
+      title: z.string().trim().min(1),
+      description: z.string().trim().nullable().optional(),
+      orderFraction: z.string().trim().optional(),
+      tags: z.array(z.string()).optional(),
+      priority: z.enum(["low", "medium", "high"]).optional(),
+      dueDate: z.string().nullable().optional(),
+    }),
+  )
+  .min(1, "Payload must be a non-empty array");
 
-const normalizeCreateInput = (item: CreateTaskBody[number]): CreateTaskPayload => {
-  const columnId = item.columnId?.trim() ?? "";
-  const title = item.title?.trim() ?? "";
+type CreateTaskBody = z.infer<typeof createTaskSchema>;
 
-  if (!columnId || !title) {
-    throw new Error("columnId and title are required");
-  }
-
-  return {
-    columnId,
-    title,
-    description: item.description?.trim() || null,
-    orderFraction: item.orderFraction?.trim() || "0",
-    tags: Array.isArray(item.tags) ? item.tags : [],
-    priority: item.priority ?? "medium",
-    dueDate: item.dueDate ?? null,
-  };
-};
-
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        created: null,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as CreateTaskBody;
-    if (!Array.isArray(body) || body.length === 0) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Payload must be a non-empty array",
-          status: 400,
-        },
-        { status: 400 },
-      );
-    }
-
-    const normalizedBody = body.map(normalizeCreateInput);
-    const columnIds = [...new Set(normalizedBody.map((item) => item.columnId))];
+export const POST = createHandle<CreateTaskBody>(
+  { body: createTaskSchema },
+  async ({ userId, body }) => {
+    const columnIds = [...new Set(body.map((item) => item.columnId))];
 
     const columnLinks = await db
       .select({ columnId: columnsTable.id, projectId: columnsTable.projectId })
@@ -65,37 +35,20 @@ export async function POST(request: Request) {
       .where(inArray(columnsTable.id, columnIds));
 
     if (columnLinks.length !== columnIds.length) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Some columns not found",
-          status: 404,
-        },
-        { status: 404 },
-      );
+      throw new NotFoundError("Some columns not found");
     }
 
     const projectIds = [...new Set(columnLinks.map((c) => c.projectId))];
-    const permitted = await hasPermission(sessionUserId, projectIds, "task:create");
-    if (!permitted) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Forbidden",
-          status: 403,
-        },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, projectIds, "task:create");
 
-    const rowsToInsert: NewTaskRow[] = normalizedBody.map((item) => ({
+    const rowsToInsert: NewTaskRow[] = body.map((item) => ({
       columnId: item.columnId,
       title: item.title,
       description: item.description ?? null,
-      orderFraction: item.orderFraction ?? "0",
+      orderFraction: item.orderFraction?.trim() || "a0",
       tags: item.tags ?? [],
       priority: item.priority ?? "medium",
-      dueDate: item.dueDate ?? null,
+      dueDate: item.dueDate ? new Date(item.dueDate) : null,
       updatedAt: new Date(),
     }));
 
@@ -106,33 +59,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        created: createdTasks.map((task) => ({
-          ...task,
-          timestamp: Date.now(),
-        })),
+        created: createdTasks.map((task) => ({ ...task, timestamp: Date.now() })),
         message: "Create tasks success",
         status: 201,
       },
       { status: 201 },
     );
-  } catch (error) {
-    const message =
-      error instanceof Error && error.message === "columnId and title are required"
-        ? error.message
-        : "Failed to create tasks";
-    const statusCode = message === "columnId and title are required" ? 400 : 500;
-
-    if (statusCode === 500) {
-      console.error("Failed to create tasks:", error);
-    }
-
-    return NextResponse.json(
-      {
-        created: null,
-        message,
-        status: statusCode,
-      },
-      { status: statusCode },
-    );
-  }
-}
+  },
+);

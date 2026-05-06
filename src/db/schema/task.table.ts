@@ -27,6 +27,7 @@ export const tasksTable = pgTable("tasks", {
   archived: boolean("archived").notNull().default(false),
   estimatedHours: integer("estimated_hours").notNull().default(0),
   loggedHours: integer("logged_hours").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

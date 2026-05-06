@@ -4,16 +4,7 @@ import { useState } from 'react';
 import { Pencil, Trash2, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore } from '@/store';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionCard } from './section-card';
 
 interface DangerZoneSectionProps {
@@ -35,12 +26,13 @@ export const DangerZoneSection = ({
   const [deleting, setDeleting] = useState(false);
 
   const handleArchive = async () => {
-    setConfirmArchive(false);
     try {
       await updateProject(projectId, { archived: !projectArchived });
       toast.success(projectArchived ? 'Board unarchived' : 'Board archived');
     } catch {
       toast.error('Unable to update archive state');
+    } finally {
+      setConfirmArchive(false);
     }
   };
 
@@ -54,6 +46,7 @@ export const DangerZoneSection = ({
       toast.error('Unable to delete board');
     } finally {
       setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -102,48 +95,35 @@ export const DangerZoneSection = ({
         </div>
       </SectionCard>
 
-      <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {projectArchived ? 'Unarchive board?' : 'Archive board?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {projectArchived
-                ? 'This board will become active again.'
-                : 'This board will be hidden from your active boards. You can unarchive it anytime.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleArchive}>
-              {projectArchived ? 'Unarchive' : 'Archive'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmArchive}
+        onOpenChange={setConfirmArchive}
+        variant="warning"
+        title={projectArchived ? 'Unarchive board?' : 'Archive board?'}
+        description={
+          projectArchived
+            ? 'This board will become active again.'
+            : 'This board will be hidden from your active boards. You can unarchive it anytime.'
+        }
+        primaryLabel={projectArchived ? 'Unarchive' : 'Archive'}
+        onConfirm={handleArchive}
+      />
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this board permanently?</AlertDialogTitle>
-            <AlertDialogDescription>
-              All columns and cards in <strong>{projectName}</strong> will be
-              removed. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {deleting ? 'Deleting…' : 'Delete board'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        variant="destructive"
+        title="Delete this board permanently?"
+        description={
+          <>
+            All columns and cards in <strong>{projectName}</strong> will be
+            removed. This action cannot be undone.
+          </>
+        }
+        primaryLabel={deleting ? 'Deleting…' : 'Delete board'}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </>
   );
 };

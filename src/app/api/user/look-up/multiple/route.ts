@@ -1,13 +1,14 @@
 import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { usersTable } from "@/db/schema";
-import { inArray } from "drizzle-orm";
+import { membershipsTable, usersTable } from "@/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const sessionUserId = session?.user?.id;
+  if (!sessionUserId) {
     return NextResponse.json(
       { data: [], message: "Not authenticated", status: 401 },
       { status: 401 },
@@ -16,12 +17,49 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const userIds: string[] = Array.isArray(body?.userIds) ? body.userIds : [];
+    const userIds: string[] = Array.isArray(body?.userIds)
+      ? Array.from(
+          new Set(
+            (body.userIds as unknown[]).filter(
+              (u): u is string => typeof u === "string",
+            ),
+          ),
+        )
+      : [];
 
     if (userIds.length === 0) {
       return NextResponse.json(
         { data: [], message: "No user IDs provided", status: 400 },
         { status: 400 },
+      );
+    }
+
+    const myOrgs = await db
+      .select({ organizationId: membershipsTable.organizationId })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, sessionUserId));
+    const myOrgIds = myOrgs.map((m) => m.organizationId);
+    if (myOrgIds.length === 0) {
+      return NextResponse.json(
+        { data: [], message: "Users fetched", status: 200 },
+        { status: 200 },
+      );
+    }
+
+    const sharedRows = await db
+      .selectDistinct({ userId: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          inArray(membershipsTable.organizationId, myOrgIds),
+          inArray(membershipsTable.userId, userIds),
+        ),
+      );
+    const allowedIds = sharedRows.map((r) => r.userId);
+    if (allowedIds.length === 0) {
+      return NextResponse.json(
+        { data: [], message: "Users fetched", status: 200 },
+        { status: 200 },
       );
     }
 
@@ -33,7 +71,7 @@ export async function POST(request: Request) {
         avatar: usersTable.avatar,
       })
       .from(usersTable)
-      .where(inArray(usersTable.id, userIds));
+      .where(inArray(usersTable.id, allowedIds));
 
     return NextResponse.json(
       { data: users, message: "Users fetched", status: 200 },

@@ -2,10 +2,12 @@ import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { columnsTable } from "@/db/schema";
 import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { assignBulkIndexes } from "@/helper/utils/fraction-string-indexing";
+import {
+  assignBulkIndexes,
+  isValidFractionKey,
+} from "@/helper/utils/fraction-string-indexing";
 import { CreateColumnPayload, NewColumnRow } from "@/types";
 import { and, eq, inArray } from "drizzle-orm";
-import { generateKeyBetween } from "fractional-indexing";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -27,21 +29,6 @@ const normalizeCreateInput = (
     color: item.color?.trim() || "#CBD5E1",
     wipLimit: Number.isFinite(item.wipLimit) ? Number(item.wipLimit) : 0,
   };
-};
-
-const isValidFractionKey = (value: string) => {
-  const key = value.trim();
-  if (!key) {
-    return false;
-  }
-
-  try {
-    // If this throws, the key is not compatible with the active fractional-indexing alphabet.
-    generateKeyBetween(key, null);
-    return true;
-  } catch {
-    return false;
-  }
 };
 
 const groupByProjectId = <T extends { projectId: string }>(items: T[]) => {

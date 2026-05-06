@@ -27,8 +27,9 @@ import { isSafari } from './is-safari';
 import { BarColumn } from './bar-column';
 import { useShallow } from 'zustand/react/shallow';
 import { useTaskStore } from '@/store/use-task.store';
-import { LoaderCircle } from 'lucide-react';
-import { formatDateToString } from '@/helper/utils';
+import { useTaskDetailStore } from '@/store/use-task-detail.store';
+import { LoaderCircle, MessageSquare } from 'lucide-react';
+import { formatDateShort } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
 
@@ -42,7 +43,7 @@ type TCardState =
 const idle: TCardState = { type: 'idle' };
 
 const innerStyles: Partial<Record<TCardState['type'], string>> = {
-  idle: 'hover:outline outline-2 outline-neutral-50 cursor-grab',
+  idle: 'hover:outline outline-2 outline-neutral-50 cursor-pointer',
   'is-dragging': 'opacity-40',
 };
 
@@ -72,6 +73,10 @@ export function CardDisplay({
 }) {
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
+  const openTask = useTaskDetailStore((s) => s.open);
+  const commentCount = useTaskStore(
+    useShallow((s) => s.tasks[card.id]?.commentCount ?? 0),
+  );
 
   return (
     <div
@@ -86,6 +91,11 @@ export function CardDisplay({
       )}
       <div
         ref={innerRef}
+        // onClick={(e) => {
+        //   if (state.type !== 'idle') return;
+        //   if ((e.target as HTMLElement).closest('[data-card-action]')) return;
+        //   openTask(card.id);
+        // }}
         className={`group relative min-h-30 rounded-md border bg-white p-4 text-gray-700 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
@@ -98,17 +108,37 @@ export function CardDisplay({
         }
       >
         <div className="flex">
-          <div className="line-clamp-3 flex-1 text-sm">{card.title}</div>
-          <CardActionsMenu card={card} />
+          <div
+            className="line-clamp-3 flex-1 text-sm"
+            onClick={(e) => {
+              if (state.type !== 'idle') return;
+              if ((e.target as HTMLElement).closest('[data-card-action]'))
+                return;
+              openTask(card.id);
+            }}
+          >
+            {card.title}
+          </div>
+          {/* <div data-card-action>
+            <CardActionsMenu card={card} />
+          </div> */}
         </div>
-        <div className="mb-4" />
-        <BarColumn taskAtColumnId={card.columnId} />
+        {/* <div className="mb-4" /> */}
+        {/* <BarColumn taskAtColumnId={card.columnId} /> */}
         <div className="mb-4" />
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-500">
-            {formatDateToString(formatDateToString(card.createdAt) ?? '-')}
+            {formatDateShort(card.createdAt)}
           </div>
-          {isLoading && <LoaderCircle className="size-4 animate-spin" />}
+          <div className="flex items-center gap-2">
+            {commentCount > 0 && (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <MessageSquare className="size-3.5" />
+                {commentCount}
+              </span>
+            )}
+            {isLoading && <LoaderCircle className="size-4 animate-spin" />}
+          </div>
         </div>
       </div>
       {state.type === 'is-over' && state.closestEdge === 'bottom' && (

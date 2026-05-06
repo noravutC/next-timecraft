@@ -68,7 +68,7 @@ Four stores in `src/store/`:
 - **DB**: PostgreSQL via Supabase, accessed with `drizzle-orm` + `postgres` driver (`src/db/index.ts`; prepared statements disabled for the pooler)
 - **Schema**: `src/db/schema/` — each table in its own file, re-exported from `index.ts`
 - **Types**: Drizzle `InferSelectModel` / `InferInsertModel` in `src/types/` — do not write manual type definitions for DB rows
-- **Queries**: shared helpers in `src/db/uniq-query/` (e.g. `hasPermission()`)
+- **Queries**: shared helpers in `src/db/uniq-query/` (`hasPermission()` is **deprecated** — use `authorize()` from `@/lib/rbac/authorize` instead)
 
 ### Key Schema Concepts
 
@@ -76,9 +76,55 @@ Four stores in `src/store/`:
 - **Soft delete on columns** — `isDeleted`, `deletedAt`, `purgeAt` fields; always filter these out in queries
 - **`tags`** — `text[]` array on both projects and tasks
 
+### RBAC (Standard pattern — use this, not ad-hoc checks)
+
+**Location:** `src/lib/rbac/`
+
+- `permissions.ts` — `Permission` union (`resource:action`) + `ROLE_PERMISSIONS: Record<ProjectRole, ReadonlySet<Permission>>`
+- `can.ts` — `can(role, permission): boolean` — pure, no DB
+- `authorize.ts` — `authorize(userId, projectIds, permission): Promise<boolean>` and `authorizeOrThrow(...)` (throws `ForbiddenError`)
+
+Always use `authorize` / `authorizeOrThrow`. Never re-implement role/permission logic in routes. Add new permissions to the union + each role's set in `permissions.ts`.
+
+### API Handler Wrappers (Standard pattern — use this for every route)
+
+**Location:** `src/lib/api/`
+
+- `errors.ts` — `AppError`, `Unauthorized/Forbidden/BadRequest/NotFoundError`. Throw these from inside handlers; the wrapper converts them to JSON responses with the right status code.
+- `handle.ts` — `createHandle` / `createParamHandle`
+
+```ts
+// No params
+export const POST = createHandle<BodyType>(
+  { body: zodSchema, permission: "task:create", resolveProjectIds: ({ body }) => [...] },
+  async ({ userId, body, session }) => { ... return NextResponse.json(...) }
+);
+
+// With route params (Next 16: params is a Promise — wrapper awaits it)
+export const PATCH = createParamHandle<{ id: string }, BodyType>(
+  { body: zodSchema, permission: "task:update", resolveProjectIds: ({ params }) => [...] },
+  async ({ params, body, userId }) => { ... }
+);
+```
+
+The wrapper handles: session 401, Zod body validation → 400, permission check → 403, unified error catch (`AppError.statusCode` → response). When `projectIds` need a DB lookup that the handler also needs, skip `permission` in config and call `authorizeOrThrow()` directly inside the handler after the lookup.
+
+**Example route:** `src/app/api/task/route.ts` (POST) — uses `createHandle` + Zod + inline `authorizeOrThrow` after column lookup.
+
+**Migration status:** only `api/task/route.ts` migrated so far. Older routes still use `getServerSession` + `hasPermission` + manual try/catch. When touching an old route, migrate it to the wrapper.
+
+### Existing helpers — always check before writing new utilities
+
+Before writing new utility code, scan these directories for an existing helper:
+- `src/lib/` — framework/integration code (`axios.ts`, `pusher-client.ts`, `pusher-server.ts`, `utils.ts`'s `cn()`, plus `lib/rbac/`, `lib/api/` above)
+- `src/helper/utils/` — pure utilities (`fraction-string-indexing.ts`, `date-format.ts`, `object.ts`'s `toRecord`/`toValueRecord`, etc.)
+- `src/db/uniq-query/` — shared DB query helpers grouped by domain
+
+If a helper exists, reuse it. If you need something new and pure, add it to `src/helper/utils/`. If it's framework/integration glue, add it to `src/lib/`.
+
 ### API Routes
 
-All routes follow: verify session → check `hasPermission()` → execute → return `{ message, data }`.
+All routes follow: verify session → check permission → execute → return `{ message, data }`. New routes should use `createHandle` / `createParamHandle` from `src/lib/api/handle.ts`.
 
 Relevant routes for the board:
 - `POST /api/project` — fetch (mode `"fetch"`) or create project

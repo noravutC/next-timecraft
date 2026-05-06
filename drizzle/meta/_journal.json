@@ -22,6 +22,20 @@
       "when": 1777293259855,
       "tag": "0002_minor_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777386194080,
+      "tag": "0003_elite_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777867482651,
+      "tag": "0005_complex_groot",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
 import { Globe, Star } from 'lucide-react';
 import { ProjectAvatar } from '@/components/project/project-avatar';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
   Tooltip,
   TooltipContent,
@@ -101,6 +102,7 @@ export const ProjectHeader = () => {
               <Skeleton className="h-6 w-28 rounded-full" />
             ) : (
               <>
+                <NotificationBell />
                 {/* Member avatars */}
                 {/* {members.length > 0 && (
                   <AvatarGroup>

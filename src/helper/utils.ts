@@ -1,15 +1,3 @@
-export function formatDateToString(date: string | Date | null | undefined): string {
-  if (!date) return '-';
-
-  const d = date instanceof Date ? date : new Date(date);
-
-  return d.toLocaleDateString("en-US", {
-    month: "short", // Aug
-    day: "2-digit", // 18
-    year: "numeric", // 2025
-  });
-}
-
 export function hexToRgba(hex: string, alpha: number): string {
   // Remove the # if present
   let c = hex.replace("#", "");

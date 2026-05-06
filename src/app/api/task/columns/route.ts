@@ -1,6 +1,7 @@
 import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { tasksTable } from "@/db/schema";
+import { columnsTable, tasksTable } from "@/db/schema";
+import { hasPermission } from "@/db/uniq-query/project/project-utils";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
@@ -48,6 +49,29 @@ export async function POST(request: Request) {
           data: [],
         },
         { status: 400 },
+      );
+    }
+
+    const columnLinks = await db
+      .select({ projectId: columnsTable.projectId })
+      .from(columnsTable)
+      .where(inArray(columnsTable.id, colIds));
+    if (columnLinks.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "Columns not found", data: [] },
+        { status: 404 },
+      );
+    }
+    const uniqProjectIds = [...new Set(columnLinks.map((c) => c.projectId))];
+    const permitted = await hasPermission(
+      userId,
+      uniqProjectIds,
+      "project:view",
+    );
+    if (!permitted) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden", data: [] },
+        { status: 403 },
       );
     }
 

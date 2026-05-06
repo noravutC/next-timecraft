@@ -62,9 +62,9 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] &
       icon: <Columns size={22} />,
       color: "bg-blue-100 text-blue-600",
       columns: [
-        { name: "Backlog", color: "#60A5FA", orderFraction: "0" },
-        { name: "In Progress", color: "#F59E0B", orderFraction: "1" },
-        { name: "Done", color: "#34D399", orderFraction: "2" },
+        { name: "Backlog", color: "#60A5FA", orderFraction: "a0" },
+        { name: "In Progress", color: "#F59E0B", orderFraction: "a1" },
+        { name: "Done", color: "#34D399", orderFraction: "a2" },
       ],
     },
     {
@@ -75,10 +75,10 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] &
       icon: <ListTodo size={22} />,
       color: "bg-emerald-100 text-emerald-600",
       columns: [
-        { name: "Todo", color: "#93C5FD", orderFraction: "0" },
-        { name: "In Development", color: "#FBBF24", orderFraction: "1" },
-        { name: "Review", color: "#A78BFA", orderFraction: "2" },
-        { name: "Released", color: "#34D399", orderFraction: "3" },
+        { name: "Todo", color: "#93C5FD", orderFraction: "a0" },
+        { name: "In Development", color: "#FBBF24", orderFraction: "a1" },
+        { name: "Review", color: "#A78BFA", orderFraction: "a2" },
+        { name: "Released", color: "#34D399", orderFraction: "a3" },
       ],
     },
     {
@@ -89,10 +89,10 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] &
       icon: <Layout size={22} />,
       color: "bg-orange-100 text-orange-600",
       columns: [
-        { name: "Ideas", color: "#93C5FD", orderFraction: "0" },
-        { name: "Drafting", color: "#F97316", orderFraction: "1" },
-        { name: "Editing", color: "#FBBF24", orderFraction: "2" },
-        { name: "Published", color: "#10B981", orderFraction: "3" },
+        { name: "Ideas", color: "#93C5FD", orderFraction: "a0" },
+        { name: "Drafting", color: "#F97316", orderFraction: "a1" },
+        { name: "Editing", color: "#FBBF24", orderFraction: "a2" },
+        { name: "Published", color: "#10B981", orderFraction: "a3" },
       ],
     },
   ];

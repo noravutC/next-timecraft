@@ -25,6 +25,9 @@ type TaskStore = {
   updateTaskFromRealtime: (task: Task) => void;
 };
 
+let updateReqCounter = 0;
+const latestUpdateReqByTask: Record<string, number> = {};
+
 export const useTaskStore = create<TaskStore>((set) => ({
   status: 'none',
   tasks: {},
@@ -56,7 +59,13 @@ export const useTaskStore = create<TaskStore>((set) => ({
   updateTasks: async (taskIds, payload) => {
     if (!taskIds.length || !payload.length) return null;
 
-    const snapshot = useTaskStore.getState().tasks;
+    const reqId = ++updateReqCounter;
+    taskIds.forEach((id) => {
+      latestUpdateReqByTask[id] = reqId;
+    });
+    const snapshotByTask = Object.fromEntries(
+      taskIds.map((id) => [id, useTaskStore.getState().tasks[id]]),
+    );
 
     set((state) => ({
       tasksLoader: { ...state.tasksLoader, ...toValueRecord(taskIds, true) },
@@ -69,10 +78,29 @@ export const useTaskStore = create<TaskStore>((set) => ({
     try {
       const { updated } = await taskServices.updateTasks(taskIds, payload);
       if (!updated?.length) return null;
-      set((state) => ({ tasks: { ...state.tasks, ...toRecord(updated, 'id') } }));
+      const fresh = updated.filter((t) => latestUpdateReqByTask[t.id] === reqId);
+      if (fresh.length) {
+        set((state) => ({
+          tasks: {
+            ...state.tasks,
+            ...Object.fromEntries(
+              fresh.map((t) => [t.id, { ...state.tasks[t.id], ...t }]),
+            ),
+          },
+        }));
+      }
       return updated;
     } catch (error) {
-      set({ tasks: snapshot });
+      set((state) => ({
+        tasks: {
+          ...state.tasks,
+          ...Object.fromEntries(
+            taskIds
+              .filter((id) => latestUpdateReqByTask[id] === reqId && snapshotByTask[id])
+              .map((id) => [id, snapshotByTask[id]]),
+          ),
+        },
+      }));
       throw error;
     } finally {
       set((state) => ({

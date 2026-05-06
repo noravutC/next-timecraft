@@ -1,7 +1,11 @@
 // app/api/project/route.ts
 
 import { db } from "@/db";
-import { projectMembersTable, projectsTable } from "@/db/schema";
+import {
+  membershipsTable,
+  projectMembersTable,
+  projectsTable,
+} from "@/db/schema";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
@@ -86,6 +90,30 @@ export async function POST(request: Request) {
         );
       }
 
+      const [orgMembership] = await db
+        .select({ role: membershipsTable.role })
+        .from(membershipsTable)
+        .where(
+          and(
+            eq(membershipsTable.userId, userId),
+            eq(membershipsTable.organizationId, organizationId),
+          ),
+        )
+        .limit(1);
+      if (
+        !orgMembership ||
+        (orgMembership.role !== "owner" && orgMembership.role !== "admin")
+      ) {
+        return NextResponse.json(
+          {
+            created: null,
+            message: "Forbidden — only org owner/admin can create projects",
+            status: 403,
+          },
+          { status: 403 },
+        );
+      }
+
       const createdProject = await db.transaction(async (tx) => {
         const [project] = await tx
           .insert(projectsTable)
@@ -135,12 +163,29 @@ export async function POST(request: Request) {
           ? body.projectIds.map((id) => id.trim()).filter(Boolean)
           : [];
 
+    const myMemberRows = await db
+      .select({ projectId: projectMembersTable.projectId })
+      .from(projectMembersTable)
+      .where(eq(projectMembersTable.userId, userId));
+    const memberProjectIds = myMemberRows.map((r) => r.projectId);
+    if (memberProjectIds.length === 0) {
+      return NextResponse.json(
+        { data: [], message: "Get projects success", status: 200 },
+        { status: 200 },
+      );
+    }
+
     const projects =
       fetchAll || projectIds.length === 0
         ? await db
             .select()
             .from(projectsTable)
-            .where(eq(projectsTable.organizationId, organizationId))
+            .where(
+              and(
+                eq(projectsTable.organizationId, organizationId),
+                inArray(projectsTable.id, memberProjectIds),
+              ),
+            )
             .orderBy(desc(projectsTable.createdAt))
         : await db
             .select()
@@ -149,6 +194,7 @@ export async function POST(request: Request) {
               and(
                 inArray(projectsTable.id, projectIds),
                 eq(projectsTable.organizationId, organizationId),
+                inArray(projectsTable.id, memberProjectIds),
               ),
             )
             .orderBy(desc(projectsTable.createdAt));

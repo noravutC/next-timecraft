@@ -159,6 +159,13 @@ export async function PATCH(
         const item = payloadById.get(taskId);
         if (!item) continue;
 
+        const dueDate =
+          item.dueDate === undefined
+            ? undefined
+            : item.dueDate === null
+              ? null
+              : new Date(item.dueDate);
+
         const [updated] = await tx
           .update(tasksTable)
           .set({
@@ -168,8 +175,9 @@ export async function PATCH(
             orderFraction: item.orderFraction,
             tags: item.tags,
             priority: item.priority,
-            dueDate: item.dueDate,
+            dueDate,
             archived: item.archived,
+            estimatedHours: item.estimatedHours,
             updatedAt: new Date(),
           })
           .where(eq(tasksTable.id, taskId))

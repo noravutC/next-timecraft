@@ -90,6 +90,17 @@ export async function POST(request: Request) {
     );
   }
 
+  if (session.user?.canCreateOrg === false) {
+    return NextResponse.json(
+      {
+        created: null,
+        message: "Forbidden — user is not allowed to create an organization",
+        status: 403,
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     const body = (await request.json()) as CreateOrganizationBody;
     const name = body.name?.trim() ?? "";

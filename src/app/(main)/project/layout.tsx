@@ -8,6 +8,7 @@ import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
 import { BoardSettingsPanel } from './settings/board-settings-panel';
 import { BottomBarProject } from '@/components/bottom-menu/bottom-bar-project';
+import { TaskDetailDialog } from '@/components/task-detail/task-detail-dialog';
 
 export default function ProjectLayout({
   children,
@@ -76,6 +77,7 @@ export default function ProjectLayout({
           </div>
         </>
       )}
+      <TaskDetailDialog />
     </div>
   );
 }
