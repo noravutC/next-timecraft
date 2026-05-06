@@ -1,105 +1,50 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
+import { NotFoundError } from "@/lib/api/errors";
+import { createHandle } from "@/lib/api/handle";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-type GetTasksRequestBody = {
-  colIds: string[];
-  limit: number;
-};
+const getTasksByColumnsSchema = z.object({
+  colIds: z.array(z.string().min(1)).min(1, "colIds must be a non-empty array"),
+  limit: z.number().int().positive(),
+});
 
-// type UpdateColumnBody = Array<UpdateColumnPayload>;
+type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const { id: userId, organizationId } = session?.user || {};
-  if (!userId?.trim() || !organizationId?.trim()) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Not  authenticated",
-        data: [],
-      },
-      { status: 401 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as GetTasksRequestBody;
-    const colIds = body.colIds;
-    if (!Array.isArray(colIds) || colIds.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "colIds must be a non-empty array",
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
-    const limit = body.limit;
-    if (typeof limit !== "number" || limit <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "limit must be a positive number",
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
+export const POST = createHandle<GetTasksByColumnsBody>(
+  { body: getTasksByColumnsSchema },
+  async ({ body, userId }) => {
+    const { colIds, limit } = body;
 
     const columnLinks = await db
       .select({ projectId: columnsTable.projectId })
       .from(columnsTable)
       .where(inArray(columnsTable.id, colIds));
     if (columnLinks.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Columns not found", data: [] },
-        { status: 404 },
-      );
+      throw new NotFoundError("Columns not found");
     }
+
     const uniqProjectIds = [...new Set(columnLinks.map((c) => c.projectId))];
-    const permitted = await hasPermission(
-      userId,
-      uniqProjectIds,
-      "project:view",
-    );
-    if (!permitted) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden", data: [] },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, uniqProjectIds, "project:view");
 
     const tasks = await db
       .select()
       .from(tasksTable)
-      .where(and(inArray(tasksTable.columnId, colIds), eq(tasksTable.archived, false)))
+      .where(
+        and(
+          inArray(tasksTable.columnId, colIds),
+          eq(tasksTable.archived, false),
+        ),
+      )
       .orderBy(asc(tasksTable.orderFraction))
       .limit(limit);
 
     return NextResponse.json(
-      {
-        data: tasks,
-        message: "Get tasks success",
-        status: 200,
-      },
+      { data: tasks, message: "Get tasks success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.log("Error get tasks from body:", error);
-    return NextResponse.json(
-      {
-        message: "Failed to get tasks",
-        status: 500,
-        data: [],
-        error: error,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

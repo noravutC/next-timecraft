@@ -270,25 +270,130 @@ export const TaskDetailDialog = () => {
                     onCommit={(title) => persist({ title })}
                   />
 
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    {task.tags.map((tag) => (
-                      <TagChip
-                        key={tag}
-                        tag={tag}
-                        size="sm"
-                        tagColors={settings.tagColors}
+                  <div className="mt-5 rounded-lg border border-border">
+                    <PropertyRow
+                      icon={
+                        <StatusDot color={columnsMap[task.columnId]?.color} />
+                      }
+                      label="Status"
+                    >
+                      <StatusPicker
+                        columns={projectColumns}
+                        activeColumnId={task.columnId}
+                        onChange={handleStatusChange}
                       />
-                    ))}
-                    <PriorityPill
-                      size="sm"
-                      value={task.priority as TaskPriority}
-                      onChange={(p) => persist({ priority: p })}
-                      variant="plain"
-                    />
-                    <DueDateCard
-                      value={dueDate}
-                      onChange={(d) => persist({ dueDate: d })}
-                    />
+                    </PropertyRow>
+
+                    <PropertyRow
+                      icon={<Flag className="size-4" />}
+                      label="Priority"
+                    >
+                      <PriorityPill
+                        value={task.priority as TaskPriority}
+                        onChange={(p) => persist({ priority: p })}
+                        variant="plain"
+                      />
+                    </PropertyRow>
+
+                    <PropertyRow
+                      icon={<UserIcon className="size-4" />}
+                      label="Assignees"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {assignees.map((a) => (
+                          <span
+                            key={a.userId}
+                            className="group inline-flex items-center gap-1.5 rounded-full bg-background py-0.5 pr-1.5 pl-0.5 text-sm"
+                          >
+                            <Avatar className="size-5">
+                              <AvatarImage
+                                src={a.avatar ?? undefined}
+                                alt={a.fullName}
+                              />
+                              <AvatarFallback className="bg-violet-500 text-xs font-semibold text-white">
+                                {a.fullName.charAt(0).toUpperCase() || '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">
+                              {a.fullName.split(' ')[0]}.
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAssignees(
+                                  task.id,
+                                  buildAssigneeItems(
+                                    assigneeIds.filter(
+                                      (id) => id !== a.userId,
+                                    ),
+                                  ),
+                                )
+                              }
+                              aria-label={`Remove ${a.fullName}`}
+                              className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </span>
+                        ))}
+                        <AssigneePicker
+                          candidates={memberCandidates}
+                          selectedIds={assigneeIds}
+                          onChange={(ids) =>
+                            setAssignees(task.id, buildAssigneeItems(ids))
+                          }
+                        />
+                      </div>
+                    </PropertyRow>
+
+                    <PropertyRow
+                      icon={<CalendarDays className="size-4" />}
+                      label="Due date"
+                    >
+                      <DueDateCard
+                        value={dueDate}
+                        onChange={(d) => persist({ dueDate: d })}
+                      />
+                    </PropertyRow>
+
+                    <PropertyRow
+                      icon={<TagIcon className="size-4" />}
+                      label="Labels"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {task.tags.map((tag) => (
+                          <TagChip
+                            key={tag}
+                            tag={tag}
+                            size="sm"
+                            tagColors={settings.tagColors}
+                            onRemove={() =>
+                              persist({
+                                tags: task.tags.filter((t) => t !== tag),
+                              })
+                            }
+                          />
+                        ))}
+                        <TagPicker
+                          projectTags={project?.tags ?? []}
+                          selectedTags={task.tags}
+                          tagColors={settings.tagColors}
+                          onChange={(tags) => persist({ tags })}
+                        />
+                      </div>
+                    </PropertyRow>
+
+                    <PropertyRow
+                      icon={<Timer className="size-4" />}
+                      label="Estimate"
+                    >
+                      <EstimatePicker
+                        value={task.estimatedHours ?? 0}
+                        onChange={(estimatedHours) =>
+                          persist({ estimatedHours })
+                        }
+                      />
+                    </PropertyRow>
                   </div>
 
                   <hr className="my-5 border-border" />
@@ -306,138 +411,16 @@ export const TaskDetailDialog = () => {
                   <hr className="my-5 border-border" />
 
                   <SubtaskList taskId={task.id} />
-
-                  <hr className="my-5 border-border" />
-
-                  <CommentActivityPanel
-                    taskId={task.id}
-                    authorId={userId}
-                    authorName={userName}
-                    authorAvatar={userAvatar}
-                  />
                 </div>
               </main>
 
-              <aside className="flex min-w-max shrink-0 flex-col overflow-y-auto border-l border-border bg-gray-50/40 px-5 py-6 [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]">
-                <Label className="mb-4 text-sm font-semibold text-muted-foreground uppercase">
-                  Properties
-                </Label>
-
-                <PropertyRow
-                  icon={<StatusDot color={columnsMap[task.columnId]?.color} />}
-                  label="Status"
-                >
-                  <StatusPicker
-                    columns={projectColumns}
-                    activeColumnId={task.columnId}
-                    onChange={handleStatusChange}
-                  />
-                </PropertyRow>
-
-                <PropertyRow
-                  icon={<UserIcon className="size-4" />}
-                  label="Assignees"
-                >
-                  <div className="flex flex-col items-start gap-1.5">
-                    {assignees.map((a) => (
-                      <span
-                        key={a.userId}
-                        className="group inline-flex items-center gap-1.5 rounded-full bg-background py-0.5 pr-1.5 pl-0.5 text-sm"
-                      >
-                        <Avatar className="size-5">
-                          <AvatarImage
-                            src={a.avatar ?? undefined}
-                            alt={a.fullName}
-                          />
-                          <AvatarFallback className="bg-violet-500 text-xs font-semibold text-white">
-                            {a.fullName.charAt(0).toUpperCase() || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate">
-                          {a.fullName.split(' ')[0]}.
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setAssignees(
-                              task.id,
-                              buildAssigneeItems(
-                                assigneeIds.filter((id) => id !== a.userId),
-                              ),
-                            )
-                          }
-                          aria-label={`Remove ${a.fullName}`}
-                          className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                    <AssigneePicker
-                      candidates={memberCandidates}
-                      selectedIds={assigneeIds}
-                      onChange={(ids) =>
-                        setAssignees(task.id, buildAssigneeItems(ids))
-                      }
-                    />
-                  </div>
-                </PropertyRow>
-
-                <PropertyRow
-                  icon={<CalendarDays className="size-4" />}
-                  label="Due date"
-                >
-                  <DueDateCard
-                    value={dueDate}
-                    onChange={(d) => persist({ dueDate: d })}
-                  />
-                </PropertyRow>
-
-                <PropertyRow
-                  icon={<Flag className="size-4" />}
-                  label="Priority"
-                >
-                  <PriorityPill
-                    value={task.priority as TaskPriority}
-                    onChange={(p) => persist({ priority: p })}
-                    variant="plain"
-                  />
-                </PropertyRow>
-
-                <PropertyRow
-                  icon={<TagIcon className="size-4" />}
-                  label="Tags"
-                >
-                  <div className="flex flex-col items-start gap-1.5">
-                    {task.tags.map((tag) => (
-                      <TagChip
-                        key={tag}
-                        tag={tag}
-                        size="sm"
-                        tagColors={settings.tagColors}
-                        onRemove={() =>
-                          persist({ tags: task.tags.filter((t) => t !== tag) })
-                        }
-                      />
-                    ))}
-                    <TagPicker
-                      projectTags={project?.tags ?? []}
-                      selectedTags={task.tags}
-                      tagColors={settings.tagColors}
-                      onChange={(tags) => persist({ tags })}
-                    />
-                  </div>
-                </PropertyRow>
-
-                <PropertyRow
-                  icon={<Timer className="size-4" />}
-                  label="Estimate"
-                >
-                  <EstimatePicker
-                    value={task.estimatedHours ?? 0}
-                    onChange={(estimatedHours) => persist({ estimatedHours })}
-                  />
-                </PropertyRow>
+              <aside className="flex w-[420px] shrink-0 flex-col overflow-hidden border-l border-border bg-gray-50/40">
+                <CommentActivityPanel
+                  taskId={task.id}
+                  authorId={userId}
+                  authorName={userName}
+                  authorAvatar={userAvatar}
+                />
               </aside>
             </div>
           </>

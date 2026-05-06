@@ -1,4 +1,3 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import {
   projectMembersTable,
@@ -7,101 +6,56 @@ import {
   usersTable,
 } from "@/db/schema";
 import { getCommentLink } from "@/db/uniq-query/comment/comment-utils";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { pusherServer } from "@/lib/pusher-server";
+import { ForbiddenError, NotFoundError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
+import { triggerExclusive } from "@/lib/pusher-server";
+import { authorize } from "@/lib/rbac/authorize";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const MAX_BODY_LEN = 5000;
 
 type RouteParams = { id: string };
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { updated: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
+const updateCommentSchema = z.object({
+  body: z.string().trim().min(1, "Body is required").max(MAX_BODY_LEN),
+  mentions: z.array(z.string()).optional().default([]),
+});
 
-  const { id: commentId } = await params;
+type UpdateCommentBody = z.infer<typeof updateCommentSchema>;
 
-  let body: { body?: string; mentions?: string[] };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { updated: null, message: "Invalid JSON", status: 400 },
-      { status: 400 },
-    );
-  }
+export const PATCH = createParamHandle<RouteParams, UpdateCommentBody>(
+  { body: updateCommentSchema },
+  async ({ request, params, body, userId }) => {
+    const commentId = params.id;
+    const text = body.body;
+    const mentions = [...new Set(body.mentions)];
 
-  const text = (body.body ?? "").trim();
-  const mentions = Array.isArray(body.mentions)
-    ? [...new Set(body.mentions.filter((m) => typeof m === "string"))]
-    : [];
+    const link = await getCommentLink(commentId);
+    if (!link) throw new NotFoundError("Comment not found");
 
-  if (!text) {
-    return NextResponse.json(
-      { updated: null, message: "Body is required", status: 400 },
-      { status: 400 },
-    );
-  }
-  if (text.length > MAX_BODY_LEN) {
-    return NextResponse.json(
-      {
-        updated: null,
-        message: `Body must be ${MAX_BODY_LEN} characters or fewer`,
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
+    const isAuthor = link.authorId === userId;
+    const canModerate = await authorize(userId, [link.projectId], "comment:update");
+    const canSelfEdit =
+      isAuthor &&
+      (await authorize(userId, [link.projectId], "task:comment"));
+    if (!canModerate && !canSelfEdit) throw new ForbiddenError();
 
-  const link = await getCommentLink(commentId);
-  if (!link) {
-    return NextResponse.json(
-      { updated: null, message: "Comment not found", status: 404 },
-      { status: 404 },
-    );
-  }
-  const isAuthor = link.authorId === sessionUserId;
-  const canModerate = await hasPermission(
-    sessionUserId,
-    [link.projectId],
-    "comment:update",
-  );
-  const canSelfEdit =
-    isAuthor &&
-    (await hasPermission(sessionUserId, [link.projectId], "task:comment"));
-  if (!canModerate && !canSelfEdit) {
-    return NextResponse.json(
-      { updated: null, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
+    let validMentions: string[] = [];
+    if (mentions.length > 0) {
+      const members = await db
+        .select({ userId: projectMembersTable.userId })
+        .from(projectMembersTable)
+        .where(
+          and(
+            eq(projectMembersTable.projectId, link.projectId),
+            inArray(projectMembersTable.userId, mentions),
+          ),
+        );
+      validMentions = members.map((m) => m.userId);
+    }
 
-  let validMentions: string[] = [];
-  if (mentions.length > 0) {
-    const members = await db
-      .select({ userId: projectMembersTable.userId })
-      .from(projectMembersTable)
-      .where(
-        and(
-          eq(projectMembersTable.projectId, link.projectId),
-          inArray(projectMembersTable.userId, mentions),
-        ),
-      );
-    validMentions = members.map((m) => m.userId);
-  }
-
-  try {
     const [{ createdAt }] = await db
       .select({ createdAt: taskCommentsTable.createdAt })
       .from(taskCommentsTable)
@@ -127,17 +81,12 @@ export async function PATCH(
       )
       .returning();
 
-    if (!updated) {
-      return NextResponse.json(
-        { updated: null, message: "Comment not found", status: 404 },
-        { status: 404 },
-      );
-    }
+    if (!updated) throw new NotFoundError("Comment not found");
 
     const [author] = await db
       .select({ fullName: usersTable.fullName, avatar: usersTable.avatar })
       .from(usersTable)
-      .where(eq(usersTable.id, sessionUserId))
+      .where(eq(usersTable.id, userId))
       .limit(1);
 
     const enriched = {
@@ -146,62 +95,35 @@ export async function PATCH(
       authorAvatar: author?.avatar ?? null,
     };
 
-    pusherServer
-      .trigger(`task-${link.taskId}`, "comment-updated", enriched)
-      .catch((e) => console.error("Pusher comment-updated failed:", e));
+    triggerExclusive(
+      request,
+      `task-${link.taskId}`,
+      "comment-updated",
+      enriched,
+    ).catch((e) => console.error("Pusher comment-updated failed:", e));
 
     return NextResponse.json(
       { updated: enriched, message: "Update comment success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to update comment:", error);
-    return NextResponse.json(
-      { updated: null, message: "Failed to update comment", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { deleted: false, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
+export const DELETE = createParamHandle<RouteParams>(
+  {},
+  async ({ request, params, userId }) => {
+    const commentId = params.id;
 
-  const { id: commentId } = await params;
+    const link = await getCommentLink(commentId);
+    if (!link) throw new NotFoundError("Comment not found");
 
-  const link = await getCommentLink(commentId);
-  if (!link) {
-    return NextResponse.json(
-      { deleted: false, message: "Comment not found", status: 404 },
-      { status: 404 },
-    );
-  }
-  const isAuthor = link.authorId === sessionUserId;
-  const canModerate = await hasPermission(
-    sessionUserId,
-    [link.projectId],
-    "comment:delete",
-  );
-  const canSelfDelete =
-    isAuthor &&
-    (await hasPermission(sessionUserId, [link.projectId], "task:comment"));
-  if (!canModerate && !canSelfDelete) {
-    return NextResponse.json(
-      { deleted: false, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
+    const isAuthor = link.authorId === userId;
+    const canModerate = await authorize(userId, [link.projectId], "comment:delete");
+    const canSelfDelete =
+      isAuthor &&
+      (await authorize(userId, [link.projectId], "task:comment"));
+    if (!canModerate && !canSelfDelete) throw new ForbiddenError();
 
-  try {
     const updated = await db.transaction(async (tx) => {
       const [row] = await tx
         .update(taskCommentsTable)
@@ -226,34 +148,21 @@ export async function DELETE(
       return row;
     });
 
-    if (!updated) {
-      return NextResponse.json(
-        { deleted: false, message: "Comment not found", status: 404 },
-        { status: 404 },
-      );
-    }
+    if (!updated) throw new NotFoundError("Comment not found");
 
-    pusherServer
-      .trigger(`task-${link.taskId}`, "comment-deleted", {
-        id: commentId,
-      })
-      .catch((e) => console.error("Pusher comment-deleted failed:", e));
-    pusherServer
-      .trigger(`project-${link.projectId}`, "task-comment-count", {
-        taskId: link.taskId,
-        delta: -1,
-      })
-      .catch((e) => console.error("Pusher count failed:", e));
+    triggerExclusive(request, `task-${link.taskId}`, "comment-deleted", {
+      id: commentId,
+    }).catch((e) => console.error("Pusher comment-deleted failed:", e));
+    triggerExclusive(
+      request,
+      `project-${link.projectId}`,
+      "task-comment-count",
+      { taskId: link.taskId, delta: -1 },
+    ).catch((e) => console.error("Pusher count failed:", e));
 
     return NextResponse.json(
       { deleted: true, message: "Delete comment success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to delete comment:", error);
-    return NextResponse.json(
-      { deleted: false, message: "Failed to delete comment", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

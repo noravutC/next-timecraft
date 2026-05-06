@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
 import { createHandle } from "@/lib/api/handle";
 import { NotFoundError } from "@/lib/api/errors";
+import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { NewTaskRow } from "@/types";
 import { inArray } from "drizzle-orm";
@@ -26,7 +27,7 @@ type CreateTaskBody = z.infer<typeof createTaskSchema>;
 
 export const POST = createHandle<CreateTaskBody>(
   { body: createTaskSchema },
-  async ({ userId, body }) => {
+  async ({ request, userId, body }) => {
     const columnIds = [...new Set(body.map((item) => item.columnId))];
 
     const columnLinks = await db
@@ -56,6 +57,23 @@ export const POST = createHandle<CreateTaskBody>(
       .insert(tasksTable)
       .values(rowsToInsert)
       .returning();
+
+    const projectByColumn = new Map(
+      columnLinks.map((c) => [c.columnId, c.projectId]),
+    );
+    const groupedByProject = new Map<string, typeof createdTasks>();
+    for (const task of createdTasks) {
+      const pid = projectByColumn.get(task.columnId);
+      if (!pid) continue;
+      const list = groupedByProject.get(pid) ?? [];
+      list.push(task);
+      groupedByProject.set(pid, list);
+    }
+    for (const [pid, tasks] of groupedByProject) {
+      triggerExclusive(request, `project-${pid}`, "tasks-created", tasks).catch(
+        (e) => console.error("Pusher tasks-created failed:", e),
+      );
+    }
 
     return NextResponse.json(
       {

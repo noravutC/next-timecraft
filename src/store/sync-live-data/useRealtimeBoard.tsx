@@ -8,7 +8,8 @@ import type { TaskAssigneeUser } from "@/services/assignee.service";
 import { Task } from "@/types";
 
 export const useRealtimeBoard = (projectId?: string | null) => {
-  const { updateTaskFromRealtime } = useTaskStore();
+  const { updateTaskFromRealtime, addTasksFromRealtime, removeTasksFromRealtime } =
+    useTaskStore();
 
   useEffect(() => {
     if (!projectId) return;
@@ -16,8 +17,16 @@ export const useRealtimeBoard = (projectId?: string | null) => {
     const channelName = `project-${projectId}`;
     const channel = pusherClient.subscribe(channelName);
 
-    channel.bind("task-updated", (updatedTask: Task) => {
-      updateTaskFromRealtime(updatedTask);
+    channel.bind("tasks-created", (tasks: Task[]) => {
+      addTasksFromRealtime(tasks);
+    });
+
+    channel.bind("tasks-updated", (tasks: Task[]) => {
+      tasks.forEach((t) => updateTaskFromRealtime(t));
+    });
+
+    channel.bind("tasks-deleted", (ids: string[]) => {
+      removeTasksFromRealtime(ids);
     });
 
     channel.bind(
@@ -50,5 +59,10 @@ export const useRealtimeBoard = (projectId?: string | null) => {
       channel.unbind_all();
       pusherClient.unsubscribe(channelName);
     };
-  }, [projectId, updateTaskFromRealtime]);
+  }, [
+    projectId,
+    updateTaskFromRealtime,
+    addTasksFromRealtime,
+    removeTasksFromRealtime,
+  ]);
 };

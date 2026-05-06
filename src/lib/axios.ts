@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getPusherSocketId } from "@/lib/pusher-client";
 
 const apiClient = axios.create({
   baseURL: "/api",
@@ -13,6 +14,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem("token"); // Or use cookies if SSR
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const socketId = getPusherSocketId();
+    if (socketId) {
+      config.headers["X-Socket-Id"] = socketId;
     }
     return config;
   },

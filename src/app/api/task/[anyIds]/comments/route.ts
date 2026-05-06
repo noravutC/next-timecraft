@@ -1,4 +1,3 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import {
   jobQueueTable,
@@ -14,12 +13,14 @@ import {
   fetchCommentsPage,
   getTaskProjectLink,
 } from "@/db/uniq-query/comment/comment-utils";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { pusherServer } from "@/lib/pusher-server";
+import { NotFoundError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
+import { triggerExclusive } from "@/lib/pusher-server";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import type { NotificationPayload } from "@/types";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const MAX_BODY_LEN = 5000;
 const DEFAULT_LIMIT = 30;
@@ -27,51 +28,26 @@ const MAX_LIMIT = 100;
 
 type RouteParams = { anyIds: string };
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { data: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
+export const GET = createParamHandle<RouteParams>(
+  {},
+  async ({ request, params, userId }) => {
+    const taskId = params.anyIds;
+    const url = new URL(request.url);
+    const cursor = url.searchParams.get("cursor");
+    const rawLimit = Number(url.searchParams.get("limit") ?? DEFAULT_LIMIT);
+    const limit = Math.min(
+      Math.max(Number.isFinite(rawLimit) ? rawLimit : DEFAULT_LIMIT, 1),
+      MAX_LIMIT,
     );
-  }
 
-  const { anyIds: taskId } = await params;
-  const url = new URL(request.url);
-  const cursor = url.searchParams.get("cursor");
-  const rawLimit = Number(url.searchParams.get("limit") ?? DEFAULT_LIMIT);
-  const limit = Math.min(
-    Math.max(Number.isFinite(rawLimit) ? rawLimit : DEFAULT_LIMIT, 1),
-    MAX_LIMIT,
-  );
+    const link = await getTaskProjectLink(taskId);
+    if (!link) throw new NotFoundError("Task not found");
 
-  const link = await getTaskProjectLink(taskId);
-  if (!link) {
-    return NextResponse.json(
-      { data: null, message: "Task not found", status: 404 },
-      { status: 404 },
-    );
-  }
-  const permitted = await hasPermission(
-    sessionUserId,
-    [link.projectId],
-    "project:view",
-  );
-  if (!permitted) {
-    return NextResponse.json(
-      { data: null, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
+    await authorizeOrThrow(userId, [link.projectId], "project:view");
 
-  try {
     const [page, unreadCount] = await Promise.all([
       fetchCommentsPage({ taskId, cursor, limit }),
-      countUnreadComments({ userId: sessionUserId, taskId }),
+      countUnreadComments({ userId, taskId }),
     ]);
 
     return NextResponse.json(
@@ -82,108 +58,45 @@ export async function GET(
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to fetch comments:", error);
-    return NextResponse.json(
-      { data: null, message: "Failed to fetch comments", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-  const sessionUserName = session?.user?.name ?? "Someone";
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { created: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
+const createCommentSchema = z.object({
+  body: z.string().trim().min(1, "Body is required").max(MAX_BODY_LEN),
+  mentions: z.array(z.string()).optional().default([]),
+  clientId: z.string().trim().min(1, "clientId is required"),
+});
 
-  const { anyIds: taskId } = await params;
+type CreateCommentBody = z.infer<typeof createCommentSchema>;
 
-  let body: {
-    body?: string;
-    mentions?: string[];
-    clientId?: string;
-  };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { created: null, message: "Invalid JSON", status: 400 },
-      { status: 400 },
-    );
-  }
+export const POST = createParamHandle<RouteParams, CreateCommentBody>(
+  { body: createCommentSchema },
+  async ({ request, params, body, userId, session }) => {
+    const taskId = params.anyIds;
+    const sessionUserName = session.user?.name ?? "Someone";
+    const text = body.body;
+    const clientId = body.clientId;
+    const mentions = [...new Set(body.mentions)];
 
-  const text = (body.body ?? "").trim();
-  const clientId = (body.clientId ?? "").trim();
-  const mentions = Array.isArray(body.mentions)
-    ? [...new Set(body.mentions.filter((m) => typeof m === "string"))]
-    : [];
+    const link = await getTaskProjectLink(taskId);
+    if (!link) throw new NotFoundError("Task not found");
 
-  if (!text) {
-    return NextResponse.json(
-      { created: null, message: "Body is required", status: 400 },
-      { status: 400 },
-    );
-  }
-  if (text.length > MAX_BODY_LEN) {
-    return NextResponse.json(
-      {
-        created: null,
-        message: `Body must be ${MAX_BODY_LEN} characters or fewer`,
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
-  if (!clientId) {
-    return NextResponse.json(
-      { created: null, message: "clientId is required", status: 400 },
-      { status: 400 },
-    );
-  }
+    await authorizeOrThrow(userId, [link.projectId], "task:comment");
 
-  const link = await getTaskProjectLink(taskId);
-  if (!link) {
-    return NextResponse.json(
-      { created: null, message: "Task not found", status: 404 },
-      { status: 404 },
-    );
-  }
-  const permitted = await hasPermission(
-    sessionUserId,
-    [link.projectId],
-    "task:comment",
-  );
-  if (!permitted) {
-    return NextResponse.json(
-      { created: null, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
+    let validMentions: string[] = [];
+    if (mentions.length > 0) {
+      const projectMembers = await db
+        .select({ userId: projectMembersTable.userId })
+        .from(projectMembersTable)
+        .where(
+          and(
+            eq(projectMembersTable.projectId, link.projectId),
+            inArray(projectMembersTable.userId, mentions),
+          ),
+        );
+      validMentions = projectMembers.map((m) => m.userId);
+    }
 
-  let validMentions: string[] = [];
-  if (mentions.length > 0) {
-    const projectMembers = await db
-      .select({ userId: projectMembersTable.userId })
-      .from(projectMembersTable)
-      .where(
-        and(
-          eq(projectMembersTable.projectId, link.projectId),
-          inArray(projectMembersTable.userId, mentions),
-        ),
-      );
-    validMentions = projectMembers.map((m) => m.userId);
-  }
-
-  try {
     const result = await db.transaction(async (tx) => {
       const existing = await tx
         .select()
@@ -198,7 +111,7 @@ export async function POST(
         .insert(taskCommentsTable)
         .values({
           taskId,
-          userId: sessionUserId,
+          userId,
           body: text,
           mentions: validMentions,
           clientId,
@@ -213,7 +126,7 @@ export async function POST(
         })
         .where(eq(tasksTable.id, taskId));
 
-      const recipients = validMentions.filter((u) => u !== sessionUserId);
+      const recipients = validMentions.filter((u) => u !== userId);
       let notifications: { id: string; userId: string }[] = [];
 
       if (recipients.length > 0) {
@@ -227,7 +140,7 @@ export async function POST(
           taskId,
           commentId: comment.id,
           projectId: link.projectId,
-          actorUserId: sessionUserId,
+          actorUserId: userId,
           actorName: sessionUserName,
           taskTitle: link.taskTitle,
           projectName: project?.name ?? "Project",
@@ -237,8 +150,8 @@ export async function POST(
         notifications = await tx
           .insert(notificationsTable)
           .values(
-            recipients.map((userId) => ({
-              userId,
+            recipients.map((uid) => ({
+              userId: uid,
               type: "comment_mention" as const,
               payload,
             })),
@@ -249,14 +162,14 @@ export async function POST(
           });
 
         await tx.insert(jobQueueTable).values(
-          recipients.map((userId) => ({
+          recipients.map((uid) => ({
             jobType: "send_notification" as const,
             payload: {
               kind: "comment_mention",
-              mentionedUserId: userId,
+              mentionedUserId: uid,
               ...payload,
             },
-            idempotencyKey: `comment_mention:${comment.id}:${userId}`,
+            idempotencyKey: `comment_mention:${comment.id}:${uid}`,
             priority: 5,
             scheduledAt: new Date(),
           })),
@@ -270,7 +183,7 @@ export async function POST(
       const [author] = await db
         .select({ fullName: usersTable.fullName, avatar: usersTable.avatar })
         .from(usersTable)
-        .where(eq(usersTable.id, sessionUserId))
+        .where(eq(usersTable.id, userId))
         .limit(1);
 
       const enriched = {
@@ -279,19 +192,17 @@ export async function POST(
         authorAvatar: author?.avatar ?? null,
       };
 
-      pusherServer
-        .trigger(`task-${taskId}`, "comment-added", {
-          comment: enriched,
-          clientId,
-        })
-        .catch((e) => console.error("Pusher comment-added failed:", e));
+      triggerExclusive(request, `task-${taskId}`, "comment-added", {
+        comment: enriched,
+        clientId,
+      }).catch((e) => console.error("Pusher comment-added failed:", e));
 
-      pusherServer
-        .trigger(`project-${link.projectId}`, "task-comment-count", {
-          taskId,
-          delta: 1,
-        })
-        .catch((e) => console.error("Pusher count failed:", e));
+      triggerExclusive(
+        request,
+        `project-${link.projectId}`,
+        "task-comment-count",
+        { taskId, delta: 1 },
+      ).catch((e) => console.error("Pusher count failed:", e));
 
       for (const n of result.notifications) {
         const [notif] = await db
@@ -300,18 +211,17 @@ export async function POST(
           .where(eq(notificationsTable.id, n.id))
           .limit(1);
         if (notif) {
-          pusherServer
-            .trigger(`user-${n.userId}`, "notification-added", notif)
-            .catch((e) => console.error("Pusher notif failed:", e));
+          triggerExclusive(
+            request,
+            `user-${n.userId}`,
+            "notification-added",
+            notif,
+          ).catch((e) => console.error("Pusher notif failed:", e));
         }
       }
 
       return NextResponse.json(
-        {
-          created: enriched,
-          message: "Create comment success",
-          status: 201,
-        },
+        { created: enriched, message: "Create comment success", status: 201 },
         { status: 201 },
       );
     }
@@ -319,7 +229,7 @@ export async function POST(
     const [author] = await db
       .select({ fullName: usersTable.fullName, avatar: usersTable.avatar })
       .from(usersTable)
-      .where(eq(usersTable.id, sessionUserId))
+      .where(eq(usersTable.id, userId))
       .limit(1);
 
     return NextResponse.json(
@@ -334,11 +244,5 @@ export async function POST(
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to create comment:", error);
-    return NextResponse.json(
-      { created: null, message: "Failed to create comment", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

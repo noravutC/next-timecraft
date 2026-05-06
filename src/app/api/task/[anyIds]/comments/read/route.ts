@@ -1,65 +1,36 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { commentReadStateTable } from "@/db/schema";
 import { getTaskProjectLink } from "@/db/uniq-query/comment/comment-utils";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { getServerSession } from "next-auth/next";
-import { NextResponse } from "next/server";
+import { NotFoundError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { sql } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 type RouteParams = { anyIds: string };
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { created: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
+const markReadSchema = z.object({
+  lastReadCommentId: z.string().nullable().optional(),
+});
 
-  const { anyIds: taskId } = await params;
+type MarkReadBody = z.infer<typeof markReadSchema>;
 
-  let body: { lastReadCommentId?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { created: null, message: "Invalid JSON", status: 400 },
-      { status: 400 },
-    );
-  }
+export const POST = createParamHandle<RouteParams, MarkReadBody>(
+  { body: markReadSchema },
+  async ({ params, body, userId }) => {
+    const taskId = params.anyIds;
+    const lastReadCommentId = body.lastReadCommentId ?? null;
 
-  const lastReadCommentId = body.lastReadCommentId ?? null;
+    const link = await getTaskProjectLink(taskId);
+    if (!link) throw new NotFoundError("Task not found");
 
-  const link = await getTaskProjectLink(taskId);
-  if (!link) {
-    return NextResponse.json(
-      { created: null, message: "Task not found", status: 404 },
-      { status: 404 },
-    );
-  }
-  const permitted = await hasPermission(
-    sessionUserId,
-    [link.projectId],
-    "project:view",
-  );
-  if (!permitted) {
-    return NextResponse.json(
-      { created: null, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
+    await authorizeOrThrow(userId, [link.projectId], "project:view");
 
-  try {
     await db
       .insert(commentReadStateTable)
       .values({
-        userId: sessionUserId,
+        userId,
         taskId,
         lastReadCommentId,
         lastReadAt: new Date(),
@@ -76,11 +47,5 @@ export async function POST(
       { created: { ok: true }, message: "Marked read", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to mark read:", error);
-    return NextResponse.json(
-      { created: null, message: "Failed to mark read", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

@@ -8,3 +8,16 @@ export const pusherServer = new Pusher({
   cluster: process.env.PUSHER_CLUSTER!,
   useTLS: true,
 });
+
+export const socketIdFromRequest = (req: Request): string | undefined =>
+  req.headers.get("x-socket-id") ?? undefined;
+
+export const triggerExclusive = (
+  req: Request,
+  channel: string,
+  event: string,
+  data: unknown,
+) =>
+  pusherServer.trigger(channel, event, data, {
+    socket_id: socketIdFromRequest(req),
+  });

@@ -58,9 +58,9 @@ export const CommentActivityPanel = ({
     <Tabs
       value={tab}
       onValueChange={(v) => setTab(v as "comments" | "activity")}
-      className="flex flex-col gap-0"
+      className="flex h-full min-h-0 flex-col gap-0"
     >
-      <div className="flex items-end justify-between border-b border-border">
+      <div className="flex shrink-0 items-end justify-start border-b border-border px-4 pt-4">
         <TabsList className="h-auto gap-5 bg-transparent p-0">
           <TabsTrigger value="comments" asChild>
             <TabButton
@@ -82,19 +82,26 @@ export const CommentActivityPanel = ({
         </TabsList>
       </div>
 
-      <TabsContent value="comments" className="mt-3 flex flex-col gap-0">
-        <CommentComposer
-          taskId={taskId}
-          authorId={authorId}
-          authorName={authorName}
-          authorAvatar={authorAvatar}
-        />
-        <CommentList taskId={taskId} currentUserId={authorId} />
+      <TabsContent
+        value="comments"
+        className="mt-0 flex min-h-0 flex-1 flex-col gap-0"
+      >
+        <div className="flex-1 overflow-y-auto px-4 py-4 [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]">
+          <CommentList taskId={taskId} currentUserId={authorId} />
+        </div>
+        <div className="shrink-0 border-t border-border bg-background p-3">
+          <CommentComposer
+            taskId={taskId}
+            authorId={authorId}
+            authorName={authorName}
+            authorAvatar={authorAvatar}
+          />
+        </div>
       </TabsContent>
 
       <TabsContent
         value="activity"
-        className="mt-3 flex flex-col items-center justify-center gap-2 p-6 text-muted-foreground"
+        className="mt-0 flex flex-1 flex-col items-center justify-center gap-2 p-6 text-muted-foreground"
       >
         <p className="text-sm">Activity feed coming soon</p>
       </TabsContent>

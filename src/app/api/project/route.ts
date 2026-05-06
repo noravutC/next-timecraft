@@ -6,29 +6,15 @@ import {
   projectMembersTable,
   projectsTable,
 } from "@/db/schema";
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/auth";
+import {
+  BadRequestError,
+  ForbiddenError,
+  UnauthorizedError,
+} from "@/lib/api/errors";
+import { createHandle } from "@/lib/api/handle";
 import { and, desc, eq, inArray } from "drizzle-orm";
-
-type FetchProjectsRequestBody = {
-  mode?: "fetch";
-  fetchAll?: boolean;
-  projectIds?: string | string[];
-};
-
-type CreateProjectRequestBody = {
-  mode: "create";
-  project?: {
-    name?: string;
-    description?: string;
-    coverImage?: string | null;
-    archived?: boolean;
-    tags?: string[];
-  };
-};
-
-type ProjectRequestBody = FetchProjectsRequestBody | CreateProjectRequestBody;
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const DATA_URL_IMAGE_PATTERN =
   /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
@@ -41,53 +27,48 @@ const normalizeCoverImage = (value?: string | null) => {
 };
 
 const isValidProjectCoverImage = (value: string) => {
-  if (value.length > MAX_PROJECT_COVER_IMAGE_LENGTH) {
-    return false;
-  }
-
+  if (value.length > MAX_PROJECT_COVER_IMAGE_LENGTH) return false;
   return DATA_URL_IMAGE_PATTERN.test(value) || HTTP_URL_PATTERN.test(value);
 };
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const { id: userId, organizationId } = session?.user || {};
-  if (!userId?.trim() || !organizationId?.trim()) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Not  authenticated",
-        data: [],
-      },
-      { status: 401 },
-    );
-  }
+const projectRequestSchema = z.union([
+  z.object({
+    mode: z.literal("create"),
+    project: z
+      .object({
+        name: z.string().optional(),
+        description: z.string().optional(),
+        coverImage: z.string().nullable().optional(),
+        archived: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+      })
+      .optional(),
+  }),
+  z.object({
+    mode: z.literal("fetch").optional(),
+    fetchAll: z.boolean().optional(),
+    projectIds: z.union([z.string(), z.array(z.string())]).optional(),
+  }),
+]);
 
-  try {
-    const body = (await request.json()) as ProjectRequestBody;
+type ProjectRequestBody = z.infer<typeof projectRequestSchema>;
 
-    if (body.mode === "create") {
+export const POST = createHandle<ProjectRequestBody>(
+  { body: projectRequestSchema },
+  async ({ body, userId, session }) => {
+    const organizationId = session.user?.organizationId;
+    if (!organizationId?.trim()) {
+      throw new UnauthorizedError("Not authenticated");
+    }
+
+    if ("mode" in body && body.mode === "create") {
       const projectName = body.project?.name?.trim() ?? "";
       const coverImage = normalizeCoverImage(body.project?.coverImage);
       if (!projectName) {
-        return NextResponse.json(
-          {
-            created: null,
-            message: "Project name is required",
-            status: 400,
-          },
-          { status: 400 },
-        );
+        throw new BadRequestError("Project name is required");
       }
-
       if (coverImage && !isValidProjectCoverImage(coverImage)) {
-        return NextResponse.json(
-          {
-            created: null,
-            message: "Project cover image is invalid",
-            status: 400,
-          },
-          { status: 400 },
-        );
+        throw new BadRequestError("Project cover image is invalid");
       }
 
       const [orgMembership] = await db
@@ -104,13 +85,8 @@ export async function POST(request: Request) {
         !orgMembership ||
         (orgMembership.role !== "owner" && orgMembership.role !== "admin")
       ) {
-        return NextResponse.json(
-          {
-            created: null,
-            message: "Forbidden — only org owner/admin can create projects",
-            status: 403,
-          },
-          { status: 403 },
+        throw new ForbiddenError(
+          "Forbidden — only org owner/admin can create projects",
         );
       }
 
@@ -152,15 +128,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const fetchAll = typeof body.fetchAll === "boolean" ? body.fetchAll : false;
+    const fetchAll =
+      "fetchAll" in body && typeof body.fetchAll === "boolean"
+        ? body.fetchAll
+        : false;
+    const rawProjectIds = "projectIds" in body ? body.projectIds : undefined;
     const projectIds =
-      typeof body.projectIds === "string"
-        ? body.projectIds
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
-        : Array.isArray(body.projectIds)
-          ? body.projectIds.map((id) => id.trim()).filter(Boolean)
+      typeof rawProjectIds === "string"
+        ? rawProjectIds.split(",").map((id) => id.trim()).filter(Boolean)
+        : Array.isArray(rawProjectIds)
+          ? rawProjectIds.map((id) => id.trim()).filter(Boolean)
           : [];
 
     const myMemberRows = await db
@@ -213,13 +190,12 @@ export async function POST(request: Request) {
             .where(inArray(projectMembersTable.projectId, allProjectIds))
         : [];
 
-    const membersByProject = memberRows.reduce<Record<string, typeof memberRows>>(
-      (acc, m) => {
-        (acc[m.projectId] ??= []).push(m);
-        return acc;
-      },
-      {},
-    );
+    const membersByProject = memberRows.reduce<
+      Record<string, typeof memberRows>
+    >((acc, m) => {
+      (acc[m.projectId] ??= []).push(m);
+      return acc;
+    }, {});
 
     const data = projects.map((project) => ({
       ...project,
@@ -228,23 +204,8 @@ export async function POST(request: Request) {
     }));
 
     return NextResponse.json(
-      {
-        data,
-        message: "Get projects success",
-        status: 200,
-      },
+      { data, message: "Get projects success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.log("Error get projects from body:", error);
-    return NextResponse.json(
-      {
-        message: "Failed to get projects",
-        status: 500,
-        data: [],
-        error: error,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

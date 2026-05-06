@@ -1,13 +1,13 @@
 // app/api/project/[id]/route.ts
 
-import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { projectMembersTable, projectsTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
+import { projectsTable } from "@/db/schema";
+import { BadRequestError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
 import { projectSettingsSchema } from "@/types/project-settings";
-import { and, eq } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const DATA_URL_IMAGE_PATTERN =
   /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
@@ -24,53 +24,34 @@ const isValidProjectCoverImage = (value: string) => {
   return DATA_URL_IMAGE_PATTERN.test(value) || HTTP_URL_PATTERN.test(value);
 };
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
+type RouteParams = { id: string };
 
-  if (!userId?.trim()) {
-    return NextResponse.json(
-      { updated: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
+const updateProjectSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  coverImage: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional(),
+  archived: z.boolean().optional(),
+  settings: z.unknown().optional(),
+});
 
-  const { id: projectId } = await params;
+type UpdateProjectBody = z.infer<typeof updateProjectSchema>;
 
-  if (!projectId?.trim()) {
-    return NextResponse.json(
-      { updated: null, message: "Project ID is required", status: 400 },
-      { status: 400 },
-    );
-  }
-
-  const canUpdate = await hasPermission(userId, [projectId], "project:update");
-  if (!canUpdate) {
-    return NextResponse.json(
-      { updated: null, message: "Forbidden", status: 403 },
-      { status: 403 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as {
-      name?: string;
-      description?: string;
-      coverImage?: string | null;
-      tags?: string[];
-      archived?: boolean;
-      settings?: unknown;
-    };
+export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
+  {
+    body: updateProjectSchema,
+    permission: "project:update",
+    resolveProjectIds: ({ params }) => [params.id],
+  },
+  async ({ params, body }) => {
+    const projectId = params.id;
+    if (!projectId?.trim()) {
+      throw new BadRequestError("Project ID is required");
+    }
 
     const name = body.name?.trim();
     if (name !== undefined && name.length === 0) {
-      return NextResponse.json(
-        { updated: null, message: "Project name cannot be empty", status: 400 },
-        { status: 400 },
-      );
+      throw new BadRequestError("Project name cannot be empty");
     }
 
     const coverImage =
@@ -79,10 +60,7 @@ export async function PATCH(
         : undefined;
 
     if (coverImage && !isValidProjectCoverImage(coverImage)) {
-      return NextResponse.json(
-        { updated: null, message: "Project cover image is invalid", status: 400 },
-        { status: 400 },
-      );
+      throw new BadRequestError("Project cover image is invalid");
     }
 
     const settingsResult =
@@ -91,13 +69,10 @@ export async function PATCH(
         : undefined;
 
     if (settingsResult && !settingsResult.success) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: `Invalid project settings: ${settingsResult.error.issues[0]?.message ?? "validation failed"}`,
-          status: 400,
-        },
-        { status: 400 },
+      throw new BadRequestError(
+        `Invalid project settings: ${
+          settingsResult.error.issues[0]?.message ?? "validation failed"
+        }`,
       );
     }
 
@@ -124,47 +99,20 @@ export async function PATCH(
       { updated, message: "Project updated successfully", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Error updating project:", error);
-    return NextResponse.json(
-      { updated: null, message: "Failed to update project", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
+export const DELETE = createParamHandle<RouteParams>(
+  {
+    permission: "project:delete",
+    resolveProjectIds: ({ params }) => [params.id],
+  },
+  async ({ params }) => {
+    const projectId = params.id;
+    if (!projectId?.trim()) {
+      throw new BadRequestError("Project ID is required");
+    }
 
-  if (!userId?.trim()) {
-    return NextResponse.json(
-      { deleted: null, message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
-
-  const { id: projectId } = await params;
-
-  if (!projectId?.trim()) {
-    return NextResponse.json(
-      { deleted: null, message: "Project ID is required", status: 400 },
-      { status: 400 },
-    );
-  }
-
-  const canDelete = await hasPermission(userId, [projectId], "project:delete");
-  if (!canDelete) {
-    return NextResponse.json(
-      { deleted: null, message: "Forbidden — only owner can delete", status: 403 },
-      { status: 403 },
-    );
-  }
-
-  try {
     const [deleted] = await db
       .delete(projectsTable)
       .where(eq(projectsTable.id, projectId))
@@ -174,11 +122,5 @@ export async function DELETE(
       { deleted, message: "Project deleted successfully", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Error deleting project:", error);
-    return NextResponse.json(
-      { deleted: null, message: "Failed to delete project", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

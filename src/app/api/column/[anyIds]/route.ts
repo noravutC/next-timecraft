@@ -1,73 +1,32 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
-import { columnsTable, projectMembersTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { UpdateColumnPayload } from "@/types";
+import { columnsTable } from "@/db/schema";
+import { BadRequestError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-type RouteParams = {
-  anyIds: string;
-};
+type RouteParams = { anyIds: string };
 
-type UpdateColumnBody = Array<UpdateColumnPayload>;
-
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        data: [],
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  const { anyIds } = await params;
-  const projectIds = anyIds
+const parseIds = (anyIds: string): string[] =>
+  anyIds
     .trim()
     .split(",")
+    .map((id) => id.trim())
     .filter((id) => id);
-  if (projectIds.length === 0) {
-    return NextResponse.json(
-      {
-        data: [],
-        message: "projectId is required",
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
 
-  const permission = await hasPermission(
-    sessionUserId,
-    projectIds,
-    "project:view",
-  );
-  if (!permission) {
-    return NextResponse.json(
-      {
-        created: null,
-        message: "Forbidden",
-        status: 403,
-      },
-      { status: 403 },
-    );
-  }
+export const GET = createParamHandle<RouteParams>(
+  {
+    permission: "project:view",
+    resolveProjectIds: ({ params }) => parseIds(params.anyIds),
+  },
+  async ({ params }) => {
+    const projectIds = parseIds(params.anyIds);
+    if (projectIds.length === 0) {
+      throw new BadRequestError("projectId is required");
+    }
 
-  // Keep compatibility with existing client query string (`?limit=...`).
-  // This route returns all columns; limit is currently unused.
-  void new URL(request.url).searchParams.get("limit");
-
-  try {
     const columns = await db
       .select()
       .from(columnsTable)
@@ -80,71 +39,32 @@ export async function GET(
       .orderBy(asc(columnsTable.orderFraction));
 
     return NextResponse.json(
-      {
-        data: columns,
-        message: "Get columns success",
-        status: 200,
-      },
+      { data: columns, message: "Get columns success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to fetch columns:", error);
-    return NextResponse.json(
-      {
-        data: [],
-        message: "Failed to fetch columns",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
+const updateColumnSchema = z
+  .array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().optional(),
+      color: z.string().optional(),
+      wipLimit: z.number().optional(),
+      orderFraction: z.string().optional(),
+    }),
+  )
+  .min(1, "Payload must be a non-empty array");
 
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
+type UpdateColumnBody = z.infer<typeof updateColumnSchema>;
 
-  const { anyIds } = await params;
-  const columnIds = anyIds
-    .trim()
-    .split(",")
-    .filter((id) => id);
-  if (columnIds.length === 0) {
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "columnIds are required",
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as UpdateColumnBody;
-    if (!Array.isArray(body) || body.length === 0) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "Payload must be a non-empty array",
-          status: 400,
-        },
-        { status: 400 },
-      );
+export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
+  { body: updateColumnSchema },
+  async ({ params, body, userId }) => {
+    const columnIds = parseIds(params.anyIds);
+    if (columnIds.length === 0) {
+      throw new BadRequestError("columnIds are required");
     }
 
     const existingColumnsList = await db
@@ -158,21 +78,7 @@ export async function PATCH(
     const uniqProjectIds = [
       ...new Set(existingColumnsList.map((col) => col.projectId)),
     ];
-    const permission = await hasPermission(
-      sessionUserId,
-      uniqProjectIds,
-      "column:update",
-    );
-    if (!permission) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Forbidden",
-          status: 403,
-        },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, uniqProjectIds, "column:update");
 
     const updatedColumns = await db.transaction(async (tx) => {
       const rowsUpdated = [];
@@ -191,9 +97,7 @@ export async function PATCH(
             .where(eq(columnsTable.id, item.id))
             .returning();
 
-          if (updated) {
-            rowsUpdated.push(updated);
-          }
+          if (updated) rowsUpdated.push(updated);
         } else {
           console.log(
             "Lacking column id or order fraction when update bulk column at: ",
@@ -206,78 +110,20 @@ export async function PATCH(
     });
 
     return NextResponse.json(
-      {
-        updated: updatedColumns,
-        message: "Update columns success",
-        status: 200,
-      },
+      { updated: updatedColumns, message: "Update columns success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message ===
-        "orderFraction must be a valid fractional key string or integer index" ||
-        error.message === "No fractional key space available" ||
-        error.message === "Too many columns for fractional indexing")
-    ) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: error.message,
-          status: 400,
-        },
-        { status: 400 },
-      );
+  },
+);
+
+export const DELETE = createParamHandle<RouteParams>(
+  {},
+  async ({ params, userId }) => {
+    const columnIds = parseIds(params.anyIds);
+    if (columnIds.length === 0) {
+      throw new BadRequestError("columnIds are required");
     }
 
-    console.error("Failed to update columns:", error);
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "Failed to update columns",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  const { anyIds } = await params;
-  const columnIds = anyIds
-    .trim()
-    .split(",")
-    .filter((id) => id);
-  if (columnIds.length === 0) {
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "columnIds are required",
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
     const existingColumnsList = await db
       .select({
         columnId: columnsTable.id,
@@ -289,21 +135,7 @@ export async function DELETE(
     const uniqProjectIds = [
       ...new Set(existingColumnsList.map((col) => col.projectId)),
     ];
-    const permission = await hasPermission(
-      sessionUserId,
-      uniqProjectIds,
-      "column:update",
-    );
-    if (!permission) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Forbidden",
-          status: 403,
-        },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, uniqProjectIds, "column:update");
 
     const deletedRows = await db
       .update(columnsTable)
@@ -323,15 +155,5 @@ export async function DELETE(
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to delete columns:", error);
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "Failed to delete columns",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

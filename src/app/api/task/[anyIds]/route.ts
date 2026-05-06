@@ -1,17 +1,40 @@
-import { authOptions } from "@/auth";
 import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
-import { hasPermission } from "@/db/uniq-query/project/project-utils";
-import { UpdateTaskPayload } from "@/types";
+import { BadRequestError, NotFoundError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
+import { triggerExclusive } from "@/lib/pusher-server";
+import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { eq, inArray } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-type RouteParams = {
-  anyIds: string;
-};
+type RouteParams = { anyIds: string };
 
-type UpdateTaskBody = Array<UpdateTaskPayload>;
+const updateTaskSchema = z
+  .array(
+    z.object({
+      id: z.string().min(1),
+      columnId: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().nullable().optional(),
+      orderFraction: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      priority: z.enum(["low", "medium", "high"]).optional(),
+      dueDate: z.union([z.string(), z.null()]).optional(),
+      archived: z.boolean().optional(),
+      estimatedHours: z.number().optional(),
+    }),
+  )
+  .min(1, "Payload must be a non-empty array");
+
+type UpdateTaskBody = z.infer<typeof updateTaskSchema>;
+
+const parseIds = (anyIds: string): string[] =>
+  anyIds
+    .trim()
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id);
 
 const getTaskProjectLinks = async (taskIds: string[]) =>
   db
@@ -23,83 +46,25 @@ const getTaskProjectLinks = async (taskIds: string[]) =>
     .innerJoin(columnsTable, eq(tasksTable.columnId, columnsTable.id))
     .where(inArray(tasksTable.id, taskIds));
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  const { anyIds } = await params;
-  const taskIds = anyIds
-    .trim()
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id);
-  if (taskIds.length === 0) {
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "taskIds are required",
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as UpdateTaskBody;
-    if (!Array.isArray(body) || body.length === 0) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "Payload must be a non-empty array",
-          status: 400,
-        },
-        { status: 400 },
-      );
-    }
+export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
+  { body: updateTaskSchema },
+  async ({ request, params, body, userId }) => {
+    const taskIds = parseIds(params.anyIds);
+    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
 
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
     if (existingTaskLinks.length === 0) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "Tasks not found",
-          status: 404,
-        },
-        { status: 404 },
-      );
+      throw new NotFoundError("Tasks not found");
     }
 
-    const payloadById = new Map<string, UpdateTaskPayload>();
+    const payloadById = new Map<string, UpdateTaskBody[number]>();
     body.forEach((item) => {
-      if (item.id) {
-        payloadById.set(item.id, item);
-      }
+      if (item.id) payloadById.set(item.id, item);
     });
 
     const targetIds = taskIds.filter((id) => payloadById.has(id));
     if (targetIds.length === 0) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "No matching payload for taskIds",
-          status: 400,
-        },
-        { status: 400 },
-      );
+      throw new BadRequestError("No matching payload for taskIds");
     }
 
     const destinationColumnIds = [
@@ -120,14 +85,7 @@ export async function PATCH(
             .where(inArray(columnsTable.id, destinationColumnIds))
         : [];
     if (destinationLinks.length !== destinationColumnIds.length) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "Some destination columns not found",
-          status: 400,
-        },
-        { status: 400 },
-      );
+      throw new BadRequestError("Some destination columns not found");
     }
 
     const uniqProjectIds = [
@@ -136,21 +94,7 @@ export async function PATCH(
         ...destinationLinks.map((column) => column.projectId),
       ]),
     ];
-    const permission = await hasPermission(
-      sessionUserId,
-      uniqProjectIds,
-      "task:update",
-    );
-    if (!permission) {
-      return NextResponse.json(
-        {
-          updated: null,
-          message: "Forbidden",
-          status: 403,
-        },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, uniqProjectIds, "task:update");
 
     const updatedTasks = await db.transaction(async (tx) => {
       const rows = [];
@@ -183,106 +127,74 @@ export async function PATCH(
           .where(eq(tasksTable.id, taskId))
           .returning();
 
-        if (updated) {
-          rows.push(updated);
-        }
+        if (updated) rows.push(updated);
       }
 
       return rows;
     });
 
+    const projectByTask = new Map(
+      existingTaskLinks.map((l) => [l.taskId, l.projectId]),
+    );
+    const projectByColumn = new Map(
+      destinationLinks.map((l) => [l.columnId, l.projectId]),
+    );
+    const groupedByProject = new Map<string, typeof updatedTasks>();
+    for (const task of updatedTasks) {
+      const pid =
+        projectByColumn.get(task.columnId) ?? projectByTask.get(task.id);
+      if (!pid) continue;
+      const list = groupedByProject.get(pid) ?? [];
+      list.push(task);
+      groupedByProject.set(pid, list);
+    }
+    for (const [pid, tasks] of groupedByProject) {
+      triggerExclusive(request, `project-${pid}`, "tasks-updated", tasks).catch(
+        (e) => console.error("Pusher tasks-updated failed:", e),
+      );
+    }
+
     return NextResponse.json(
-      {
-        updated: updatedTasks,
-        message: "Update tasks success",
-        status: 200,
-      },
+      { updated: updatedTasks, message: "Update tasks success", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to update tasks:", error);
-    return NextResponse.json(
-      {
-        updated: null,
-        message: "Failed to update tasks",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<RouteParams> },
-) {
-  const session = await getServerSession(authOptions);
-  const sessionUserId = session?.user?.id;
+export const DELETE = createParamHandle<RouteParams>(
+  {},
+  async ({ request, params, userId }) => {
+    const taskIds = parseIds(params.anyIds);
+    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
 
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  const { anyIds } = await params;
-  const taskIds = anyIds
-    .trim()
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id);
-  if (taskIds.length === 0) {
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "taskIds are required",
-        status: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
     if (existingTaskLinks.length === 0) {
-      return NextResponse.json(
-        {
-          deleted: false,
-          message: "Tasks not found",
-          status: 404,
-        },
-        { status: 404 },
-      );
+      throw new NotFoundError("Tasks not found");
     }
 
     const uniqProjectIds = [
       ...new Set(existingTaskLinks.map((task) => task.projectId)),
     ];
-    const permission = await hasPermission(
-      sessionUserId,
-      uniqProjectIds,
-      "task:delete",
-    );
-    if (!permission) {
-      return NextResponse.json(
-        {
-          deleted: false,
-          message: "Forbidden",
-          status: 403,
-        },
-        { status: 403 },
-      );
-    }
+    await authorizeOrThrow(userId, uniqProjectIds, "task:delete");
 
     const deletedRows = await db
       .delete(tasksTable)
       .where(inArray(tasksTable.id, taskIds))
       .returning({ id: tasksTable.id });
+
+    const deletedIdSet = new Set(deletedRows.map((r) => r.id));
+    const groupedByProject = new Map<string, string[]>();
+    for (const link of existingTaskLinks) {
+      if (!deletedIdSet.has(link.taskId)) continue;
+      const list = groupedByProject.get(link.projectId) ?? [];
+      list.push(link.taskId);
+      groupedByProject.set(link.projectId, list);
+    }
+    for (const [pid, ids] of groupedByProject) {
+      triggerExclusive(request, `project-${pid}`, "tasks-deleted", ids).catch(
+        (e) => console.error("Pusher tasks-deleted failed:", e),
+      );
+    }
 
     return NextResponse.json(
       {
@@ -292,15 +204,5 @@ export async function DELETE(
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Failed to delete tasks:", error);
-    return NextResponse.json(
-      {
-        deleted: false,
-        message: "Failed to delete tasks",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

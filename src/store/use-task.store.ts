@@ -23,6 +23,8 @@ type TaskStore = {
     limitTasks: number,
   ) => Promise<TaskCache[]>;
   updateTaskFromRealtime: (task: Task) => void;
+  addTasksFromRealtime: (tasks: Task[]) => void;
+  removeTasksFromRealtime: (taskIds: string[]) => void;
 };
 
 let updateReqCounter = 0;
@@ -164,8 +166,33 @@ export const useTaskStore = create<TaskStore>((set) => ({
     set((state) => ({
       tasks: {
         ...state.tasks,
-        [task.id]: { ...task, timestamp: Date.now() },
+        [task.id]: { ...state.tasks[task.id], ...task, timestamp: Date.now() },
       },
     }));
+  },
+
+  addTasksFromRealtime: (tasks) => {
+    if (!tasks.length) return;
+    const ts = Date.now();
+    set((state) => ({
+      tasks: {
+        ...state.tasks,
+        ...Object.fromEntries(
+          tasks.map((t) => [
+            t.id,
+            { ...state.tasks[t.id], ...t, timestamp: ts },
+          ]),
+        ),
+      },
+    }));
+  },
+
+  removeTasksFromRealtime: (taskIds) => {
+    if (!taskIds.length) return;
+    set((state) => {
+      const next = { ...state.tasks };
+      taskIds.forEach((id) => delete next[id]);
+      return { tasks: next };
+    });
   },
 }));

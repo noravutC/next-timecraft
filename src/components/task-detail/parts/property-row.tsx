@@ -7,8 +7,8 @@ interface PropertyRowProps {
 }
 
 export const PropertyRow = ({ icon, label, children }: PropertyRowProps) => (
-  <div className="mb-4 grid grid-cols-2 items-start gap-3">
-    <div className="flex items-center gap-1.5 pt-1.5 text-xs text-muted-foreground uppercase">
+  <div className="grid grid-cols-[180px_1fr] items-center gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <span className="text-muted-foreground">{icon}</span>
       {label}
     </div>
