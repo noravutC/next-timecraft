@@ -174,3 +174,15 @@ PUSHER_CLUSTER=
 NEXT_PUBLIC_PUSHER_KEY=
 NEXT_PUBLIC_PUSHER_CLUSTER=
 ```
+
+## Skills system
+
+Project-local skills live in `.claude/skills/<name>/SKILL.md`. Claude Code auto-discovers them via YAML frontmatter — there is no manual index.
+
+### When to update a skill
+
+- A user correction reveals a wrong pattern, library, or convention you used.
+- You had to fix your own output a second time to match an existing codebase pattern.
+- You discovered a real pattern in code that no skill captures.
+
+When any of these happen, open the relevant `SKILL.md` and update it. The **`skill-authoring` skill** governs the *how* — size caps, frontmatter quality, pre-flight audit, stability gate, and update protocol. It will auto-trigger the moment you start editing under `.claude/skills/`. Read it first; do not write skill content from memory of these rules.

@@ -3,7 +3,10 @@ import { toast } from "sonner";
 import { commentServices } from "@/services/comment.service";
 import { useTaskStore } from "./use-task.store";
 import type {
+  AttachmentInput,
   CreateCommentPayload,
+  ReactionSummary,
+  TaskCommentAttachment,
   TaskCommentWithAuthor,
   UpdateCommentPayload,
 } from "@/types";
@@ -36,8 +39,18 @@ type CommentStore = {
   fetchMore: (taskId: string) => Promise<void>;
   create: (
     taskId: string,
-    payload: { body: string; mentions: string[]; authorId: string; authorName: string; authorAvatar: string | null },
+    payload: {
+      body: string;
+      mentions: string[];
+      authorId: string;
+      authorName: string;
+      authorAvatar: string | null;
+      attachments?: TaskCommentAttachment[];
+      attachmentInputs?: AttachmentInput[];
+    },
   ) => Promise<TaskCommentWithAuthor | null>;
+  toggleReaction: (commentId: string, taskId: string, emoji: string, userId: string) => Promise<void>;
+  ingestReactionChanged: (taskId: string, commentId: string, reactions: ReactionSummary[]) => void;
   update: (
     commentId: string,
     taskId: string,
@@ -50,6 +63,25 @@ type CommentStore = {
   ingestDeleted: (taskId: string, commentId: string) => void;
   reset: (taskId: string) => void;
 };
+
+const buildOptimisticAttachments = (
+  inputs: AttachmentInput[],
+  commentId: string,
+): TaskCommentAttachment[] =>
+  inputs.map((a, idx) => ({
+    id: `temp-att-${commentId}-${idx}`,
+    commentId,
+    type: a.type,
+    storagePath: a.storagePath,
+    url: a.url,
+    mimeType: a.mimeType,
+    sizeBytes: a.sizeBytes,
+    width: a.width ?? null,
+    height: a.height ?? null,
+    durationMs: a.durationMs ?? null,
+    orderIndex: idx,
+    createdAt: new Date(),
+  }));
 
 const sortDescByCreatedAt = (a: TaskCommentWithAuthor, b: TaskCommentWithAuthor) => {
   const ad = new Date(a.createdAt).getTime();
@@ -157,6 +189,8 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
       updatedAt: new Date(),
       authorName: payload.authorName,
       authorAvatar: payload.authorAvatar,
+      attachments: payload.attachments ?? buildOptimisticAttachments(payload.attachmentInputs ?? [], `temp-${clientId}`),
+      reactions: [],
     };
 
     set((s) => {
@@ -189,6 +223,7 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
         body: payload.body,
         mentions: payload.mentions,
         clientId,
+        attachments: payload.attachmentInputs ?? [],
       };
       const res = await commentServices.create(taskId, body);
       const real = res.created;
@@ -413,6 +448,73 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
           [taskId]: {
             ...prev,
             items: prev.items.filter((c) => c.id !== commentId),
+          },
+        },
+      };
+    });
+  },
+
+  toggleReaction: async (commentId, taskId, emoji, userId) => {
+    const snapshot = get().byTask[taskId];
+    if (!snapshot) return;
+
+    const applyToggle = (reactions: ReactionSummary[]): ReactionSummary[] => {
+      const existing = reactions.find((r) => r.emoji === emoji);
+      if (!existing) {
+        return [...reactions, { emoji, count: 1, userIds: [userId] }];
+      }
+      const has = existing.userIds.includes(userId);
+      const nextUsers = has
+        ? existing.userIds.filter((id) => id !== userId)
+        : [...existing.userIds, userId];
+      const updated: ReactionSummary = {
+        emoji,
+        count: nextUsers.length,
+        userIds: nextUsers,
+      };
+      const without = reactions.filter((r) => r.emoji !== emoji);
+      return updated.count === 0 ? without : [...without, updated];
+    };
+
+    set((s) => {
+      const prev = s.byTask[taskId];
+      if (!prev) return s;
+      return {
+        byTask: {
+          ...s.byTask,
+          [taskId]: {
+            ...prev,
+            items: prev.items.map((c) =>
+              c.id === commentId
+                ? { ...c, reactions: applyToggle(c.reactions) }
+                : c,
+            ),
+          },
+        },
+      };
+    });
+
+    try {
+      await commentServices.toggleReaction(commentId, emoji);
+    } catch (err) {
+      set((s) => ({ byTask: { ...s.byTask, [taskId]: snapshot } }));
+      toast.error("Failed to react");
+      console.error(err);
+    }
+  },
+
+  ingestReactionChanged: (taskId, commentId, reactions) => {
+    set((s) => {
+      const prev = s.byTask[taskId];
+      if (!prev) return s;
+      return {
+        byTask: {
+          ...s.byTask,
+          [taskId]: {
+            ...prev,
+            items: prev.items.map((c) =>
+              c.id === commentId ? { ...c, reactions } : c,
+            ),
           },
         },
       };

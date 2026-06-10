@@ -7,5 +7,4 @@ export * from "./subtask";
 export * from "./notification";
 export * from "./global/api";
 export * from "./organization";
-export * from "./member-ship";
 export * from "./template-column";

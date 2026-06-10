@@ -59,6 +59,7 @@ export const CommentList = ({ taskId, currentUserId }: CommentListProps) => {
           key={c.id}
           comment={c}
           isOwn={c.userId === currentUserId}
+          currentUserId={currentUserId}
         />
       ))}
       {hasMore && (

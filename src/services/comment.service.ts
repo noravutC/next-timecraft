@@ -6,9 +6,18 @@ import type {
   APIDelete,
   CommentsPage,
   CreateCommentPayload,
+  ReactionSummary,
   TaskCommentWithAuthor,
   UpdateCommentPayload,
 } from "@/types";
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  token: string;
+  path: string;
+  publicUrl: string;
+  kind: "image" | "video";
+}
 
 class CommentService {
   private client = apiClient;
@@ -59,6 +68,39 @@ class CommentService {
       .then((r) => r.data)
       .catch((e) => {
         throw e?.response?.data || new Error("Failed to delete comment");
+      });
+  }
+
+  async createUploadUrl(payload: {
+    taskId: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+  }): Promise<APIPost<UploadUrlResponse> & { data: UploadUrlResponse }> {
+    return this.client
+      .post(`/comment/upload-url`, payload)
+      .then((r) => r.data)
+      .catch((e) => {
+        throw e?.response?.data || new Error("Failed to create upload URL");
+      });
+  }
+
+  async toggleReaction(
+    commentId: string,
+    emoji: string,
+  ): Promise<
+    APIPost<{
+      commentId: string;
+      reactions: ReactionSummary[];
+      action: "added" | "removed";
+      emoji: string;
+    }>
+  > {
+    return this.client
+      .post(`/comment/${commentId}/reaction`, { emoji })
+      .then((r) => r.data)
+      .catch((e) => {
+        throw e?.response?.data || new Error("Failed to toggle reaction");
       });
   }
 

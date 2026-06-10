@@ -19,7 +19,9 @@ export type Permission =
   | "task:delete"
   | "task:comment"
   | "comment:update"
-  | "comment:delete";
+  | "comment:delete"
+  | "comment:react"
+  | "comment:upload";
 
 const definePermissions = (
   map: Record<ProjectRole, Permission[]>,
@@ -50,6 +52,8 @@ export const ROLE_PERMISSIONS = definePermissions({
     "task:comment",
     "comment:update",
     "comment:delete",
+    "comment:react",
+    "comment:upload",
   ],
   admin: [
     "project:view",
@@ -67,6 +71,8 @@ export const ROLE_PERMISSIONS = definePermissions({
     "task:comment",
     "comment:update",
     "comment:delete",
+    "comment:react",
+    "comment:upload",
   ],
   editor: [
     "project:view",
@@ -75,6 +81,8 @@ export const ROLE_PERMISSIONS = definePermissions({
     "task:move",
     "task:delete",
     "task:comment",
+    "comment:react",
+    "comment:upload",
   ],
-  viewer: ["project:view"],
+  viewer: ["project:view", "comment:react"],
 });

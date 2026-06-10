@@ -9,6 +9,8 @@ export * from "./task.table";
 export * from "./task-assignee.table";
 export * from "./task-dependency.table";
 export * from "./task-comment.table";
+export * from "./task-comment-attachment.table";
+export * from "./task-comment-reaction.table";
 export * from "./subtask.table";
 export * from "./comment-read-state.table";
 export * from "./notification.table";

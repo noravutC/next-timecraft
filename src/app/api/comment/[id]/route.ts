@@ -5,7 +5,11 @@ import {
   tasksTable,
   usersTable,
 } from "@/db/schema";
-import { getCommentLink } from "@/db/uniq-query/comment/comment-utils";
+import {
+  fetchAttachmentsForComments,
+  fetchReactionsForComments,
+  getCommentLink,
+} from "@/db/uniq-query/comment/comment-utils";
 import { ForbiddenError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { triggerExclusive } from "@/lib/pusher-server";
@@ -89,10 +93,17 @@ export const PATCH = createParamHandle<RouteParams, UpdateCommentBody>(
       .where(eq(usersTable.id, userId))
       .limit(1);
 
+    const [attachmentsByComment, reactionsByComment] = await Promise.all([
+      fetchAttachmentsForComments([commentId]),
+      fetchReactionsForComments([commentId]),
+    ]);
+
     const enriched = {
       ...updated,
       authorName: author?.fullName ?? "",
       authorAvatar: author?.avatar ?? null,
+      attachments: attachmentsByComment[commentId] ?? [],
+      reactions: reactionsByComment[commentId] ?? [],
     };
 
     triggerExclusive(

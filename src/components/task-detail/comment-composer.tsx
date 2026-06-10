@@ -1,29 +1,24 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import {
-  AtSign,
-  Bold,
-  Code,
-  Image as ImageIcon,
-  Italic,
-  List,
-  Paperclip,
-  Send,
-  Smile,
-  Video,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useUserStore, useProjectStore } from "@/store";
 import { useShallow } from "zustand/react/shallow";
 import { useCommentStore } from "@/store/use-comment.store";
+import { applyWrap } from "@/helper/utils/markdown-editor";
 import {
-  MentionDropdown,
-  type MentionCandidate,
-} from "./mention-dropdown";
-import { CommentAvatar } from "./comment-avatar";
+  buildMentionInsertion,
+  extractMentionIds,
+} from "@/helper/utils/mention";
+import type { AttachmentInput } from "@/types";
+import { MentionDropdown, type MentionCandidate } from "./mention-dropdown";
+import { AttachmentPreviewTile } from "./parts/attachment-preview-tile";
+import { MarkdownView } from "./parts/markdown-view";
+import { HiddenFileInput } from "./parts/hidden-file-input";
+import { ComposerToolbar } from "./parts/composer-toolbar";
+import { useAttachmentUploads } from "./use-attachment-uploads";
+import { useMentionPicker } from "./use-mention-picker";
 
 interface CommentComposerProps {
   taskId: string;
@@ -39,10 +34,13 @@ export const CommentComposer = ({
   authorAvatar,
 }: CommentComposerProps) => {
   const [value, setValue] = useState("");
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [activeIdx, setActiveIdx] = useState(0);
   const [isSending, setIsSending] = useState(false);
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const [preview, setPreview] = useState(false);
+
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const anyInputRef = useRef<HTMLInputElement>(null);
 
   const projectIsUsing = useProjectStore((s) => s.projectIsUsing);
   const project = useProjectStore((s) =>
@@ -63,160 +61,202 @@ export const CommentComposer = ({
       .filter((m): m is MentionCandidate => m !== null);
   }, [project?.members, users]);
 
-  const filteredCandidates = useMemo(() => {
-    if (mentionQuery === null) return [];
-    const q = mentionQuery.toLowerCase();
-    return memberCandidates
-      .filter((c) => c.name.toLowerCase().includes(q))
-      .slice(0, 6);
-  }, [mentionQuery, memberCandidates]);
+  const mention = useMentionPicker(memberCandidates);
+  const upload = useAttachmentUploads(taskId);
 
-  const detectMention = (text: string, caret: number) => {
-    const upto = text.slice(0, caret);
-    const match = upto.match(/(?:^|\s)@([^\s@]*)$/);
-    return match ? match[1] : null;
+  const setValueAndCursor = (next: string, cursor: number) => {
+    setValue(next);
+    requestAnimationFrame(() => {
+      const ta = taRef.current;
+      if (!ta) return;
+      ta.focus();
+      ta.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const handleWrap = (marker: string) => {
+    const ta = taRef.current;
+    if (!ta) return;
+    const r = applyWrap(
+      value,
+      ta.selectionStart ?? 0,
+      ta.selectionEnd ?? 0,
+      marker,
+    );
+    setValueAndCursor(r.value, r.cursor);
+  };
+
+  const insertMention = (c: MentionCandidate) => {
+    const ta = taRef.current;
+    if (!ta) return;
+    const r = buildMentionInsertion(
+      value,
+      ta.selectionStart ?? value.length,
+      c.name,
+    );
+    setValue(r.value);
+    mention.dismiss();
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(r.cursor, r.cursor);
+    });
   };
 
   const updateValue = (next: string, caret: number) => {
     setValue(next);
-    const q = detectMention(next, caret);
-    setMentionQuery(q);
-    setActiveIdx(0);
-  };
-
-  const insertMention = (c: MentionCandidate) => {
-    const ta = ref.current;
-    if (!ta) return;
-    const caret = ta.selectionStart ?? value.length;
-    const upto = value.slice(0, caret);
-    const after = value.slice(caret);
-    const replaced = upto.replace(/@([^\s@]*)$/, `@${c.name} `);
-    const next = replaced + after;
-    setValue(next);
-    setMentionQuery(null);
-    setActiveIdx(0);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(replaced.length, replaced.length);
-    });
-  };
-
-  const extractMentions = (text: string): string[] => {
-    const ids = new Set<string>();
-    for (const c of memberCandidates) {
-      const re = new RegExp(
-        `@${c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`,
-      );
-      if (re.test(text)) ids.add(c.id);
-    }
-    return Array.from(ids);
+    mention.updateForText(next, caret);
   };
 
   const submit = async () => {
     const trimmed = value.trim();
-    if (!trimmed || isSending) return;
+    const ready = upload.pending.filter((p) => p.status === "ready");
+    if (upload.pending.some((p) => p.status === "uploading")) {
+      toast.message("Wait for uploads to finish");
+      return;
+    }
+    if (!trimmed && ready.length === 0) return;
+    if (isSending) return;
+
     setIsSending(true);
-    const mentions = extractMentions(trimmed);
+    const mentions = extractMentionIds(trimmed, memberCandidates);
+    const inputs: AttachmentInput[] = ready
+      .map((p) => p.attachment)
+      .filter((a): a is AttachmentInput => !!a);
+
     setValue("");
-    setMentionQuery(null);
+    mention.dismiss();
+    upload.clearAll();
+
     await create(taskId, {
       body: trimmed,
       mentions,
       authorId,
       authorName,
       authorAvatar,
+      attachmentInputs: inputs,
     });
     setIsSending(false);
   };
 
-  const toolbarGroups: React.ComponentType<{ className?: string }>[][] = [
-    [Bold, Italic, Code, List],
-    [ImageIcon, Video, Paperclip, AtSign, Smile],
-  ];
+  const canSend =
+    !isSending &&
+    !upload.pending.some((p) => p.status === "uploading") &&
+    (value.trim().length > 0 ||
+      upload.pending.some((p) => p.status === "ready"));
 
   return (
     <div className="shrink-0 pt-2 pb-4">
-      <div className="relative flex flex-col rounded-xl border border-border bg-background shadow-sm focus-within:border-foreground/40 focus-within:shadow-md">
-        {filteredCandidates.length > 0 && (
+      <HiddenFileInput
+        ref={imageInputRef}
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onFiles={upload.addFiles}
+      />
+      <HiddenFileInput
+        ref={videoInputRef}
+        accept="video/mp4,video/webm,video/quicktime"
+        onFiles={upload.addFiles}
+      />
+      <HiddenFileInput
+        ref={anyInputRef}
+        accept="image/*,video/*"
+        onFiles={upload.addFiles}
+      />
+
+      <div
+        className="flex flex-col rounded-md border border-border bg-background p-2 px-3 shadow-sm focus-within:border-primary focus-within:shadow-md"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={upload.onDrop}
+      >
+        {mention.isOpen && (
           <MentionDropdown
-            candidates={filteredCandidates}
-            activeIndex={activeIdx}
+            candidates={mention.filtered}
+            activeIndex={mention.activeIdx}
             onSelect={insertMention}
-            onHover={setActiveIdx}
+            onHover={mention.setActiveIdx}
           />
         )}
-        <div className="flex items-center gap-3 px-3 pt-3">
-          <CommentAvatar name={authorName} avatar={authorAvatar} />
-          <Textarea
-            ref={ref}
-            value={value}
-            onChange={(e) => {
-              const ta = e.target;
-              updateValue(ta.value, ta.selectionStart ?? ta.value.length);
-            }}
-            onKeyDown={(e) => {
-              if (filteredCandidates.length > 0) {
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setActiveIdx((i) =>
-                    Math.min(i + 1, filteredCandidates.length - 1),
-                  );
-                  return;
-                }
-                if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setActiveIdx((i) => Math.max(i - 1, 0));
-                  return;
-                }
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  insertMention(filteredCandidates[activeIdx]);
-                  return;
-                }
-                if (e.key === "Escape") {
-                  setMentionQuery(null);
-                  return;
-                }
-              }
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            placeholder="Write a comment… use @ to mention"
-            className="min-h-9 resize-none border-0 bg-transparent p-0 py-1.5 text-sm shadow-none focus-visible:ring-0"
-          />
-        </div>
-        <div className="mt-2 flex items-center justify-between gap-1 px-2 pb-2">
-          <div className="flex min-w-0 items-center gap-1 text-muted-foreground">
-            {toolbarGroups.map((group, gi) => (
-              <div key={gi} className="flex items-center">
-                {gi > 0 && (
-                  <span className="mx-1 h-4 w-px bg-border" aria-hidden />
-                )}
-                {group.map((Icon, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    tabIndex={-1}
-                    className="rounded p-1 hover:bg-muted hover:text-foreground"
-                  >
-                    <Icon className="size-4" />
-                  </button>
+
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            {preview ? (
+              <div className="min-h-9 py-1.5 text-sm">
+                <MarkdownView value={value} />
+              </div>
+            ) : (
+              <Textarea
+                ref={taRef}
+                value={value}
+                onChange={(e) => {
+                  const ta = e.target;
+                  updateValue(ta.value, ta.selectionStart ?? ta.value.length);
+                }}
+                onPaste={upload.onPaste}
+                onKeyDown={(e) => {
+                  if (mention.isOpen) {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      mention.moveDown();
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      mention.moveUp();
+                      return;
+                    }
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      insertMention(mention.filtered[mention.activeIdx]);
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      mention.dismiss();
+                      return;
+                    }
+                  }
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    submit();
+                    return;
+                  }
+                  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+                    e.preventDefault();
+                    handleWrap("**");
+                    return;
+                  }
+                  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+                    e.preventDefault();
+                    handleWrap("*");
+                    return;
+                  }
+                }}
+                placeholder="Write a comment… use @ to mention"
+                className="min-h-9 resize-none border-0 bg-transparent p-0 py-1.5 text-sm shadow-none focus-visible:ring-0"
+              />
+            )}
+
+            {upload.pending.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {upload.pending.map((p) => (
+                  <AttachmentPreviewTile
+                    key={p.id}
+                    pending={p}
+                    onRemove={upload.removePending}
+                  />
                 ))}
               </div>
-            ))}
+            )}
           </div>
-          <Button
-            size="xs"
-            onClick={submit}
-            disabled={!value.trim() || isSending}
-            className="gap-2 text-xs"
-          >
-            <Send className="size-3.5" />
-            Send
-          </Button>
         </div>
+
+        <ComposerToolbar
+          preview={preview}
+          canSend={canSend}
+          onTogglePreview={() => setPreview((p) => !p)}
+          onSend={submit}
+          onPickImage={() => imageInputRef.current?.click()}
+          onPickVideo={() => videoInputRef.current?.click()}
+          onPickAny={() => anyInputRef.current?.click()}
+        />
       </div>
     </div>
   );

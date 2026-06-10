@@ -2,17 +2,25 @@ import { db } from "@/db";
 import {
   columnsTable,
   commentReadStateTable,
+  taskCommentAttachmentsTable,
+  taskCommentReactionsTable,
   taskCommentsTable,
   tasksTable,
   usersTable,
 } from "@/db/schema";
-import type { TaskCommentWithAuthor } from "@/types";
+import type {
+  ReactionSummary,
+  TaskCommentAttachment,
+  TaskCommentWithAuthor,
+} from "@/types";
 import {
   and,
+  asc,
   count,
   desc,
   eq,
   gt,
+  inArray,
   isNull,
   lt,
   or,
@@ -126,7 +134,69 @@ export async function fetchCommentsPage(args: {
       ? encodeCursor({ createdAt: last.createdAt, id: last.id })
       : null;
 
-  return { items: trimmed, nextCursor, hasMore };
+  const ids = trimmed.map((c) => c.id);
+  const [attachmentsByComment, reactionsByComment] = await Promise.all([
+    fetchAttachmentsForComments(ids),
+    fetchReactionsForComments(ids),
+  ]);
+
+  const items: TaskCommentWithAuthor[] = trimmed.map((c) => ({
+    ...c,
+    attachments: attachmentsByComment[c.id] ?? [],
+    reactions: reactionsByComment[c.id] ?? [],
+  }));
+
+  return { items, nextCursor, hasMore };
+}
+
+export async function fetchAttachmentsForComments(
+  commentIds: string[],
+): Promise<Record<string, TaskCommentAttachment[]>> {
+  if (commentIds.length === 0) return {};
+  const rows = await db
+    .select()
+    .from(taskCommentAttachmentsTable)
+    .where(inArray(taskCommentAttachmentsTable.commentId, commentIds))
+    .orderBy(
+      asc(taskCommentAttachmentsTable.commentId),
+      asc(taskCommentAttachmentsTable.orderIndex),
+    );
+  const out: Record<string, TaskCommentAttachment[]> = {};
+  for (const r of rows) {
+    (out[r.commentId] ??= []).push(r);
+  }
+  return out;
+}
+
+export async function fetchReactionsForComments(
+  commentIds: string[],
+): Promise<Record<string, ReactionSummary[]>> {
+  if (commentIds.length === 0) return {};
+  const rows = await db
+    .select({
+      commentId: taskCommentReactionsTable.commentId,
+      emoji: taskCommentReactionsTable.emoji,
+      userId: taskCommentReactionsTable.userId,
+    })
+    .from(taskCommentReactionsTable)
+    .where(inArray(taskCommentReactionsTable.commentId, commentIds));
+
+  const acc: Record<string, Map<string, string[]>> = {};
+  for (const r of rows) {
+    const map = (acc[r.commentId] ??= new Map());
+    const list = map.get(r.emoji) ?? [];
+    list.push(r.userId);
+    map.set(r.emoji, list);
+  }
+  const out: Record<string, ReactionSummary[]> = {};
+  for (const [cid, map] of Object.entries(acc)) {
+    out[cid] = Array.from(map.entries()).map(([emoji, userIds]) => ({
+      emoji,
+      count: userIds.length,
+      userIds,
+    }));
+  }
+  return out;
 }
 
 export async function countUnreadComments(args: {

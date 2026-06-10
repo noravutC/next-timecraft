@@ -4,16 +4,26 @@ import {
   notificationsTable,
   projectMembersTable,
   projectsTable,
+  taskCommentAttachmentsTable,
   taskCommentsTable,
   tasksTable,
   usersTable,
 } from "@/db/schema";
 import {
   countUnreadComments,
+  fetchAttachmentsForComments,
   fetchCommentsPage,
   getTaskProjectLink,
 } from "@/db/uniq-query/comment/comment-utils";
-import { NotFoundError } from "@/lib/api/errors";
+import {
+  ALLOWED_IMAGE_MIME,
+  ALLOWED_VIDEO_MIME,
+  COMMENT_MEDIA_BUCKET,
+  MAX_FILES_PER_COMMENT,
+  maxBytesFor,
+  supabaseAdmin,
+} from "@/lib/supabase-storage";
+import { AppError, BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
@@ -61,11 +71,32 @@ export const GET = createParamHandle<RouteParams>(
   },
 );
 
-const createCommentSchema = z.object({
-  body: z.string().trim().min(1, "Body is required").max(MAX_BODY_LEN),
-  mentions: z.array(z.string()).optional().default([]),
-  clientId: z.string().trim().min(1, "clientId is required"),
+const attachmentSchema = z.object({
+  type: z.enum(["image", "video"]),
+  storagePath: z.string().min(1).max(512),
+  url: z.string().url().max(1024),
+  mimeType: z.string().min(1).max(120),
+  sizeBytes: z.number().int().positive(),
+  width: z.number().int().positive().nullable().optional(),
+  height: z.number().int().positive().nullable().optional(),
+  durationMs: z.number().int().positive().nullable().optional(),
 });
+
+const createCommentSchema = z
+  .object({
+    body: z.string().trim().max(MAX_BODY_LEN).default(""),
+    mentions: z.array(z.string()).optional().default([]),
+    clientId: z.string().trim().min(1, "clientId is required"),
+    attachments: z
+      .array(attachmentSchema)
+      .max(MAX_FILES_PER_COMMENT)
+      .optional()
+      .default([]),
+  })
+  .refine((d) => d.body.trim().length > 0 || d.attachments.length > 0, {
+    message: "Comment must have body or at least one attachment",
+    path: ["body"],
+  });
 
 type CreateCommentBody = z.infer<typeof createCommentSchema>;
 
@@ -74,14 +105,42 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
   async ({ request, params, body, userId, session }) => {
     const taskId = params.anyIds;
     const sessionUserName = session.user?.name ?? "Someone";
-    const text = body.body;
+    const text = body.body.trim();
     const clientId = body.clientId;
     const mentions = [...new Set(body.mentions)];
+    const attachmentsInput = body.attachments;
 
     const link = await getTaskProjectLink(taskId);
     if (!link) throw new NotFoundError("Task not found");
 
     await authorizeOrThrow(userId, [link.projectId], "task:comment");
+    let attachmentUrls: string[] = [];
+    if (attachmentsInput.length > 0) {
+      await authorizeOrThrow(userId, [link.projectId], "comment:upload");
+      if (!supabaseAdmin) throw new AppError(500, "Storage is not configured");
+      attachmentUrls = attachmentsInput.map((a) => {
+        const allowed =
+          a.type === "image"
+            ? ALLOWED_IMAGE_MIME.has(a.mimeType)
+            : ALLOWED_VIDEO_MIME.has(a.mimeType);
+        if (!allowed) {
+          throw new BadRequestError(
+            `Unsupported attachment mime: ${a.mimeType}`,
+          );
+        }
+        if (a.sizeBytes > maxBytesFor(a.type)) {
+          throw new BadRequestError("Attachment exceeds size limit");
+        }
+        if (!a.storagePath.startsWith(`${link.projectId}/${taskId}/`)) {
+          throw new BadRequestError("Invalid attachment path");
+        }
+        // Derive the public URL server-side from the validated path; never
+        // trust the client-supplied url (could point anywhere).
+        return supabaseAdmin.storage
+          .from(COMMENT_MEDIA_BUCKET)
+          .getPublicUrl(a.storagePath).publicUrl;
+      });
+    }
 
     let validMentions: string[] = [];
     if (mentions.length > 0) {
@@ -117,6 +176,23 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           clientId,
         })
         .returning();
+
+      if (attachmentsInput.length > 0) {
+        await tx.insert(taskCommentAttachmentsTable).values(
+          attachmentsInput.map((a, idx) => ({
+            commentId: comment.id,
+            type: a.type,
+            storagePath: a.storagePath,
+            url: attachmentUrls[idx],
+            mimeType: a.mimeType,
+            sizeBytes: a.sizeBytes,
+            width: a.width ?? null,
+            height: a.height ?? null,
+            durationMs: a.durationMs ?? null,
+            orderIndex: idx,
+          })),
+        );
+      }
 
       await tx
         .update(tasksTable)
@@ -186,10 +262,16 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         .where(eq(usersTable.id, userId))
         .limit(1);
 
+      const attachmentsByComment = await fetchAttachmentsForComments([
+        result.comment.id,
+      ]);
+
       const enriched = {
         ...result.comment,
         authorName: author?.fullName ?? sessionUserName,
         authorAvatar: author?.avatar ?? null,
+        attachments: attachmentsByComment[result.comment.id] ?? [],
+        reactions: [],
       };
 
       triggerExclusive(request, `task-${taskId}`, "comment-added", {
@@ -232,12 +314,18 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
       .where(eq(usersTable.id, userId))
       .limit(1);
 
+    const dedupAttachments = await fetchAttachmentsForComments([
+      result.comment.id,
+    ]);
+
     return NextResponse.json(
       {
         created: {
           ...result.comment,
           authorName: author?.fullName ?? sessionUserName,
           authorAvatar: author?.avatar ?? null,
+          attachments: dedupAttachments[result.comment.id] ?? [],
+          reactions: [],
         },
         message: "Comment already exists",
         status: 200,

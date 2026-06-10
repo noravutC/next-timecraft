@@ -36,6 +36,13 @@
       "when": 1777867482651,
       "tag": "0005_complex_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778129067076,
+      "tag": "0006_first_wild_pack",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,8 @@ import { projectMembersTable } from "./project-member.table";
 import { projectsTable } from "./project.table";
 import { taskAssigneesTable } from "./task-assignee.table";
 import { taskCommentsTable } from "./task-comment.table";
+import { taskCommentAttachmentsTable } from "./task-comment-attachment.table";
+import { taskCommentReactionsTable } from "./task-comment-reaction.table";
 import { taskDependenciesTable } from "./task-dependency.table";
 import { tasksTable } from "./task.table";
 import { subtasksTable } from "./subtask.table";
@@ -115,13 +117,39 @@ export const subtasksTableRelations = relations(subtasksTable, ({ one }) => ({
 
 export const taskCommentsTableRelations = relations(
   taskCommentsTable,
-  ({ one }) => ({
+  ({ one, many }) => ({
     task: one(tasksTable, {
       fields: [taskCommentsTable.taskId],
       references: [tasksTable.id],
     }),
     user: one(usersTable, {
       fields: [taskCommentsTable.userId],
+      references: [usersTable.id],
+    }),
+    attachments: many(taskCommentAttachmentsTable),
+    reactions: many(taskCommentReactionsTable),
+  }),
+);
+
+export const taskCommentAttachmentsTableRelations = relations(
+  taskCommentAttachmentsTable,
+  ({ one }) => ({
+    comment: one(taskCommentsTable, {
+      fields: [taskCommentAttachmentsTable.commentId],
+      references: [taskCommentsTable.id],
+    }),
+  }),
+);
+
+export const taskCommentReactionsTableRelations = relations(
+  taskCommentReactionsTable,
+  ({ one }) => ({
+    comment: one(taskCommentsTable, {
+      fields: [taskCommentReactionsTable.commentId],
+      references: [taskCommentsTable.id],
+    }),
+    user: one(usersTable, {
+      fields: [taskCommentReactionsTable.userId],
       references: [usersTable.id],
     }),
   }),

@@ -3,13 +3,14 @@
 import { useEffect } from "react";
 import { pusherClient } from "@/lib/pusher-client";
 import { useCommentStore } from "@/store/use-comment.store";
-import type { TaskCommentWithAuthor } from "@/types";
+import type { ReactionSummary, TaskCommentWithAuthor } from "@/types";
 
 export const useTaskComments = (taskId?: string | null) => {
   const fetchInitial = useCommentStore((s) => s.fetchInitial);
   const ingestAdded = useCommentStore((s) => s.ingestAdded);
   const ingestUpdated = useCommentStore((s) => s.ingestUpdated);
   const ingestDeleted = useCommentStore((s) => s.ingestDeleted);
+  const ingestReactionChanged = useCommentStore((s) => s.ingestReactionChanged);
 
   useEffect(() => {
     if (!taskId) return;
@@ -30,10 +31,23 @@ export const useTaskComments = (taskId?: string | null) => {
     channel.bind("comment-deleted", ({ id }: { id: string }) => {
       ingestDeleted(taskId, id);
     });
+    channel.bind(
+      "comment-reaction-changed",
+      (data: { commentId: string; reactions: ReactionSummary[] }) => {
+        ingestReactionChanged(taskId, data.commentId, data.reactions);
+      },
+    );
 
     return () => {
       channel.unbind_all();
       pusherClient.unsubscribe(channelName);
     };
-  }, [taskId, fetchInitial, ingestAdded, ingestUpdated, ingestDeleted]);
+  }, [
+    taskId,
+    fetchInitial,
+    ingestAdded,
+    ingestUpdated,
+    ingestDeleted,
+    ingestReactionChanged,
+  ]);
 };
