@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
-import LogoAnimationLoop from '@/components/logo-space/logo-animation-loop';
+import { Loader } from '@/components/ui/loader';
 import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
 import { BoardSettingsPanel } from './settings/board-settings-panel';
@@ -68,7 +68,7 @@ export default function ProjectLayout({
             <div className="min-w-0 flex-1 overflow-hidden">
               {status === 'fetching' ? (
                 <div className="flex h-full w-full items-center justify-center">
-                  <LogoAnimationLoop />
+                  <Loader size="lg" />
                 </div>
               ) : (
                 children

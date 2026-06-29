@@ -28,7 +28,8 @@ import { BarColumn } from './bar-column';
 import { useShallow } from 'zustand/react/shallow';
 import { useTaskStore } from '@/store/use-task.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
-import { LoaderCircle, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { formatDateShort } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
@@ -137,7 +138,7 @@ export function CardDisplay({
                 {commentCount}
               </span>
             )}
-            {isLoading && <LoaderCircle className="size-4 animate-spin" />}
+            {isLoading && <Loader size="xs" />}
           </div>
         </div>
       </div>

@@ -118,6 +118,7 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
     if (attachmentsInput.length > 0) {
       await authorizeOrThrow(userId, [link.projectId], "comment:upload");
       if (!supabaseAdmin) throw new AppError(500, "Storage is not configured");
+      const storage = supabaseAdmin.storage;
       attachmentUrls = attachmentsInput.map((a) => {
         const allowed =
           a.type === "image"
@@ -136,9 +137,8 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         }
         // Derive the public URL server-side from the validated path; never
         // trust the client-supplied url (could point anywhere).
-        return supabaseAdmin.storage
-          .from(COMMENT_MEDIA_BUCKET)
-          .getPublicUrl(a.storagePath).publicUrl;
+        return storage.from(COMMENT_MEDIA_BUCKET).getPublicUrl(a.storagePath)
+          .data.publicUrl;
       });
     }
 

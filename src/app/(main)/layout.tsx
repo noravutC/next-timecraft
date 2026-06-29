@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 // components
 import { HeaderMenu } from '@/components/menu-bar/header-menu';
-import LogoAnimationLoop from '@/components/logo-space/logo-animation-loop';
+import { LoaderScreen } from '@/components/ui/loader';
 
 export default function RootLayout({
   children,
@@ -21,11 +21,7 @@ export default function RootLayout({
   }, [status, router]);
 
   if (status === 'loading') {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <LogoAnimationLoop />
-      </div>
-    );
+    return <LoaderScreen />;
   }
 
   if (status === 'unauthenticated') {

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CreateOrganization } from "./steps-create";
-import LogoAnimationLoop from "@/components/logo-space/logo-animation-loop";
+import { LoaderScreen } from "@/components/ui/loader";
 
 export default function CreateOrganizationPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -27,11 +27,7 @@ export default function CreateOrganizationPage() {
   }, [sessionStatus, organizationId, canCreateOrg, router]);
 
   if (sessionStatus === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <LogoAnimationLoop />
-      </div>
-    );
+    return <LoaderScreen />;
   }
 
   return (

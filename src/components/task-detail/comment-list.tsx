@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { useCommentStore } from "@/store/use-comment.store";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 import { CommentItem } from "./comment-item";
 
 interface CommentListProps {
@@ -37,7 +38,7 @@ export const CommentList = ({ taskId, currentUserId }: CommentListProps) => {
   if (!initialized && status === "fetching") {
     return (
       <div className="flex items-center justify-center py-6 text-muted-foreground">
-        <LoaderCircle className="size-4 animate-spin" />
+        <Loader size="xs" />
       </div>
     );
   }
@@ -73,7 +74,7 @@ export const CommentList = ({ taskId, currentUserId }: CommentListProps) => {
             className="text-xs"
           >
             {status === "fetching" ? (
-              <LoaderCircle className="size-3.5 animate-spin" />
+              <Loader size="xs" />
             ) : (
               "Load older"
             )}

@@ -3,9 +3,7 @@
 import React, { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-// import { LoaderPage } from "@/components/Loader-page";
-import { LogoAnimation } from "@/components/logo-space/logo-animation";
-import LogoAnimationLoop from "@/components/logo-space/logo-animation-loop";
+import { LoaderScreen } from "@/components/ui/loader";
 
 export default function RootPage() {
   const { data: session, status } = useSession();
@@ -34,17 +32,5 @@ export default function RootPage() {
     }
   }, [status, organizationId, canCreateOrg, router]);
 
-  if (status === "loading") {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <LogoAnimationLoop />
-      </div>
-    );
-  } else {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <LogoAnimation />
-      </div>
-    );
-  }
+  return <LoaderScreen />;
 }

@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 import type { PendingFile } from "../use-attachment-uploads";
 
 type Props = {
@@ -28,7 +29,7 @@ export const AttachmentPreviewTile = memo(function AttachmentPreviewTile({
       )}
       {pending.status === "uploading" && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-          <Loader2 className="size-4 animate-spin text-white" />
+          <Loader size="xs" onColor />
         </div>
       )}
       {pending.status === "error" && (

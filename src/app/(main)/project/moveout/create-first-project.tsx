@@ -1,11 +1,5 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  LoaderCircle,
-  Sparkles,
-  Upload,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Upload, X } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -242,7 +236,7 @@ export const CreateFirstProject = () => {
                         onClick={onCreateProject}
                       >
                         {status === "creating" ? (
-                          <LoaderCircle className="animate-spin size-4" />
+                          <Loader size="xs" onColor />
                         ) : (
                           <>
                             Create Project

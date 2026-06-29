@@ -1,0 +1,23 @@
+{
+  "pkg": "timecraft",
+  "globalName": "TimeCraft",
+  "projectId": "30bd3c76-0cfd-47b6-a6b9-cb2d05fe6a14",
+  "shape": "package",
+  "srcDir": "src/components/ui",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/.cache/tailwind.css",
+  "runtimeFontPrefixes": ["Open Sans", "Cascadia Code", "Source Code Pro"],
+  "guidelinesGlob": ["docs/design-guidelines/**/*.md"],
+  "overrides": {
+    "Dialog": { "cardMode": "single", "viewport": "680x540" },
+    "DropdownMenu": { "cardMode": "single", "viewport": "440x360" },
+    "Tooltip": { "cardMode": "single", "viewport": "360x220" },
+    "Popover": { "cardMode": "single", "viewport": "460x400" }
+  },
+  "dtsPropsFor": {
+    "Button": "variant?: \"default\" | \"destructive\" | \"outline\" | \"secondary\" | \"ghost\" | \"link\" | \"white\"; size?: \"default\" | \"xs\" | \"sm\" | \"lg\" | \"icon\"; asChild?: boolean; type?: \"button\" | \"submit\" | \"reset\"; disabled?: boolean; onClick?: React.MouseEventHandler<HTMLButtonElement>; className?: string; children?: React.ReactNode;",
+    "Badge": "variant?: \"default\" | \"secondary\" | \"destructive\" | \"outline\"; asChild?: boolean; className?: string; children?: React.ReactNode;",
+    "Input": "inputSize?: \"sm\" | \"md\" | \"lg\" | \"default\"; type?: string; placeholder?: string; value?: string; defaultValue?: string; disabled?: boolean; onChange?: React.ChangeEventHandler<HTMLInputElement>; className?: string;",
+    "Avatar": "size?: \"default\" | \"sm\" | \"lg\"; className?: string; children?: React.ReactNode;"
+  }
+}
