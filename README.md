@@ -18,13 +18,13 @@ A real-time Kanban project management SaaS built with Next.js 16, React 19, and 
 - **Google OAuth** — Secure sign-in with session management and organization context
 - **Soft Delete** — Safe column deletion with scheduled purge support
 
-## Screenshots        <-- ใส่ตรงนี้
-
-**Kanban Board**
-![TimeCraft Kanban Board](docs/screenshot-board.png)
+## Screenshots
 
 **Login Page**
 ![TimeCraft Login](docs/screenshot-login.png)
+
+**Kanban Board**
+![TimeCraft Kanban Board](docs/screenshot-board.png)
 
 
 ## Tech Stack
