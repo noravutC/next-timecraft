@@ -157,10 +157,12 @@ Google Cloud Console → APIs & Services → Credentials → your OAuth client:
 - Authorized JavaScript origins: `http://<PUBLIC_IP>` (or `https://your-domain.com`)
 - Authorized redirect URIs: `.../api/auth/callback/google`
 
-Also update `AUTH_URL` in `.env.production` to match, then:
+Also update `AUTH_URL` in `.env.production` to match, then recreate the container (⚠️ `docker restart` does NOT reload `--env-file` — env is fixed at container creation):
 
 ```bash
-docker restart timecraft
+docker stop timecraft && docker rm timecraft
+docker run -d --name timecraft --env-file .env.production \
+  -p 127.0.0.1:3000:3000 --restart unless-stopped timecraft
 ```
 
 ## Step 7 — Deploying updates
@@ -188,7 +190,9 @@ docker run -d --name timecraft --env-file .env.production \
 - **`AUTH_URL` must exactly match the public URL** (scheme included). If the
   Google callback shown at `/api/auth/providers` still points at an old
   IP/scheme, the container is running with a stale `AUTH_URL` — edit
-  `.env.production` and `docker restart timecraft`.
+  `.env.production`, then **stop + rm + run the container again**. A plain
+  `docker restart` keeps the old env: `--env-file` is only read when the
+  container is created.
 
 ## Step 8 — Operations checklist
 
