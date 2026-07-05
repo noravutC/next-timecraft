@@ -17,6 +17,7 @@
     "db:studio": "drizzle-kit studio --config src/drizzle.config.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.0.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",

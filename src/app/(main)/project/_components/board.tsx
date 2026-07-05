@@ -15,6 +15,7 @@ import { useTaskStore } from "@/store/use-task.store";
 import type { UpdateColumnPayload, UpdateTaskPayload } from "@/types";
 import { useRealtimeBoard } from "@/store/sync-live-data/useRealtimeBoard";
 import { computeCardMove, computeColumnMove } from "./board-operations";
+import { AiBreakdown } from "./ai-breakdown";
 import { Column } from "./column";
 import { useSpacebarPan } from "./use-spacebar-pan";
 import {
@@ -185,12 +186,13 @@ export const Board = () => {
   const scrollCls = `flex h-full flex-row items-start gap-4.5 overflow-x-auto p-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? "rounded border-2 border-dashed" : ""}`;
 
   return (
-    <div className={`flex h-full flex-col bg-[#F6F7F9] ${boardCls}`}>
+    <div className={`relative flex h-full flex-col bg-[#F6F7F9] ${boardCls}`}>
       <div ref={scrollableRef} className={scrollCls} style={{ cursor: panCursor !== "default" ? panCursor : undefined }}>
         {board.columns.map((column) => (
           <Column key={column.id} column={column} allColumns={board.columns} />
         ))}
       </div>
+      <AiBreakdown columns={board.columns} />
     </div>
   );
 };
