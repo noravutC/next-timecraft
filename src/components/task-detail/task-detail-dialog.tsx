@@ -6,21 +6,13 @@ import {
   CalendarDays,
   Flag,
   Link,
-  MoreHorizontal,
   Tag as TagIcon,
   Timer,
-  Trash2,
   User as UserIcon,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
@@ -33,7 +25,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTaskComments } from '@/store/sync-live-data/useTaskComments';
 import { useTaskSubtasks } from '@/store/sync-live-data/useTaskSubtasks';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
-import { formatDateShort, formatRelativeDay } from '@/helper/utils/date-format';
 import { withSettingsDefaults } from '@/types/project-settings';
 import type { TaskPriority, UpdateTaskPayload } from '@/types';
 import { CommentActivityPanel } from './comment-activity-panel';
@@ -49,7 +40,6 @@ import { EstimatePicker } from './parts/estimate-picker';
 import { SubtaskList } from './parts/subtask-list';
 import { PropertyRow } from './parts/property-row';
 import { StatusDot } from './parts/status-dot';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Label } from '@radix-ui/react-label';
 

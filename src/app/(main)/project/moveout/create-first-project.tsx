@@ -142,7 +142,7 @@ export const CreateFirstProject = () => {
           </h1>
 
           <p className="text-sm text-gray-500 mb-8 max-w-lg mx-auto">
-            You don't have any projects yet. No worries! Get started easily by
+            You don&apos;t have any projects yet. No worries! Get started easily by
             creating a blank board or choosing a pre-made template below.
           </p>
         </div>

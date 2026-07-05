@@ -22,7 +22,6 @@ export const StatusPicker = ({
   columns,
   activeColumnId,
   onChange,
-  size = 'md',
 }: StatusPickerProps) => {
   const active = columns.find((c) => c.id === activeColumnId);
   const color = active?.color ?? '#94a3b8';

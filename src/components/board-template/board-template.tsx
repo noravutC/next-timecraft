@@ -13,7 +13,7 @@ interface BoardTemplateProps {
 }
 
 // Don't used yet
-export const BoardTemplate = ({ projectId }: BoardTemplateProps) => {
+export const BoardTemplate = ({ projectId: _projectId }: BoardTemplateProps) => {
   // const {
   //     fetchTemplateColumns,
   //     templateColumns,

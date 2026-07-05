@@ -1,6 +1,6 @@
 // src/lib/services/template-columns.service.ts
 import apiClient from "@/lib/axios";
-import { TemplateColumn, Project, Column, APIGet, APIPut } from "@/types";
+import { TemplateColumn, Column, APIGet, APIPut } from "@/types";
 
 class TemplateColumnsService {
   private client = apiClient;

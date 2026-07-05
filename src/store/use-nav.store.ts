@@ -20,7 +20,7 @@ interface NavState {
   setView: (view: WorkspaceView) => void;
 }
 
-export const useNavStore = create<NavState>((set, get) => ({
+export const useNavStore = create<NavState>((set) => ({
   view: 'board',
   setView: (view) => set({ view }),
 }));

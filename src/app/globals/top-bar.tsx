@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 // components
-import { Button } from "@/components/ui/button";
 import { DropdownMenuDemo } from "./topbar-components/menu-option";
 import timecraftLogo from "@/../public/timecraft-logo.svg";
-import { ChevronDown } from "lucide-react";
 
 // Don't used yet
 export const Topbar = () => {

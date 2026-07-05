@@ -4,14 +4,11 @@ import { usePathname } from "next/navigation";
 // hooks
 // import { useProjectStore } from "@/hooks/useProjects.hook";
 // components
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Briefcase, List, ClipboardList } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   CollapsButton,
   type CollapsButtonMenu,
 } from "./sidebar-components/button-collaps";
-// types
-import { Project } from "@/types";
 
 interface SidebarProps {
   childrenHeader?: React.ReactNode;
@@ -23,9 +20,7 @@ export const Sidebar = ({ childrenHeader }: SidebarProps) => {
   // const { fetchProjects } = useProjectStore();
 
   // const [projects, setProjects] = useState<Projects[]>([]);
-  const [defaultMenuItems, setDefaultMenuItems] = useState<CollapsButtonMenu[]>(
-    [],
-  );
+  const [defaultMenuItems] = useState<CollapsButtonMenu[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isRotated, setIsRotated] = useState(false);
   const pathname = usePathname();

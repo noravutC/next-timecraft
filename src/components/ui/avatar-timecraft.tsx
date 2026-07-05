@@ -51,3 +51,4 @@ export const AvatarTimeCraft = React.memo(
     );
   },
 );
+AvatarTimeCraft.displayName = "AvatarTimeCraft";

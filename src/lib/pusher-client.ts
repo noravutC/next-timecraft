@@ -15,7 +15,7 @@ export const pusherClient =
     ? new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
       })
-    : ({} as any);
+    : ({} as Pusher);
 
 export const getPusherSocketId = (): string | undefined => {
   if (typeof window === "undefined") return undefined;

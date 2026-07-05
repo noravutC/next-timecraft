@@ -1,6 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { columnsTable } from "@/db/schema";
-import type { Task } from "./task";
 
 export type ColumnRow = InferSelectModel<typeof columnsTable>;
 export type NewColumnRow = InferInsertModel<typeof columnsTable>;

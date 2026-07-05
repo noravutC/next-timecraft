@@ -3,7 +3,7 @@ export const toValueRecord = <V>(ids: string[], value: V): Record<string, V> =>
   Object.fromEntries(ids.map((id) => [id, value]));
 
 export const toRecord = <
-  T extends Record<string, any>,
+  T extends object,
   K extends keyof T,
   U = T,
 >(
