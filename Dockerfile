@@ -27,6 +27,11 @@ ENV DATABASE_URL=postgres://build:build@localhost:5432/build \
     NEXTAUTH_SECRET=build-placeholder \
     GOOGLE_CLIENT_ID=build GOOGLE_CLIENT_SECRET=build \
     PUSHER_APP_ID=build PUSHER_KEY=build PUSHER_SECRET=build PUSHER_CLUSTER=mt1
+
+# Node caps its heap at ~half of physical RAM; on small hosts (t3.micro:
+# ~1GB) the TypeScript pass of `next build` OOMs even when swap is free.
+# Raise the cap explicitly so the build can spill into swap instead.
+ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN pnpm build
 
 # ---- run: minimal standalone runtime ----
