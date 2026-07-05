@@ -2,6 +2,9 @@
 
 A real-time Kanban project management SaaS built with Next.js 16, React 19, and TypeScript.
 
+### 🌐 Live demo: **[noravut.dev](https://noravut.dev)** — click **Continue as guest**, no sign-up, 10 seconds
+Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
+
 [![CI](https://github.com/noravutC/next-timecraft/actions/workflows/ci.yml/badge.svg)](https://github.com/noravutC/next-timecraft/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -108,7 +111,7 @@ Two supported paths:
 | Path | What it is | Guide |
 |---|---|---|
 | **Vercel** | Zero-config: connect the repo, set env vars, deploy | — |
-| **Docker on AWS EC2** | Multi-stage image (`Dockerfile`, Next.js standalone output ≈ small runtime, non-root user, built-in `HEALTHCHECK` hitting `/api/health`) behind a Caddy HTTPS proxy | [docs/deploy-aws.md](docs/deploy-aws.md) |
+| **Docker on AWS EC2** | Multi-stage image (`Dockerfile`, Next.js standalone output ≈ small runtime, non-root user, built-in `HEALTHCHECK` hitting `/api/health`) behind a Caddy HTTPS proxy — **this is what serves [noravut.dev](https://noravut.dev)** | [docs/deploy-aws.md](docs/deploy-aws.md) |
 
 For local container work there's a `docker-compose.yml` (app + Postgres 16):
 

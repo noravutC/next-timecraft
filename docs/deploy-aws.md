@@ -143,6 +143,13 @@ sudo systemctl reload caddy
 
 Visit `http://<PUBLIC_IP>` (or your domain) — the login page should load.
 
+> **Google OAuth requires a real domain.** Google rejects bare IP addresses as
+> authorized origins ("must end with a public top-level domain") and requires
+> HTTPS for non-localhost domains. Point a domain's A record at the Elastic IP
+> (a cheap registrar domain, or a free `duckdns.org` subdomain both work),
+> put that domain in the Caddyfile, and Caddy provisions the certificate
+> automatically. Guest login works without any of this.
+
 ## Step 6 — Update Google OAuth redirect
 
 Google Cloud Console → APIs & Services → Credentials → your OAuth client:
@@ -150,10 +157,12 @@ Google Cloud Console → APIs & Services → Credentials → your OAuth client:
 - Authorized JavaScript origins: `http://<PUBLIC_IP>` (or `https://your-domain.com`)
 - Authorized redirect URIs: `.../api/auth/callback/google`
 
-Also update `AUTH_URL` in `.env.production` to match, then:
+Also update `AUTH_URL` in `.env.production` to match, then recreate the container (⚠️ `docker restart` does NOT reload `--env-file` — env is fixed at container creation):
 
 ```bash
-docker restart timecraft
+docker stop timecraft && docker rm timecraft
+docker run -d --name timecraft --env-file .env.production \
+  -p 127.0.0.1:3000:3000 --restart unless-stopped timecraft
 ```
 
 ## Step 7 — Deploying updates
@@ -168,6 +177,22 @@ docker run -d --name timecraft --env-file .env.production \
 ```
 
 (Automating this with a GitHub Actions deploy job + ECR is a good follow-up.)
+
+## Step 7.5 — Battle-tested gotchas (hit during the real deploy)
+
+- **`next build` OOMs on t3.micro** — Node caps its heap at ~half of RAM, so
+  the TypeScript pass dies at ~455 MB even with free swap. Fixed in the
+  Dockerfile with `NODE_OPTIONS=--max-old-space-size=2048` (+ a 2 GB swapfile
+  on the host: `sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile &&
+  sudo mkswap /swapfile && sudo swapon /swapfile`).
+- **Allocate an Elastic IP before publishing any link** — the default public
+  IP changes on every stop/start.
+- **`AUTH_URL` must exactly match the public URL** (scheme included). If the
+  Google callback shown at `/api/auth/providers` still points at an old
+  IP/scheme, the container is running with a stale `AUTH_URL` — edit
+  `.env.production`, then **stop + rm + run the container again**. A plain
+  `docker restart` keeps the old env: `--env-file` is only read when the
+  container is created.
 
 ## Step 8 — Operations checklist
 
