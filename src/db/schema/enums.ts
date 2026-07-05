@@ -34,3 +34,11 @@ export const jobStatusEnum = pgEnum("job_status", [
   "failed",
   "cancelled",
 ]);
+
+export const aiProviderEnum = pgEnum("ai_provider", ["claude", "gemini"]);
+
+export const aiUsageStatusEnum = pgEnum("ai_usage_status", [
+  "success",
+  "error",
+  "refusal",
+]);

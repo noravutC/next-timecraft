@@ -61,9 +61,18 @@ src/
 
 ## AI Task Breakdown — design notes
 
-The board has an **AI breakdown** button: describe a goal, pick a column, and Claude
-(`claude-opus-4-8`, via the official `@anthropic-ai/sdk`) turns it into cards that
-appear one by one as they are generated.
+The board has an **AI breakdown** button: describe a goal, pick a column, and an LLM
+turns it into cards that appear one by one as they are generated.
+
+**Bring your own key, two providers.** Each user picks a provider — **Claude**
+(`claude-opus-4-8`, official `@anthropic-ai/sdk`) or **Gemini** (`gemini-2.5-flash`,
+official `@google/genai`) — and stores their own API key from the AI settings panel.
+Keys are encrypted at rest (AES-256-GCM, `src/lib/ai/crypto.ts`) in the `ai_settings`
+table and are never returned to the client — the API only reports whether a key is
+set. A server-side `ANTHROPIC_API_KEY` acts as an optional shared fallback. Every
+request writes a row to `ai_usage_logs` with the provider, model, input/output token
+counts, task count, and outcome (`success` / `error` / `refusal`) — the raw material
+for per-user usage dashboards and cost attribution.
 
 **How it streams.** `POST /api/ai/task-breakdown` (session + RBAC-checked like every
 other route) opens a streaming request to Claude and forwards results to the browser
@@ -123,7 +132,8 @@ PUSHER_SECRET=
 PUSHER_CLUSTER=
 NEXT_PUBLIC_PUSHER_KEY=
 NEXT_PUBLIC_PUSHER_CLUSTER=
-ANTHROPIC_API_KEY=   # optional — enables AI Task Breakdown; feature returns 503 without it
+ANTHROPIC_API_KEY=   # optional — shared Claude fallback for AI Task Breakdown (users can bring their own key)
+AI_ENCRYPTION_KEY=   # optional — dedicated secret for encrypting stored AI keys (falls back to NEXTAUTH_SECRET)
 ```
 
 ### Commands

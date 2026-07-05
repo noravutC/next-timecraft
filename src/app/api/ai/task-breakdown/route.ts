@@ -3,7 +3,11 @@ import { db } from "@/db";
 import { columnsTable } from "@/db/schema";
 import { createHandle } from "@/lib/api/handle";
 import { AppError, NotFoundError } from "@/lib/api/errors";
-import { CLAUDE_MODEL, getClaudeClient, isAiConfigured } from "@/lib/ai/claude";
+import { AI_MODELS, streamCompletion } from "@/lib/ai/providers";
+import {
+  insertAiUsageLog,
+  resolveAiCredentials,
+} from "@/db/uniq-query/ai/ai-utils";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -16,8 +20,8 @@ const breakdownSchema = z.object({
 
 type BreakdownBody = z.infer<typeof breakdownSchema>;
 
-// Claude is instructed to answer in NDJSON (one JSON object per line) so we
-// can validate + forward each subtask the moment its line completes.
+// The model is instructed to answer in NDJSON (one JSON object per line) so
+// we can validate + forward each subtask the moment its line completes.
 const subtaskSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(1000).nullable().optional(),
@@ -51,11 +55,15 @@ export const POST = createHandle<BreakdownBody>(
 
     await authorizeOrThrow(userId, [column.projectId], "task:create");
 
-    if (!isAiConfigured()) {
-      throw new AppError(503, "AI is not configured on this server");
+    const credentials = await resolveAiCredentials(userId);
+    if (!credentials) {
+      throw new AppError(
+        503,
+        "No AI API key configured — add one in AI settings",
+      );
     }
-
-    const client = getClaudeClient();
+    const { provider, apiKey } = credentials;
+    const model = AI_MODELS[provider];
     const maxTasks = body.maxTasks ?? 8;
     const encoder = new TextEncoder();
 
@@ -83,41 +91,48 @@ export const POST = createHandle<BreakdownBody>(
           }
         };
 
-        try {
-          const claudeStream = client.messages.stream({
-            model: CLAUDE_MODEL,
-            max_tokens: 8192,
-            thinking: { type: "adaptive" },
-            system: SYSTEM_PROMPT,
-            messages: [
-              {
-                role: "user",
-                content: `Break this goal into at most ${maxTasks} subtasks:\n\n${body.goal}`,
-              },
-            ],
+        const log = (
+          status: "success" | "error" | "refusal",
+          usage: { inputTokens: number; outputTokens: number },
+          errorMessage?: string,
+        ) =>
+          insertAiUsageLog({
+            userId,
+            projectId: column.projectId,
+            provider,
+            model,
+            feature: "task-breakdown",
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            taskCount: sent,
+            status,
+            errorMessage: errorMessage ?? null,
           });
 
-          for await (const event of claudeStream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              buffer += event.delta.text;
+        try {
+          const usage = await streamCompletion(provider, {
+            apiKey,
+            system: SYSTEM_PROMPT,
+            prompt: `Break this goal into at most ${maxTasks} subtasks:\n\n${body.goal}`,
+            maxTokens: 8192,
+            onText: (text) => {
+              buffer += text;
               let newlineIdx = buffer.indexOf("\n");
               while (newlineIdx !== -1) {
                 flushLine(buffer.slice(0, newlineIdx));
                 buffer = buffer.slice(newlineIdx + 1);
                 newlineIdx = buffer.indexOf("\n");
               }
-            }
-          }
+            },
+          });
           flushLine(buffer);
 
-          const final = await claudeStream.finalMessage();
-          if (final.stop_reason === "refusal") {
+          if (usage.refused) {
             send("error", { message: "AI declined this request" });
+            await log("refusal", usage);
           } else {
             send("done", { count: sent });
+            await log("success", usage);
           }
         } catch (error) {
           // headers are already sent — surface errors as an SSE event
@@ -125,13 +140,16 @@ export const POST = createHandle<BreakdownBody>(
           if (error instanceof Anthropic.RateLimitError) {
             message = "AI is busy right now — try again in a minute";
           } else if (error instanceof Anthropic.AuthenticationError) {
-            message = "AI is misconfigured on this server";
+            message = "Your Claude API key was rejected — check AI settings";
           } else if (error instanceof Anthropic.APIConnectionError) {
             message = "Could not reach the AI service";
+          } else if (error instanceof Error && /API key/i.test(error.message)) {
+            message = "Your API key was rejected — check AI settings";
           } else {
             console.error("[ai/task-breakdown]", error);
           }
           send("error", { message });
+          await log("error", { inputTokens: 0, outputTokens: 0 }, message);
         } finally {
           controller.close();
         }

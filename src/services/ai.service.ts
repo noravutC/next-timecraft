@@ -1,4 +1,13 @@
+import apiClient from "@/lib/axios";
 import type { AiSubtask } from "@/app/api/ai/task-breakdown/route";
+import type { AiSettingsStatus } from "@/app/api/ai/settings/route";
+import type { APISingleGet, APIPut } from "@/types";
+
+export type AiSettingsUpdatePayload = {
+  provider?: "claude" | "gemini";
+  claudeApiKey?: string | null;
+  geminiApiKey?: string | null;
+};
 
 export type AiBreakdownHandlers = {
   onTask: (task: AiSubtask) => void | Promise<void>;
@@ -11,6 +20,28 @@ export type AiBreakdownHandlers = {
 // incrementally through it. Auth still works — the route reads the session
 // cookie, which same-origin fetch sends automatically.
 class AiService {
+  private client = apiClient;
+
+  async getSettings(): Promise<APISingleGet<AiSettingsStatus>> {
+    return this.client
+      .get("/ai/settings")
+      .then((r) => r.data as APISingleGet<AiSettingsStatus>)
+      .catch((e) => {
+        throw e?.response?.data || new Error("Failed to fetch AI settings");
+      });
+  }
+
+  async updateSettings(
+    payload: AiSettingsUpdatePayload,
+  ): Promise<APIPut<AiSettingsStatus>> {
+    return this.client
+      .put("/ai/settings", payload)
+      .then((r) => r.data as APIPut<AiSettingsStatus>)
+      .catch((e) => {
+        throw e?.response?.data || new Error("Failed to update AI settings");
+      });
+  }
+
   async streamTaskBreakdown(
     payload: { goal: string; columnId: string; maxTasks?: number },
     handlers: AiBreakdownHandlers,
