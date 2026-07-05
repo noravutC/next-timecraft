@@ -10,16 +10,28 @@ import {
   UpdateTaskPayload,
 } from "@/types";
 
+export interface TaskAssigneeLite {
+  userId: string;
+  fullName: string;
+  avatar: string | null;
+  email: string;
+}
+
 class TaskService {
   private client = apiClient;
 
   async getTasksByColumns(
     colIds: string[],
     limit: number,
-  ): Promise<APIGet<TaskCache[]>> {
+  ): Promise<APIGet<TaskCache[]> & { assignees: Record<string, TaskAssigneeLite[]> }> {
     return this.client
       .post(`/task/columns`, { colIds, limit })
-      .then((response) => response.data as APIGet<TaskCache[]>)
+      .then(
+        (response) =>
+          response.data as APIGet<TaskCache[]> & {
+            assignees: Record<string, TaskAssigneeLite[]>;
+          },
+      )
       .catch((error) => {
         throw (
           error?.response?.data ||

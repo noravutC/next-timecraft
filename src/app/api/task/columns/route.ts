@@ -3,6 +3,10 @@ import { columnsTable, tasksTable } from "@/db/schema";
 import { NotFoundError } from "@/lib/api/errors";
 import { createHandle } from "@/lib/api/handle";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
+import {
+  fetchAssigneesForTasks,
+  type AssigneeWithUser,
+} from "@/db/uniq-query/task/assignee-utils";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -42,8 +46,14 @@ export const POST = createHandle<GetTasksByColumnsBody>(
       .orderBy(asc(tasksTable.orderFraction))
       .limit(limit);
 
+    const assigneeRows = await fetchAssigneesForTasks(tasks.map((t) => t.id));
+    const assignees: Record<string, AssigneeWithUser[]> = {};
+    for (const { taskId, ...user } of assigneeRows) {
+      (assignees[taskId] ??= []).push(user);
+    }
+
     return NextResponse.json(
-      { data: tasks, message: "Get tasks success", status: 200 },
+      { data: tasks, assignees, message: "Get tasks success", status: 200 },
       { status: 200 },
     );
   },

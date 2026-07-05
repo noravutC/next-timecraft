@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store/use-task.store";
 import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
@@ -49,7 +48,7 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
 
   return (
     <div
-      className="mx-3 my-1 flex flex-shrink-0 flex-col gap-2 min-h-30 rounded-md border border-blue-400 bg-white p-4 ring-1 ring-blue-400"
+      className="mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-[#D9D7F5] bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]"
       {...{ [blockBoardPanningAttr]: true }}
     >
       <textarea
@@ -58,24 +57,24 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Task title..."
-        className="flex-1 resize-none bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+        className="min-h-11.5 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[#1D1E26] outline-none placeholder:text-gray-400"
       />
       <div className="flex flex-row items-center gap-2">
         <Button
           size="sm"
           disabled={!title.trim() || isSubmitting}
           onClick={handleSubmit}
-          className="h-7 text-xs"
+          className="h-8 rounded-md bg-[#5B50E6] text-xs font-semibold hover:bg-[#4A40D6]"
         >
-          {isSubmitting ? "Adding..." : "Add"}
+          {isSubmitting ? "Adding..." : "Add card"}
         </Button>
         <Button
           size="sm"
           variant="ghost"
           onClick={onClose}
-          className="h-7 w-7 p-0"
+          className="h-8 text-xs font-medium text-[#8A8F9C] hover:text-[#15161D]"
         >
-          <X size={14} />
+          Cancel
         </Button>
       </div>
     </div>

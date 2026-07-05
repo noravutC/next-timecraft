@@ -184,6 +184,19 @@
   background: #075985;
 }
 
+.scrollbar-light {
+  scrollbar-color: #e2e4ea transparent;
+}
+.scrollbar-light::-webkit-scrollbar-thumb {
+  background-color: #e2e4ea;
+}
+.scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background-color: #cfd2db;
+}
+.scrollbar-light::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @keyframes tc-float {
   0%,
   100% {

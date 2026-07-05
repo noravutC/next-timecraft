@@ -68,7 +68,7 @@ export const ProjectHeader = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-7"
+                      className="size-7 hover:bg-[#F2F3F6]"
                       onClick={() => setStarred((s) => !s)}
                     >
                       <Star
@@ -84,7 +84,11 @@ export const ProjectHeader = () => {
                 {/* Visibility */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-7">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 hover:bg-[#F2F3F6] hover:text-[#5B50E6]"
+                    >
                       <Globe className="size-3.5 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>

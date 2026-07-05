@@ -41,6 +41,27 @@ export async function fetchAssignees(taskId: string): Promise<AssigneeWithUser[]
     .where(eq(taskAssigneesTable.taskId, taskId));
 }
 
+export interface AssigneeWithUserAndTask extends AssigneeWithUser {
+  taskId: string;
+}
+
+export async function fetchAssigneesForTasks(
+  taskIds: string[],
+): Promise<AssigneeWithUserAndTask[]> {
+  if (taskIds.length === 0) return [];
+  return db
+    .select({
+      taskId: taskAssigneesTable.taskId,
+      userId: taskAssigneesTable.userId,
+      fullName: usersTable.fullName,
+      avatar: usersTable.avatar,
+      email: usersTable.email,
+    })
+    .from(taskAssigneesTable)
+    .innerJoin(usersTable, eq(taskAssigneesTable.userId, usersTable.id))
+    .where(inArray(taskAssigneesTable.taskId, taskIds));
+}
+
 export async function setAssignees(
   taskId: string,
   userIds: string[],

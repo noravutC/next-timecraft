@@ -30,8 +30,6 @@ import { Card, CardShadow } from "./card";
 import { SettingsContext } from "@/context/kanban/setting-provider";
 import { useTaskStore } from "@/store/use-task.store";
 import { cn } from "@/lib/utils";
-import { hexToRgba } from "@/helper/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShallow } from "zustand/react/shallow";
@@ -53,13 +51,25 @@ const stateStyles: Record<TColumnState["type"], string> = {
 
 const idle: TColumnState = { type: "idle" };
 
-const CardList = memo(function CardList({ column }: { column: TColumn }) {
+const CardList = memo(function CardList({
+  column,
+  allColumns,
+}: {
+  column: TColumn;
+  allColumns: TColumn[];
+}) {
   return column.cards.map((card) => (
-    <Card key={card.id} card={card} columnId={column.id} />
+    <Card key={card.id} card={card} columnId={column.id} allColumns={allColumns} />
   ));
 });
 
-export const Column = ({ column }: { column: TColumn }) => {
+export const Column = ({
+  column,
+  allColumns,
+}: {
+  column: TColumn;
+  allColumns: TColumn[];
+}) => {
   const scrollableRef = useRef<HTMLDivElement | null>(null);
   const outerFullHeightRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -74,9 +84,6 @@ export const Column = ({ column }: { column: TColumn }) => {
   const isLoading = columnsLoader[column.id] ?? false;
   const [state, setState] = useState<TColumnState>(idle);
   const [isAdding, setIsAdding] = useState(false);
-  const backgroundStyle = column.color
-    ? { background: hexToRgba(column.color, 0.6) }
-    : {};
 
   // fetch tasks ของ column นี้เมื่อ mount
   useEffect(() => {
@@ -200,41 +207,49 @@ export const Column = ({ column }: { column: TColumn }) => {
 
   return (
     <div
-      className={cn("flex w-72 flex-shrink-0 select-none flex-col")}
+      className={cn("flex w-[290px] flex-shrink-0 select-none flex-col")}
       ref={outerFullHeightRef}
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-14rem)] min-h-60 flex-col rounded-md text-gray-800 border overflow-hidden ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-14rem)] min-h-60 flex-col overflow-hidden rounded-xl text-gray-800 ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
       >
         <div
-          className={`flex max-h-full bg-white flex-col ${state.type === "is-column-over" ? "invisible" : ""}`}
+          className={`flex min-h-0 max-h-full flex-1 flex-col ${state.type === "is-column-over" ? "invisible" : ""}`}
         >
           <div
-            className={cn(
-              "flex flex-row items-center justify-between p-2 mb-1",
-            )}
-            style={backgroundStyle}
+            className="mb-1 flex flex-row items-center gap-2 px-1.5 pt-0.5 pb-3"
             ref={headerRef}
           >
-            <div className="pl-2 font-semibold leading-4 text-sm">
+            <span
+              className="size-2 flex-shrink-0 rounded-full"
+              style={{ backgroundColor: column.color ?? "#94A3B8" }}
+            />
+            <div className="text-xs font-bold tracking-wide text-[#6B7180] uppercase">
               {column.title}
             </div>
-            <div className="w-fit flex items-center gap-2 justify-end">
-              <Badge variant="outline" className="bg-white rounded-full">
-                {column.totalTasks} task
-              </Badge>
-              {/* <Button type="button" size="xs" className="cursor-pointer bg-gray-700/40 hover:bg-gray-700/60" aria-label="More actions">
-                <Ellipsis size={16} />
-              </Button> */}
-            </div>
+            <Badge
+              variant="outline"
+              className="rounded-full border-transparent bg-[#EDEEF2] px-1.75 py-0.25 text-[11px] font-semibold text-[#A2A7B3]"
+            >
+              {column.totalTasks}
+            </Badge>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => setIsAdding(true)}
+              aria-label="Add a card"
+              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-[#B6BAC4] hover:bg-[#E9EAEF] hover:text-[#5B50E6]"
+            >
+              <Plus size={16} />
+            </button>
           </div>
           <div
             className={
-              "flex flex-col overflow-y-auto [overflow-anchor:none] [scrollbar-color:theme(colors.gray.400)_theme(colors.gray.50)] [scrollbar-width:thin]"
+              "flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [overflow-anchor:none] scrollbar-thin-y scrollbar-light"
             }
             ref={scrollableRef}
           >
@@ -245,7 +260,7 @@ export const Column = ({ column }: { column: TColumn }) => {
                 ))}
               </div>
             ) : (
-              <CardList column={column} />
+              <CardList column={column} allColumns={allColumns} />
             )}
             {state.type === "is-card-over" && !state.isOverChildCard && (
               <div className="flex-shrink-0 px-3 py-1">
@@ -260,14 +275,14 @@ export const Column = ({ column }: { column: TColumn }) => {
               onClose={() => setIsAdding(false)}
             />
           ) : (
-            <div className="flex flex-row gap-2 p-2">
+            <div className="px-1 pt-1.5">
               <button
                 type="button"
                 onClick={() => setIsAdding(true)}
-                className="flex cursor-pointer flex-grow justify-start flex-row gap-2 rounded hover:bg-gray-100 active:bg-gray-100 text-sm text-gray-700 p-2 py-3"
+                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-md p-2.5 text-left text-sm font-semibold text-[#9499A5] hover:bg-[#EDEEF2] hover:text-[#5B50E6]"
               >
-                <Plus size={16} />
-                <div className="leading-4 font-semibold">Add a card</div>
+                <Plus size={15} />
+                Add a card
               </button>
             </div>
           )}
