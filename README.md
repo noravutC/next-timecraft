@@ -101,6 +101,25 @@ malformed task.
   429/5xx twice with backoff). If the stream dies mid-way, the user keeps the cards
   that were already created — nothing is rolled back.
 
+## Deployment
+
+Two supported paths:
+
+| Path | What it is | Guide |
+|---|---|---|
+| **Vercel** | Zero-config: connect the repo, set env vars, deploy | — |
+| **Docker on AWS EC2** | Multi-stage image (`Dockerfile`, Next.js standalone output ≈ small runtime, non-root user, built-in `HEALTHCHECK` hitting `/api/health`) behind a Caddy HTTPS proxy | [docs/deploy-aws.md](docs/deploy-aws.md) |
+
+For local container work there's a `docker-compose.yml` (app + Postgres 16):
+
+```bash
+cp .env.docker.example .env.docker   # fill in values
+docker compose up --build
+```
+
+`GET /api/health` reports app + database status (`200 ok` / `503 degraded`) for
+load balancers and uptime monitors. CI builds the production image on every PR.
+
 ## Getting Started
 
 ### Prerequisites

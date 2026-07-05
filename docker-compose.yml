@@ -1,0 +1,38 @@
+# Local/self-hosted stack: TimeCraft + Postgres.
+# 1. cp .env.docker.example .env.docker  (fill in real values)
+# 2. docker compose up --build
+services:
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_PUSHER_KEY: ${NEXT_PUBLIC_PUSHER_KEY}
+        NEXT_PUBLIC_PUSHER_CLUSTER: ${NEXT_PUBLIC_PUSHER_CLUSTER}
+    ports:
+      - "3000:3000"
+    env_file: .env.docker
+    environment:
+      # inside the compose network the app talks to the db service directly
+      DATABASE_URL: postgres://timecraft:timecraft@db:5432/timecraft
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: timecraft
+      POSTGRES_PASSWORD: timecraft
+      POSTGRES_DB: timecraft
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timecraft"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
