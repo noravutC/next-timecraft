@@ -183,13 +183,13 @@ export const TaskDetailDialog = () => {
     >
       <DialogContent
         showCloseButton={false}
-        className="flex h-[88vh] max-h-[860px] w-[calc(100%-2rem)] max-w-[1200px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1200px]"
+        className="flex h-[88vh] max-h-[860px] w-[calc(100%-2rem)] max-w-[1200px] flex-col gap-0 overflow-hidden rounded-2xl border-line p-0 sm:max-w-[1200px]"
       >
         <DialogTitle className="sr-only">{task?.title ?? 'Task'}</DialogTitle>
 
         {task && userId ? (
           <>
-            <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+            <header className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-4 py-2.5">
               <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                 {project && (
                   <ProjectAvatar
@@ -260,7 +260,7 @@ export const TaskDetailDialog = () => {
                     onCommit={(title) => persist({ title })}
                   />
 
-                  <div className="mt-5 rounded-lg border border-border">
+                  <div className="mt-6">
                     <PropertyRow
                       icon={
                         <StatusDot color={columnsMap[task.columnId]?.color} />
@@ -293,14 +293,14 @@ export const TaskDetailDialog = () => {
                         {assignees.map((a) => (
                           <span
                             key={a.userId}
-                            className="group inline-flex items-center gap-1.5 rounded-full bg-background py-0.5 pr-1.5 pl-0.5 text-sm"
+                            className="group inline-flex items-center gap-1.5 rounded-full bg-surface-hover py-0.5 pr-1.5 pl-0.5 text-sm"
                           >
                             <Avatar className="size-5">
                               <AvatarImage
                                 src={a.avatar ?? undefined}
                                 alt={a.fullName}
                               />
-                              <AvatarFallback className="bg-violet-500 text-xs font-semibold text-white">
+                              <AvatarFallback className="bg-brand text-xs font-semibold text-white">
                                 {a.fullName.charAt(0).toUpperCase() || '?'}
                               </AvatarFallback>
                             </Avatar>
@@ -386,10 +386,10 @@ export const TaskDetailDialog = () => {
                     </PropertyRow>
                   </div>
 
-                  <hr className="my-5 border-border" />
+                  <hr className="my-6 border-line" />
 
                   <div>
-                    <Label className="mb-2 text-sm font-semibold text-muted-foreground uppercase">
+                    <Label className="mb-2 text-sm font-semibold text-ink">
                       Description
                     </Label>
                     <InlineDescription
@@ -398,13 +398,13 @@ export const TaskDetailDialog = () => {
                     />
                   </div>
 
-                  <hr className="my-5 border-border" />
+                  <hr className="my-6 border-line" />
 
                   <SubtaskList taskId={task.id} />
                 </div>
               </main>
 
-              <aside className="flex w-[420px] shrink-0 flex-col overflow-hidden border-l border-border bg-gray-50/40">
+              <aside className="flex w-[420px] shrink-0 flex-col overflow-hidden border-l border-line bg-surface">
                 <CommentActivityPanel
                   taskId={task.id}
                   authorId={userId}

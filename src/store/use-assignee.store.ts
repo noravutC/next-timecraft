@@ -19,6 +19,7 @@ type AssigneeStore = {
   fetch: (taskId: string) => Promise<void>;
   setAll: (taskId: string, items: TaskAssigneeUser[]) => Promise<void>;
   ingestRealtime: (taskId: string, items: TaskAssigneeUser[]) => void;
+  ingestMany: (byTask: Record<string, TaskAssigneeUser[]>) => void;
 };
 
 export const useAssigneeStore = create<AssigneeStore>((set, get) => ({
@@ -98,5 +99,16 @@ export const useAssigneeStore = create<AssigneeStore>((set, get) => ({
         [taskId]: { items, status: "none", initialized: true },
       },
     }));
+  },
+
+  // hydrate ทีละหลาย task จาก bulk fetch ของ board (ไม่ยิง API)
+  ingestMany: (byTaskRecord) => {
+    set((s) => {
+      const next = { ...s.byTask };
+      for (const [taskId, items] of Object.entries(byTaskRecord)) {
+        next[taskId] = { items, status: "none", initialized: true };
+      }
+      return { byTask: next };
+    });
   },
 }));

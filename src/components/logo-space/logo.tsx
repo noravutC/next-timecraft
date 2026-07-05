@@ -21,7 +21,7 @@ export const Logo = ({ size = 25, textSize = "base" }: LogoProps) => {
         </svg>
       </div>
       <p
-        className={`font-extrabold tracking-tight text-[#15161D] ${textSize === "xs" ? "text-xs" : textSize === "sm" ? "text-sm" : textSize === "base" ? "text-base" : textSize === "lg" ? "text-lg" : "text-xl"}`}
+        className={`font-extrabold tracking-tight text-ink ${textSize === "xs" ? "text-xs" : textSize === "sm" ? "text-sm" : textSize === "base" ? "text-base" : textSize === "lg" ? "text-lg" : "text-xl"}`}
       >
         TimeCraft
       </p>

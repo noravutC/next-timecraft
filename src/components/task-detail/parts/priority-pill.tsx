@@ -10,32 +10,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { TaskPriority } from '@/types';
 import { Button } from '@/components/ui/button';
-
-const PRIORITY_STYLES: Record<
-  TaskPriority,
-  { bg: string; border: string; text: string; label: string }
-> = {
-  low: {
-    bg: 'rgba(100,116,139,0.10)',
-    border: 'rgba(100,116,139,0.30)',
-    text: '#334155',
-    label: 'Low',
-  },
-  medium: {
-    bg: 'rgba(59,130,246,0.10)',
-    border: 'rgba(59,130,246,0.30)',
-    text: '#1d4ed8',
-    label: 'Medium',
-  },
-  high: {
-    bg: 'rgba(239,68,68,0.10)',
-    border: 'rgba(239,68,68,0.30)',
-    text: '#b91c1c',
-    label: 'High',
-  },
-};
-
-const ORDER: TaskPriority[] = ['low', 'medium', 'high'];
+import { PRIORITY_ORDER as ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 
 interface PriorityPillProps {
   value: TaskPriority;

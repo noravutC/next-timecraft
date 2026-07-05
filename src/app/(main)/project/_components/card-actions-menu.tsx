@@ -87,7 +87,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           size={"xs"}
           variant={"ghost"}
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-md p-0 text-[#A8ADB8] opacity-0 hover:bg-[#F0F1F5] hover:text-[#5B50E6] group-hover:opacity-100 data-[state=open]:opacity-100"
+          className="size-6 rounded-md p-0 text-ink-faint opacity-0 hover:bg-surface-hover hover:text-brand group-hover:opacity-100 data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
           <Ellipsis className="size-4" />

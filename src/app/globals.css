@@ -53,6 +53,16 @@
   --color-primary: var(--primary);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-faint: var(--ink-faint);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-line: var(--line);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -74,7 +84,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* --primary: oklch(0.205 0 0); */
-  --primary: var(--c-blue);
+  --primary: var(--brand);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -100,15 +110,27 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  --c-blue: #3b82f6;
   --c-orange: #ffa239;
   --c-pink: #f472b6;
   --c-text: #1e293b;
 
-  /* Login brand accent */
-  --brand: #4d49e0;
-  --brand-dark: #423fc4;
-
+  /* App chrome palette — single source of truth for UI colors.
+     brand-*  : primary purple + tints
+     ink-*    : text ladder, strongest → faintest
+     surface-*: gray fills (board bg, hover, active/selected)
+     line     : hairline borders */
+  --brand: #5b50e6;
+  --brand-dark: #4a40d6;
+  --brand-soft: #eeedfc;
+  --brand-line: #d9d7f5;
+  --ink: #1d1e26;
+  --ink-muted: #6b7180;
+  --ink-subtle: #8a8f9c;
+  --ink-faint: #a8adb8;
+  --surface: #f6f7f9;
+  --surface-hover: #f2f3f6;
+  --surface-active: #edeef2;
+  --line: #ecedf1;
 }
 
 .dark {

@@ -22,7 +22,7 @@ interface EstimatePickerProps {
 }
 
 export const EstimatePicker = ({ value, onChange }: EstimatePickerProps) => (
-  <div className="grid w-fit grid-cols-3 gap-1.5">
+  <div className="flex w-fit items-center gap-1.5">
     {OPTIONS.map((opt) => {
       const active = value === opt.hours;
       return (
@@ -31,10 +31,10 @@ export const EstimatePicker = ({ value, onChange }: EstimatePickerProps) => (
           type="button"
           onClick={() => onChange(active ? 0 : opt.hours)}
           className={cn(
-            "h-7 rounded-md border px-3 text-xs transition-colors",
+            "h-7 cursor-pointer rounded-md border px-3 text-xs font-medium transition-colors",
             active
-              ? "border-foreground bg-foreground text-background"
-              : "border-border bg-background hover:bg-muted",
+              ? "border-brand bg-brand text-white"
+              : "border-line bg-background text-ink-subtle hover:bg-surface-hover hover:text-ink",
           )}
         >
           {opt.label}

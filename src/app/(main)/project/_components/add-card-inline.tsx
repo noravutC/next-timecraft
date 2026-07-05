@@ -48,7 +48,7 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
 
   return (
     <div
-      className="mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-[#D9D7F5] bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]"
+      className="mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]"
       {...{ [blockBoardPanningAttr]: true }}
     >
       <textarea
@@ -57,14 +57,14 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Task title..."
-        className="min-h-11.5 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[#1D1E26] outline-none placeholder:text-gray-400"
+        className="min-h-11.5 flex-1 resize-none bg-transparent text-sm leading-relaxed text-ink outline-none placeholder:text-gray-400"
       />
       <div className="flex flex-row items-center gap-2">
         <Button
           size="sm"
           disabled={!title.trim() || isSubmitting}
           onClick={handleSubmit}
-          className="h-8 rounded-md bg-[#5B50E6] text-xs font-semibold hover:bg-[#4A40D6]"
+          className="h-8 rounded-md bg-brand text-xs font-semibold hover:bg-brand-dark"
         >
           {isSubmitting ? "Adding..." : "Add card"}
         </Button>
@@ -72,7 +72,7 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
           size="sm"
           variant="ghost"
           onClick={onClose}
-          className="h-8 text-xs font-medium text-[#8A8F9C] hover:text-[#15161D]"
+          className="h-8 text-xs font-medium text-ink-subtle hover:text-ink"
         >
           Cancel
         </Button>

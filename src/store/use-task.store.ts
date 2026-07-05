@@ -5,6 +5,7 @@ import { taskServices } from '@/services/tasks.service';
 import { toRecord, toValueRecord } from '@/helper/utils/object';
 import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
+import { useAssigneeStore } from './use-assignee.store';
 
 type TaskStore = {
   status: LoaderStatus;
@@ -148,6 +149,8 @@ export const useTaskStore = create<TaskStore>((set) => ({
         tasks: { ...state.tasks, ...toRecord(tasksData, 'id') },
         status: 'none',
       }));
+      // bulk fetch ส่ง assignees มาด้วย — hydrate เข้า assignee store ให้การ์ดใช้
+      useAssigneeStore.getState().ingestMany(response.assignees ?? {});
       return tasksData;
     } catch (error) {
       set({ status: 'error' });

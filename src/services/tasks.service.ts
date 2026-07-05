@@ -10,12 +10,10 @@ import {
   UpdateTaskPayload,
 } from "@/types";
 
-export interface TaskAssigneeLite {
-  userId: string;
-  fullName: string;
-  avatar: string | null;
-  email: string;
-}
+import type { TaskAssigneeUser } from "./assignee.service";
+
+/** alias เดิม — shape เดียวกับ TaskAssigneeUser ของ assignee.service */
+export type TaskAssigneeLite = TaskAssigneeUser;
 
 class TaskService {
   private client = apiClient;

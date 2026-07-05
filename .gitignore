@@ -54,3 +54,4 @@ ds-bundle/
 # playwright
 /test-results/
 /playwright-report/
+.playwright-mcp/
