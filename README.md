@@ -120,6 +120,19 @@ docker compose up --build
 `GET /api/health` reports app + database status (`200 ok` / `503 degraded`) for
 load balancers and uptime monitors. CI builds the production image on every PR.
 
+## Observability
+
+- **Structured logging** — every API request goes through the shared handler
+  wrapper (`src/lib/api/handle.ts`) which emits one JSON log line via **pino**:
+  method, path, status, duration, userId. Unhandled errors log with full stack.
+  `docker logs timecraft` therefore yields grep-able JSON, ready for CloudWatch.
+- **Error tracking (Sentry)** — DSN-gated: set `SENTRY_DSN` (server) and
+  `NEXT_PUBLIC_SENTRY_DSN` (client) and both runtimes report unhandled errors,
+  API 500s, and React render crashes (`global-error.tsx`). With no DSN the
+  integration is a no-op. Source-map upload is intentionally not wired (it
+  requires a build-time `SENTRY_AUTH_TOKEN`); stack traces are still useful
+  because server code runs unminified in the standalone build.
+
 ## Getting Started
 
 ### Prerequisites
@@ -153,6 +166,9 @@ NEXT_PUBLIC_PUSHER_KEY=
 NEXT_PUBLIC_PUSHER_CLUSTER=
 ANTHROPIC_API_KEY=   # optional — shared Claude fallback for AI Task Breakdown (users can bring their own key)
 AI_ENCRYPTION_KEY=   # optional — dedicated secret for encrypting stored AI keys (falls back to NEXTAUTH_SECRET)
+SENTRY_DSN=              # optional — server-side error tracking (off when empty)
+NEXT_PUBLIC_SENTRY_DSN=  # optional — client-side error tracking (build-time on Docker)
+LOG_LEVEL=               # optional — pino level, default "info"
 ```
 
 ### Commands
