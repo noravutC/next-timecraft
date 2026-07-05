@@ -209,6 +209,8 @@ export const Column = ({
     <div
       className={cn("flex w-[290px] flex-shrink-0 select-none flex-col")}
       ref={outerFullHeightRef}
+      data-testid="board-column"
+      data-column-name={column.title}
     >
       <div
         className={cn(

@@ -103,6 +103,8 @@ export function CardDisplay({
         `flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`,
         isLoading && 'pointer-events-none',
       )}
+      data-testid="board-card"
+      data-card-title={card.title}
     >
       {state.type === 'is-over' && state.closestEdge === 'top' && (
         <CardShadow dragging={state.dragging} />
