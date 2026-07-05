@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # Dummy values so import-time env reads don't fail during `next build`.
+      # No job in this workflow talks to a real database or external service.
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      NEXTAUTH_SECRET: ci-dummy-secret
+      GOOGLE_CLIENT_ID: ci-dummy
+      GOOGLE_CLIENT_SECRET: ci-dummy
+      PUSHER_APP_ID: ci-dummy
+      PUSHER_KEY: ci-dummy
+      PUSHER_SECRET: ci-dummy
+      PUSHER_CLUSTER: mt1
+      NEXT_PUBLIC_PUSHER_KEY: ci-dummy
+      NEXT_PUBLIC_PUSHER_CLUSTER: mt1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
