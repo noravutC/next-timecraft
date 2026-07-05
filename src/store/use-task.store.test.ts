@@ -46,20 +46,26 @@ beforeEach(() => {
 describe("updateTasks (optimistic update)", () => {
   it("applies the payload to local state before the API resolves", async () => {
     seedStore([makeTask("t1")]);
-    let resolveApi!: (v: { updated: TaskCache[] }) => void;
+    let resolveApi!: (
+      v: Awaited<ReturnType<typeof taskServices.updateTasks>>,
+    ) => void;
     vi.mocked(taskServices.updateTasks).mockReturnValue(
       new Promise((r) => (resolveApi = r)),
     );
 
     const pending = useTaskStore
       .getState()
-      .updateTasks(["t1"], [{ title: "renamed" }]);
+      .updateTasks(["t1"], [{ columnId: "col-1", title: "renamed" }]);
 
     // optimistic: state already changed while the request is in flight
     expect(useTaskStore.getState().tasks["t1"].title).toBe("renamed");
     expect(useTaskStore.getState().tasksLoader["t1"]).toBe(true);
 
-    resolveApi({ updated: [makeTask("t1", { title: "renamed" })] });
+    resolveApi({
+      updated: [makeTask("t1", { title: "renamed" })],
+      message: "ok",
+      status: 200,
+    });
     await pending;
     expect(useTaskStore.getState().tasksLoader["t1"]).toBe(false);
   });
@@ -71,7 +77,7 @@ describe("updateTasks (optimistic update)", () => {
       message: "ok",
     } as Awaited<ReturnType<typeof taskServices.updateTasks>>);
 
-    await useTaskStore.getState().updateTasks(["t1"], [{ title: "renamed" }]);
+    await useTaskStore.getState().updateTasks(["t1"], [{ columnId: "col-1", title: "renamed" }]);
 
     const t1 = useTaskStore.getState().tasks["t1"];
     expect(t1.title).toBe("from-server");
@@ -83,7 +89,7 @@ describe("updateTasks (optimistic update)", () => {
     vi.mocked(taskServices.updateTasks).mockRejectedValue(new Error("boom"));
 
     await expect(
-      useTaskStore.getState().updateTasks(["t1"], [{ title: "renamed" }]),
+      useTaskStore.getState().updateTasks(["t1"], [{ columnId: "col-1", title: "renamed" }]),
     ).rejects.toThrow("boom");
 
     expect(useTaskStore.getState().tasks["t1"].title).toBe("original");
@@ -107,10 +113,10 @@ describe("updateTasks (optimistic update)", () => {
 
     const first = useTaskStore
       .getState()
-      .updateTasks(["t1"], [{ title: "first" }]);
+      .updateTasks(["t1"], [{ columnId: "col-1", title: "first" }]);
     const second = useTaskStore
       .getState()
-      .updateTasks(["t1"], [{ title: "second" }]);
+      .updateTasks(["t1"], [{ columnId: "col-1", title: "second" }]);
 
     rejectFirst(new Error("stale failure"));
     await expect(first).rejects.toThrow("stale failure");

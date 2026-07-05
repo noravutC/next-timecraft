@@ -71,8 +71,10 @@ describe("assignBulkIndexes", () => {
     expect(assignBulkIndexes([])).toEqual([]);
   });
 
+  type Payload = { title?: string; orderFraction?: string | null };
+
   it("assigns strictly ascending keys to every payload", () => {
-    const items = [{ title: "a" }, { title: "b" }, { title: "c" }];
+    const items: Payload[] = [{ title: "a" }, { title: "b" }, { title: "c" }];
     const result = assignBulkIndexes(items);
     const keys = result.map((r) => r.orderFraction!);
     expect(keys).toHaveLength(3);
@@ -81,7 +83,7 @@ describe("assignBulkIndexes", () => {
   });
 
   it("keeps all generated keys between prev and next bounds", () => {
-    const items = [{}, {}, {}, {}];
+    const items: Payload[] = [{}, {}, {}, {}];
     const result = assignBulkIndexes(items, "a0", "a1");
     for (const r of result) {
       expect(r.orderFraction! > "a0").toBe(true);
@@ -96,6 +98,7 @@ describe("assignBulkIndexes", () => {
   });
 
   it("sanitizes invalid bounds instead of throwing", () => {
-    expect(() => assignBulkIndexes([{}], "!!bad!!", "??bad??")).not.toThrow();
+    const items: Payload[] = [{}];
+    expect(() => assignBulkIndexes(items, "!!bad!!", "??bad??")).not.toThrow();
   });
 });
