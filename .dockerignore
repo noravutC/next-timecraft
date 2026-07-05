@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.github
+.claude
+e2e
+test-results
+playwright-report
+docs
+*.md
+.env*
+tsconfig.tsbuildinfo
