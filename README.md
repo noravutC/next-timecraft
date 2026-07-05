@@ -120,6 +120,19 @@ docker compose up --build
 `GET /api/health` reports app + database status (`200 ok` / `503 degraded`) for
 load balancers and uptime monitors. CI builds the production image on every PR.
 
+## Performance & hardening
+
+- **Core Web Vitals** (Lighthouse against the live AWS deployment, `/login`):
+  **100 desktop / 98 mobile** — LCP 0.5s/2.3s, TBT 0ms/100ms, **CLS 0** on both.
+- **Rate limiting** — every authenticated API request passes a per-user,
+  per-path sliding-window limiter in the shared handler wrapper (default
+  120 req/min; the AI route is capped at 10 req/min since LLM calls are the
+  most expensive thing the app does). Exceeding it returns
+  `429 Too many requests — retry in Ns`. Implemented in-memory
+  (`src/lib/api/rate-limit.ts`) because the app runs as a single container —
+  the module is a drop-in swap point for Upstash Redis if it ever scales
+  horizontally.
+
 ## Observability
 
 - **Structured logging** — every API request goes through the shared handler
