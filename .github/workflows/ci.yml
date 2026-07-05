@@ -37,11 +37,13 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm typecheck
-
       - name: Unit tests
         run: pnpm test
 
+      # Build first: it generates next-env.d.ts and .next/types,
+      # which `tsc --noEmit` needs (next-env.d.ts is gitignored).
       - name: Build
         run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
