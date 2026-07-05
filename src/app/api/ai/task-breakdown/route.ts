@@ -14,7 +14,7 @@ import { z } from "zod";
 
 const breakdownSchema = z.object({
   goal: z.string().trim().min(3).max(2000),
-  columnId: z.string().trim().min(1),
+  columnId: z.string().trim().uuid(),
   maxTasks: z.number().int().min(1).max(12).optional(),
 });
 
@@ -44,7 +44,8 @@ const sseEncode = (event: string, data: unknown) =>
   `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
 export const POST = createHandle<BreakdownBody>(
-  { body: breakdownSchema },
+  // LLM calls are the most expensive thing this app does — 10/min per user
+  { body: breakdownSchema, rateLimit: { limit: 10, windowMs: 60_000 } },
   async ({ userId, body }) => {
     const [column] = await db
       .select({ id: columnsTable.id, projectId: columnsTable.projectId })

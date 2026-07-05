@@ -6,7 +6,13 @@ import { Permission } from "@/lib/rbac/permissions";
 import { Session } from "next-auth";
 import { NextResponse } from "next/server";
 import { ZodType } from "zod";
-import { AppError, BadRequestError, UnauthorizedError } from "./errors";
+import { checkRateLimit, RateLimitConfig } from "./rate-limit";
+import {
+  AppError,
+  BadRequestError,
+  TooManyRequestsError,
+  UnauthorizedError,
+} from "./errors";
 
 type Awaitable<T> = T | Promise<T>;
 
@@ -31,6 +37,23 @@ type BaseConfig<TBody, TParams = undefined> = {
   body?: ZodType<TBody>;
   permission?: Permission;
   resolveProjectIds?: ResolveProjectIds<TBody, TParams>;
+  /** per-user, per-path. Defaults to 120 req/min; tighten for expensive routes */
+  rateLimit?: RateLimitConfig;
+};
+
+const DEFAULT_RATE_LIMIT: RateLimitConfig = { limit: 120, windowMs: 60_000 };
+
+const enforceRateLimit = (
+  request: Request,
+  userId: string,
+  config: RateLimitConfig | undefined,
+) => {
+  const { pathname } = new URL(request.url);
+  const result = checkRateLimit(
+    `${userId}:${pathname}`,
+    config ?? DEFAULT_RATE_LIMIT,
+  );
+  if (!result.ok) throw new TooManyRequestsError(result.retryAfterSec);
 };
 
 const errorResponse = (statusCode: number, message: string) =>
@@ -98,6 +121,7 @@ export function createHandle<TBody = undefined>(
     try {
       const session = await requireSession();
       userId = session.user.id;
+      enforceRateLimit(request, userId, config.rateLimit);
       const body = await parseBody(request, config.body);
 
       if (config.permission) {
@@ -131,6 +155,7 @@ export function createParamHandle<TParams, TBody = undefined>(
     try {
       const session = await requireSession();
       userId = session.user.id;
+      enforceRateLimit(request, userId, config.rateLimit);
       const params = await context.params;
       const body = await parseBody(request, config.body);
 

@@ -35,3 +35,10 @@ export class NotFoundError extends AppError {
     this.name = "NotFoundError";
   }
 }
+
+export class TooManyRequestsError extends AppError {
+  constructor(retryAfterSec: number) {
+    super(429, `Too many requests — retry in ${retryAfterSec}s`);
+    this.name = "TooManyRequestsError";
+  }
+}
