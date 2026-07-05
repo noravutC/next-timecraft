@@ -48,6 +48,10 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 
 ## Architecture
 
+Design decisions and trade-offs (fractional indexing, optimistic UI,
+realtime, RBAC, AI streaming, deployment) are documented in
+**[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
 ```
 src/
 ├── app/
