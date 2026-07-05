@@ -43,6 +43,13 @@
       "when": 1778129067076,
       "tag": "0006_first_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783228418427,
+      "tag": "0007_luxuriant_kabuki",
+      "breakpoints": true
     }
   ]
 }

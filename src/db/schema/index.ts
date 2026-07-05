@@ -16,4 +16,6 @@ export * from "./comment-read-state.table";
 export * from "./notification.table";
 export * from "./cron-job.table";
 export * from "./job-queue.table";
+export * from "./ai-setting.table";
+export * from "./ai-usage-log.table";
 export * from "./relations";
