@@ -3,12 +3,8 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, User } from "lucide-react";
-import { toast } from "sonner";
+import { User } from "lucide-react";
 // components
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Loader, LoaderScreen } from "@/components/ui/loader";
 
 const BRAND = "TimeCraft";
@@ -17,7 +13,6 @@ export default function Login() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [guestLoading, setGuestLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false);
   const organizationId = session?.user?.organizationId?.trim() ?? "";
   const canCreateOrg = session?.user?.canCreateOrg ?? false;
 
@@ -42,11 +37,6 @@ export default function Login() {
     if (guestLoading) return;
     setGuestLoading(true);
     await signIn("guest", { redirect: false });
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    toast.info("Email sign-in is coming soon — please continue with Google.");
   };
 
   if (status !== "unauthenticated") {
@@ -82,13 +72,13 @@ export default function Login() {
           <span className="text-lg font-bold tracking-tight">{BRAND}</span>
         </div>
 
-        {/* form block */}
+        {/* sign-in block */}
         <div className="flex flex-1 flex-col justify-center py-10">
           <div className="mx-auto w-full max-w-sm">
             <h1 className="mb-2 text-2xl font-bold tracking-tight">
               Welcome back
             </h1>
-            <p className="mb-6 text-sm leading-relaxed text-gray-500">
+            <p className="mb-8 text-sm leading-relaxed text-gray-500">
               Sign in to manage your team&apos;s boards, tasks, and timelines.
             </p>
 
@@ -96,7 +86,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => signIn("google")}
-              className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-900 transition-colors hover:border-gray-300 hover:bg-gray-50"
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-900 transition-all duration-150 hover:-translate-y-px hover:border-gray-300 hover:bg-gray-50 hover:shadow-md active:translate-y-0 active:shadow-none"
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path
@@ -121,91 +111,16 @@ export default function Login() {
 
             <div className="my-5 flex items-center gap-3.5">
               <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs font-medium text-gray-400">
-                or continue with email
-              </span>
+              <span className="text-xs font-medium text-gray-400">or</span>
               <div className="h-px flex-1 bg-gray-200" />
             </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <Label
-                  htmlFor="tc-email"
-                  className="mb-2 block text-sm font-semibold text-gray-700"
-                >
-                  Email
-                </Label>
-                <Input
-                  id="tc-email"
-                  name="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  autoComplete="email"
-                  className="h-10 rounded-xl border-gray-200 px-3.5 text-sm focus-visible:border-brand focus-visible:ring-brand/20"
-                />
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <Label
-                    htmlFor="tc-pass"
-                    className="text-sm font-semibold text-gray-700"
-                  >
-                    Password
-                  </Label>
-                  <a
-                    href="#"
-                    className="text-sm font-semibold text-brand no-underline"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="tc-pass"
-                    name="password"
-                    type={showPw ? "text" : "password"}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className="h-10 rounded-xl border-gray-200 pr-12 pl-3.5 text-sm focus-visible:border-brand focus-visible:ring-brand/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((v) => !v)}
-                    aria-label={showPw ? "Hide password" : "Show password"}
-                    className="absolute top-1/2 right-1.5 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    {showPw ? (
-                      <EyeOff className="size-[18px]" />
-                    ) : (
-                      <Eye className="size-[18px]" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <Label className="flex cursor-pointer items-center gap-2.5 text-sm font-normal text-gray-600">
-                <Checkbox
-                  name="remember"
-                  className="data-[state=checked]:border-brand data-[state=checked]:bg-brand"
-                />
-                Keep me signed in for 30 days
-              </Label>
-
-              <button
-                type="submit"
-                className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-dark active:translate-y-px"
-              >
-                Sign in
-              </button>
-            </form>
 
             {/* Guest */}
             <button
               type="button"
               onClick={handleGuestLogin}
               disabled={guestLoading}
-              className="mt-3 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800 transition-colors hover:border-gray-300 hover:bg-gray-100 disabled:opacity-70"
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800 transition-all duration-150 hover:-translate-y-px hover:border-gray-300 hover:bg-gray-100 hover:shadow-md active:translate-y-0 active:shadow-none disabled:opacity-70"
             >
               {guestLoading ? (
                 <Loader size="xs" />
@@ -214,12 +129,8 @@ export default function Login() {
               )}
               {guestLoading ? "Signing in as guest…" : "Continue as guest"}
             </button>
-
-            <p className="mt-6 text-center text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
-              <a href="#" className="font-semibold text-brand no-underline">
-                Sign up free
-              </a>
+            <p className="mt-3 text-center text-xs text-gray-400">
+              No sign-up needed — jump straight into a live demo board.
             </p>
           </div>
         </div>
@@ -227,14 +138,14 @@ export default function Login() {
         {/* footer */}
         <div className="flex items-center justify-between text-xs text-gray-400">
           <span>© 2026 {BRAND}</span>
-          <div className="flex gap-4">
-            <a href="#" className="text-gray-400 no-underline">
-              Privacy
-            </a>
-            <a href="#" className="text-gray-400 no-underline">
-              Terms
-            </a>
-          </div>
+          <a
+            href="https://github.com/noravutC/next-timecraft"
+            target="_blank"
+            rel="noreferrer"
+            className="text-gray-400 no-underline transition-colors hover:text-gray-600"
+          >
+            GitHub
+          </a>
         </div>
       </section>
 
@@ -257,10 +168,6 @@ export default function Login() {
 
         {/* headline */}
         <div className="relative max-w-[480px]">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 py-1.5 text-xs font-semibold">
-            <span className="size-2 rounded-full bg-emerald-300" />
-            Run your whole team in one place
-          </div>
           <h2 className="mb-3.5 text-4xl font-bold leading-tight tracking-tight">
             Turn plans into
             <br />
@@ -269,8 +176,8 @@ export default function Login() {
             actually see
           </h2>
           <p className="max-w-[430px] text-base leading-relaxed text-white/80">
-            Plan with Kanban, track on the Timeline, and keep your whole team
-            aligned in real time.
+            Plan with Kanban, break big goals into tasks with AI, and keep
+            your whole team aligned in real time.
           </p>
         </div>
 
@@ -419,21 +326,16 @@ export default function Login() {
           </div>
         </div>
 
-        {/* bottom trust row */}
-        <div className="relative flex items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2.5">
-            {["Kanban", "Timeline", "Automation"].map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-white/15 bg-white/15 px-3.5 py-1.5 text-xs font-semibold"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-          <div className="text-right text-xs whitespace-nowrap text-white/80">
-            Trusted by <strong className="text-white">12,000+</strong> teams
-          </div>
+        {/* feature chips — real features only */}
+        <div className="relative flex flex-wrap gap-2.5">
+          {["Kanban", "Real-time sync", "AI task breakdown"].map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-white/15 bg-white/15 px-3.5 py-1.5 text-xs font-semibold"
+            >
+              {t}
+            </span>
+          ))}
         </div>
       </section>
     </div>

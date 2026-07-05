@@ -275,8 +275,13 @@ export const Column = ({
             {!isLoading &&
               column.cards.length === 0 &&
               state.type !== "is-card-over" && (
-                <div className="px-3 py-8 text-center text-xs font-medium text-ink-faint">
-                  No tasks yet
+                <div className="animate-in fade-in mx-3 my-2 flex flex-col items-center gap-1 rounded-xl border border-dashed border-line px-3 py-8 text-center duration-200">
+                  <span className="text-xs font-medium text-ink-faint">
+                    No tasks yet
+                  </span>
+                  <span className="text-xs text-ink-faint/70">
+                    Drop a card here or press +
+                  </span>
                 </div>
               )}
             {state.type === "is-card-over" && !state.isOverChildCard && (

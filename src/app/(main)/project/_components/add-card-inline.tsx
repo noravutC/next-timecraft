@@ -48,7 +48,7 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
 
   return (
     <div
-      className="mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]"
+      className="animate-in fade-in slide-in-from-bottom-2 mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)] duration-200"
       {...{ [blockBoardPanningAttr]: true }}
     >
       <textarea

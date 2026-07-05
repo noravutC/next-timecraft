@@ -128,7 +128,7 @@ export function CardDisplay({
     <div
       ref={outerRef}
       className={cn(
-        `flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`,
+        `animate-in fade-in flex flex-shrink-0 flex-col gap-2 px-3 py-1 duration-200 ${outerStyles[state.type] ?? ''}`,
         isLoading && 'pointer-events-none',
       )}
       data-testid="board-card"
