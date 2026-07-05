@@ -1,8 +1,7 @@
-import { authOptions } from "@/auth";
+import { auth } from "@/auth";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { Permission } from "@/lib/rbac/permissions";
 import { Session } from "next-auth";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { ZodType } from "zod";
 import { AppError, BadRequestError, UnauthorizedError } from "./errors";
@@ -62,7 +61,7 @@ const parseBody = async <TBody>(
 };
 
 const requireSession = async (): Promise<Session & { user: { id: string } }> => {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
   return session as Session & { user: { id: string } };
 };

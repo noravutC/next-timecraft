@@ -1,8 +1,7 @@
 // src/auth.ts
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { AuthOptions } from "next-auth";
 import { and, eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { membershipsTable, organizationsTable, usersTable } from "@/db/schema";
@@ -125,7 +124,9 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, email: string) => {
   return token;
 };
 
-export const authOptions: AuthOptions = {
+export const authConfig: NextAuthConfig = {
+  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -262,7 +263,7 @@ export const authOptions: AuthOptions = {
         session.user.organizationId = tokenTypes.organizationId ?? "";
         session.user.systemRole = tokenTypes.systemRole ?? "user";
         session.user.canCreateOrg = tokenTypes.canCreateOrg ?? false;
-        session.user.email = tokenTypes.email ?? undefined;
+        session.user.email = tokenTypes.email ?? session.user.email ?? "";
         session.user.name = tokenTypes.fullName ?? session.user.name ?? "";
         session.user.image = tokenTypes.avatar ?? session.user.image ?? null;
       }
@@ -271,4 +272,4 @@ export const authOptions: AuthOptions = {
   },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

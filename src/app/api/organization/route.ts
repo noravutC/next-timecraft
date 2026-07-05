@@ -1,8 +1,7 @@
-import { authOptions } from "@/auth";
+import { auth } from "@/auth";
 import { db } from "@/db";
 import { membershipsTable, organizationsTable } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
 type CreateOrganizationBody = {
@@ -23,7 +22,7 @@ const toOrganizationCache = (organization: {
 });
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const sessionUserId = session?.user?.id;
 
   if (!sessionUserId) {
@@ -76,7 +75,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const sessionUserId = session?.user?.id;
 
   if (!sessionUserId) {

@@ -1,12 +1,11 @@
-import { authOptions } from "@/auth";
+import { auth } from "@/auth";
 import { db } from "@/db";
 import { membershipsTable, usersTable } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const sessionUserId = session?.user?.id;
   if (!sessionUserId) {
     return NextResponse.json(

@@ -1,16 +1,15 @@
-import { authOptions } from "@/auth";
+import { auth } from "@/auth";
 import {
   countUnreadNotifications,
   fetchNotificationsPage,
 } from "@/db/uniq-query/notification/notification-utils";
-import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const sessionUserId = session?.user?.id;
   if (!sessionUserId) {
     return NextResponse.json(
