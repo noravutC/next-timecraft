@@ -1,4 +1,6 @@
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/auth";
+import { logger } from "@/lib/logger";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { Permission } from "@/lib/rbac/permissions";
 import { Session } from "next-auth";
@@ -37,8 +39,28 @@ const errorResponse = (statusCode: number, message: string) =>
 const toAppError = (error: unknown): AppError => {
   if (error instanceof AppError) return error;
   if (error instanceof SyntaxError) return new BadRequestError("Invalid JSON body");
-  console.error("[api]", error);
+  logger.error({ err: error }, "unhandled api error");
+  Sentry.captureException(error);
   return new AppError(500, "Internal server error");
+};
+
+const logRequest = (
+  request: Request,
+  status: number,
+  startedAt: number,
+  userId?: string,
+) => {
+  const { pathname } = new URL(request.url);
+  logger.info(
+    {
+      method: request.method,
+      path: pathname,
+      status,
+      durationMs: Date.now() - startedAt,
+      userId,
+    },
+    "api request",
+  );
 };
 
 const parseBody = async <TBody>(
@@ -71,9 +93,11 @@ export function createHandle<TBody = undefined>(
   handler: (ctx: HandleContext<TBody>) => Awaitable<Response>,
 ) {
   return async (request: Request): Promise<Response> => {
+    const startedAt = Date.now();
+    let userId: string | undefined;
     try {
       const session = await requireSession();
-      const userId = session.user.id;
+      userId = session.user.id;
       const body = await parseBody(request, config.body);
 
       if (config.permission) {
@@ -83,9 +107,12 @@ export function createHandle<TBody = undefined>(
         await authorizeOrThrow(userId, projectIds, config.permission);
       }
 
-      return await handler({ request, session, userId, body });
+      const response = await handler({ request, session, userId, body });
+      logRequest(request, response.status, startedAt, userId);
+      return response;
     } catch (error) {
       const err = toAppError(error);
+      logRequest(request, err.statusCode, startedAt, userId);
       return errorResponse(err.statusCode, err.message);
     }
   };
@@ -99,9 +126,11 @@ export function createParamHandle<TParams, TBody = undefined>(
     request: Request,
     context: { params: Promise<TParams> },
   ): Promise<Response> => {
+    const startedAt = Date.now();
+    let userId: string | undefined;
     try {
       const session = await requireSession();
-      const userId = session.user.id;
+      userId = session.user.id;
       const params = await context.params;
       const body = await parseBody(request, config.body);
 
@@ -112,9 +141,12 @@ export function createParamHandle<TParams, TBody = undefined>(
         await authorizeOrThrow(userId, projectIds, config.permission);
       }
 
-      return await handler({ request, session, userId, body, params });
+      const response = await handler({ request, session, userId, body, params });
+      logRequest(request, response.status, startedAt, userId);
+      return response;
     } catch (error) {
       const err = toAppError(error);
+      logRequest(request, err.statusCode, startedAt, userId);
       return errorResponse(err.statusCode, err.message);
     }
   };

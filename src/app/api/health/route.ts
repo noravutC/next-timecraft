@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { logger } from "@/lib/logger";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,7 @@ export async function GET() {
     await db.execute(sql`select 1`);
     dbOk = true;
   } catch (error) {
-    console.error("[health] db check failed:", error);
+    logger.error({ err: error }, "health db check failed");
   }
 
   return NextResponse.json(
