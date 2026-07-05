@@ -98,18 +98,25 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
         className="w-52"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuItem onClick={handleMoveNext} disabled={!nextColumn}>
+        <DropdownMenuItem
+          onClick={handleMoveNext}
+          disabled={!nextColumn}
+          className="text-ink focus:bg-surface-hover focus:text-brand [&_svg]:text-ink-subtle focus:[&_svg]:text-brand"
+        >
           <ArrowRight size={13} className="mr-2" />
           Move to next column
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDuplicate}>
+        <DropdownMenuItem
+          onClick={handleDuplicate}
+          className="text-ink focus:bg-surface-hover focus:text-brand [&_svg]:text-ink-subtle focus:[&_svg]:text-brand"
+        >
           <Copy size={13} className="mr-2" />
           Duplicate
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleDelete}
-          className="text-red-500 focus:text-red-500 focus:bg-red-50"
+          className="text-red-600 focus:bg-red-50 focus:text-red-600 [&_svg]:text-red-400 focus:[&_svg]:text-red-600"
         >
           <Trash2 size={13} className="mr-2" />
           Delete card
