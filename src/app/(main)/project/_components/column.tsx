@@ -44,7 +44,7 @@ type TColumnState =
 
 const stateStyles: Record<TColumnState["type"], string> = {
   idle: "cursor-grab",
-  "is-card-over": "outline outline-2 outline-neutral-50",
+  "is-card-over": "outline outline-2 outline-brand-line",
   "is-dragging": "opacity-40",
   "is-column-over": "bg-gray-200",
 };
@@ -214,7 +214,7 @@ export const Column = ({
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-14rem)] min-h-60 flex-col overflow-hidden rounded-xl text-gray-800 ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-11rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
@@ -222,29 +222,37 @@ export const Column = ({
         <div
           className={`flex min-h-0 max-h-full flex-1 flex-col ${state.type === "is-column-over" ? "invisible" : ""}`}
         >
+          {/* แถบสีประจำ column */}
           <div
-            className="mb-1 flex flex-row items-center gap-2 px-1.5 pt-0.5 pb-3"
+            className="h-1 w-full flex-shrink-0"
+            style={{ backgroundColor: column.color ?? "#94A3B8" }}
+          />
+          <div
+            className="flex flex-row items-center gap-2 px-3 pt-2.5 pb-2"
             ref={headerRef}
           >
-            <span
-              className="size-2 flex-shrink-0 rounded-full"
-              style={{ backgroundColor: column.color ?? "#94A3B8" }}
-            />
-            <div className="text-xs font-bold tracking-wide text-[#6B7180] uppercase">
+            <div className="text-sm font-semibold text-ink">
               {column.title}
             </div>
             <Badge
               variant="outline"
-              className="rounded-full border-transparent bg-[#EDEEF2] px-1.75 py-0.25 text-[11px] font-semibold text-[#A2A7B3]"
+              className={cn(
+                "rounded-full border-transparent px-1.75 py-0.25 text-xs font-semibold",
+                column.wipLimit > 0 && column.totalTasks > column.wipLimit
+                  ? "bg-red-100/80 text-red-600"
+                  : "bg-white/80 text-ink-subtle",
+              )}
             >
-              {column.totalTasks}
+              {column.wipLimit > 0
+                ? `${column.totalTasks}/${column.wipLimit}`
+                : column.totalTasks}
             </Badge>
             <div className="flex-1" />
             <button
               type="button"
               onClick={() => setIsAdding(true)}
               aria-label="Add a card"
-              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-[#B6BAC4] hover:bg-[#E9EAEF] hover:text-[#5B50E6]"
+              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-white/80 hover:text-brand"
             >
               <Plus size={16} />
             </button>
@@ -264,6 +272,13 @@ export const Column = ({
             ) : (
               <CardList column={column} allColumns={allColumns} />
             )}
+            {!isLoading &&
+              column.cards.length === 0 &&
+              state.type !== "is-card-over" && (
+                <div className="px-3 py-8 text-center text-xs font-medium text-ink-faint">
+                  No tasks yet
+                </div>
+              )}
             {state.type === "is-card-over" && !state.isOverChildCard && (
               <div className="flex-shrink-0 px-3 py-1">
                 <CardShadow dragging={state.dragging} />
@@ -277,11 +292,11 @@ export const Column = ({
               onClose={() => setIsAdding(false)}
             />
           ) : (
-            <div className="px-1 pt-1.5">
+            <div className="px-1.5 pt-1 pb-1.5">
               <button
                 type="button"
                 onClick={() => setIsAdding(true)}
-                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-md p-2.5 text-left text-sm font-semibold text-[#9499A5] hover:bg-[#EDEEF2] hover:text-[#5B50E6]"
+                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-lg p-2.5 text-left text-sm font-semibold text-ink-subtle hover:bg-white/80 hover:text-brand"
               >
                 <Plus size={15} />
                 Add a card

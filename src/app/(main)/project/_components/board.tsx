@@ -186,7 +186,7 @@ export const Board = () => {
   const scrollCls = `flex h-full flex-row items-start gap-4.5 overflow-x-auto p-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? "rounded border-2 border-dashed" : ""}`;
 
   return (
-    <div className={`relative flex h-full flex-col bg-[#F6F7F9] ${boardCls}`}>
+    <div className={`relative flex h-full flex-col bg-surface ${boardCls}`}>
       <div ref={scrollableRef} className={scrollCls} style={{ cursor: panCursor !== "default" ? panCursor : undefined }}>
         {board.columns.map((column) => (
           <Column key={column.id} column={column} allColumns={board.columns} />

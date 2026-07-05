@@ -23,14 +23,17 @@ export const formatRelativePast = (date: Date) => {
   return date.toLocaleDateString();
 };
 
-export const formatRelativeDay = (d: Date) => {
+/** จำนวนวันจากวันนี้ถึง date (ติดลบ = เลยมาแล้ว), เทียบที่เที่ยงคืน */
+export const daysUntil = (date: string | Date): number => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const target = new Date(d);
+  const target = new Date(date);
   target.setHours(0, 0, 0, 0);
-  const diffDays = Math.round(
-    (target.getTime() - today.getTime()) / MS_PER_DAY,
-  );
+  return Math.round((target.getTime() - today.getTime()) / MS_PER_DAY);
+};
+
+export const formatRelativeDay = (d: Date) => {
+  const diffDays = daysUntil(d);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   if (diffDays === -1) return "Yesterday";

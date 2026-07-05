@@ -29,9 +29,22 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTaskStore } from '@/store/use-task.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
-import { CalendarDays, MessageSquare } from 'lucide-react';
+import { useAssigneeStore } from '@/store/use-assignee.store';
+import { CalendarDays, Flag, MessageSquare } from 'lucide-react';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from '@/components/ui/avatar';
 import { Loader } from '@/components/ui/loader';
-import { formatDateShort } from '@/helper/utils/date-format';
+import { PRIORITY_STYLES } from '@/lib/task-priority';
+import {
+  daysUntil,
+  formatDateShort,
+  formatRelativeDay,
+} from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
@@ -46,8 +59,12 @@ type TCardState =
 
 const idle: TCardState = { type: 'idle' };
 
+const NO_ASSIGNEES: never[] = [];
+const MAX_VISIBLE_TAGS = 2;
+const MAX_VISIBLE_ASSIGNEES = 3;
+
 const innerStyles: Partial<Record<TCardState['type'], string>> = {
-  idle: 'hover:border-[#D9D7F5] hover:shadow-[0_5px_16px_rgba(20,22,35,0.08)] hover:-translate-y-px cursor-pointer',
+  idle: 'hover:border-brand-line hover:shadow-[0_5px_16px_rgba(20,22,35,0.08)] hover:-translate-y-px cursor-pointer',
   'is-dragging': 'opacity-40',
 };
 
@@ -90,11 +107,22 @@ export function CardDisplay({
   );
   const tagColors = withSettingsDefaults(projectSettings).tagColors;
 
+  const assignees = useAssigneeStore(
+    useShallow((s) => s.byTask[card.id]?.items ?? NO_ASSIGNEES),
+  );
+
   const firstTag = card.tags?.[0];
   const palette = firstTag
     ? paletteFor(tagColors[firstTag] ?? hashTagColor(firstTag))
     : null;
-  const barColor = palette?.value ?? '#CBD5E1';
+
+  const dueDate = card.dueDate ? new Date(card.dueDate) : null;
+  const dueInDays = dueDate ? daysUntil(dueDate) : null;
+  // โชว์ธงเฉพาะ high — การ์ดต้องเหลือแต่สัญญาณที่สำคัญจริง
+  const priorityStyle =
+    card.priority === 'high' ? PRIORITY_STYLES.high : null;
+  const hasMeta =
+    !!dueDate || commentCount > 0 || assignees.length > 0 || isLoading;
 
   return (
     <div
@@ -111,7 +139,7 @@ export function CardDisplay({
       )}
       <div
         ref={innerRef}
-        className={`group relative min-h-30 rounded-xl border border-[#ECEDF1] bg-white p-3.5 text-gray-700 shadow-[0_1px_2px_rgba(20,22,35,0.03)] transition-[box-shadow,border-color,transform] duration-150 ${innerStyles[state.type] ?? ''}`}
+        className={`group relative rounded-xl border border-line bg-white p-3.5 text-gray-700 shadow-[0_1px_2px_rgba(20,22,35,0.03)] transition-[box-shadow,border-color,transform] duration-150 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
             ? {
@@ -122,14 +150,16 @@ export function CardDisplay({
             : undefined
         }
       >
-        <div
-          className="mb-2.5 h-[5px] w-6.5 rounded-full"
-          style={{ backgroundColor: barColor }}
-        />
+        {palette && (
+          <div
+            className="mb-2.5 h-[5px] w-6.5 rounded-full"
+            style={{ backgroundColor: palette.value }}
+          />
+        )}
 
         <div className="flex items-start">
           <div
-            className="line-clamp-3 flex-1 text-sm leading-tight font-semibold tracking-tight text-[#1D1E26]"
+            className="line-clamp-3 flex-1 text-sm leading-tight font-semibold tracking-tight text-ink"
             onClick={(e) => {
               if (state.type !== 'idle') return;
               if ((e.target as HTMLElement).closest('[data-card-action]'))
@@ -137,6 +167,14 @@ export function CardDisplay({
               openTask(card.id);
             }}
           >
+            {priorityStyle && (
+              <Flag
+                className="mr-1.5 -mt-px inline size-3.5 align-middle"
+                style={{ color: priorityStyle.text }}
+                fill="currentColor"
+                aria-label={`${priorityStyle.label} priority`}
+              />
+            )}
             {card.title}
           </div>
           {allColumns && (
@@ -149,32 +187,80 @@ export function CardDisplay({
           )}
         </div>
 
-        {palette && firstTag && (
-          <div
-            className="mt-2.5 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold"
-            style={{ backgroundColor: palette.bg, color: palette.text }}
-          >
-            <span
-              className="size-1.5 rounded-full"
-              style={{ backgroundColor: barColor }}
-            />
-            {firstTag}
+        {card.tags && card.tags.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {card.tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => {
+              const p = paletteFor(tagColors[tag] ?? hashTagColor(tag));
+              return (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold"
+                  style={{ backgroundColor: p.bg, color: p.text }}
+                >
+                  <span
+                    className="size-1.5 rounded-full"
+                    style={{ backgroundColor: p.value }}
+                  />
+                  {tag}
+                </span>
+              );
+            })}
+            {card.tags.length > MAX_VISIBLE_TAGS && (
+              <span className="text-xs font-medium text-ink-faint">
+                +{card.tags.length - MAX_VISIBLE_TAGS}
+              </span>
+            )}
           </div>
         )}
 
-        <div className="mt-3 flex items-center gap-3">
-          <span className="flex items-center gap-1 text-xs font-medium text-[#8A8F9C]">
-            <CalendarDays className="size-3.5" />
-            {formatDateShort(card.createdAt)}
-          </span>
-          {commentCount > 0 && (
-            <span className="flex items-center gap-1 text-xs font-medium text-[#8A8F9C]">
-              <MessageSquare className="size-3.5" />
-              {commentCount}
-            </span>
-          )}
-          {isLoading && <Loader size="xs" />}
-        </div>
+        {hasMeta && (
+          <div className="mt-3 flex items-center gap-2.5">
+            {dueDate && dueInDays !== null && (
+              <span
+                className={cn(
+                  'flex items-center gap-1 text-xs font-medium',
+                  dueInDays < 0
+                    ? 'text-red-500'
+                    : dueInDays <= 2
+                      ? 'text-amber-600'
+                      : 'text-ink-subtle',
+                )}
+              >
+                <CalendarDays className="size-3.5" />
+                {Math.abs(dueInDays) <= 7
+                  ? formatRelativeDay(dueDate)
+                  : formatDateShort(dueDate)}
+              </span>
+            )}
+            {commentCount > 0 && (
+              <span className="flex items-center gap-1 text-xs font-medium text-ink-subtle">
+                <MessageSquare className="size-3.5" />
+                {commentCount}
+              </span>
+            )}
+            {isLoading && <Loader size="xs" />}
+            {assignees.length > 0 && (
+              <>
+                <span className="flex-1" />
+                <AvatarGroup className="-space-x-1.5">
+                  {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
+                    <Avatar key={a.userId} className="size-5">
+                      <AvatarImage src={a.avatar ?? undefined} alt={a.fullName} />
+                      <AvatarFallback className="text-xs font-semibold">
+                        {a.fullName?.[0]?.toUpperCase() ?? '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {assignees.length > MAX_VISIBLE_ASSIGNEES && (
+                    <AvatarGroupCount className="size-5 text-xs">
+                      +{assignees.length - MAX_VISIBLE_ASSIGNEES}
+                    </AvatarGroupCount>
+                  )}
+                </AvatarGroup>
+              </>
+            )}
+          </div>
+        )}
       </div>
       {state.type === 'is-over' && state.closestEdge === 'bottom' && (
         <CardShadow dragging={state.dragging} />

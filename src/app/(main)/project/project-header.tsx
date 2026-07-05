@@ -2,6 +2,8 @@
 
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
 import { Globe, Star } from 'lucide-react';
+import { Logo } from '@/components/logo-space/logo';
+import { UserMenu } from '@/components/menu-bar/user-menu';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
@@ -39,8 +41,10 @@ export const ProjectHeader = () => {
   return (
     <div className="flex w-full flex-col">
       <header className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-4">
-        {/* LEFT — project identity */}
+        {/* LEFT — app logo + project identity */}
         <div className="flex items-center gap-2">
+          <Logo size={20} textSize="base" />
+          <Separator orientation="vertical" className="mx-1.5 h-4" />
           {loading ? (
             <>
               <Skeleton className="size-5 rounded" />
@@ -68,7 +72,7 @@ export const ProjectHeader = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-7 hover:bg-[#F2F3F6]"
+                      className="size-7 hover:bg-surface-hover"
                       onClick={() => setStarred((s) => !s)}
                     >
                       <Star
@@ -87,7 +91,7 @@ export const ProjectHeader = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-7 hover:bg-[#F2F3F6] hover:text-[#5B50E6]"
+                      className="size-7 hover:bg-surface-hover hover:text-brand"
                     >
                       <Globe className="size-3.5 text-muted-foreground" />
                     </Button>
@@ -150,6 +154,8 @@ export const ProjectHeader = () => {
                 )} */}
 
                 <Separator orientation="vertical" className="h-4" />
+
+                <UserMenu />
 
                 {/* Filter */}
                 {/* <Tooltip>
