@@ -249,7 +249,7 @@ export const Column = ({
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-11rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-15rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
