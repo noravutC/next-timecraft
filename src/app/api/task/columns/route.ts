@@ -1,5 +1,10 @@
 import { db } from '@/db';
-import { columnsTable, tasksTable } from '@/db/schema';
+import {
+  columnsTable,
+  taskAssigneesTable,
+  taskPriorityLevelEnum,
+  tasksTable,
+} from '@/db/schema';
 import { NotFoundError } from '@/lib/api/errors';
 import { createHandle } from '@/lib/api/handle';
 import { authorizeOrThrow } from '@/lib/rbac/authorize';
@@ -10,14 +15,17 @@ import {
 import type { TaskPageInfo, TaskRow } from '@/types';
 import {
   and,
+  arrayOverlaps,
   asc,
   count,
   eq,
   getTableColumns,
+  ilike,
   inArray,
   lte,
   or,
   sql,
+  type SQL,
 } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -27,11 +35,24 @@ const cursorSchema = z.object({
   id: z.string().uuid(),
 });
 
+const filterSchema = z
+  .object({
+    q: z.string().trim().min(1).max(200).optional(),
+    priorities: z
+      .array(z.enum(taskPriorityLevelEnum.enumValues))
+      .max(10)
+      .optional(),
+    tags: z.array(z.string().min(1).max(100)).max(50).optional(),
+    assigneeIds: z.array(z.string().uuid()).max(50).optional(),
+  })
+  .optional();
+
 const getTasksByColumnsSchema = z.object({
   colIds: z.array(z.string().min(1)).min(1, 'colIds must be a non-empty array'),
   limit: z.number().int().positive().max(100),
   // per-column cursor: only tasks AFTER this (orderFraction, id) are returned
   cursors: z.record(z.string(), cursorSchema).optional(),
+  filter: filterSchema,
 });
 
 type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
@@ -39,7 +60,7 @@ type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
 export const POST = createHandle<GetTasksByColumnsBody>(
   { body: getTasksByColumnsSchema },
   async ({ body, userId }) => {
-    const { colIds, limit, cursors } = body;
+    const { colIds, limit, cursors, filter } = body;
 
     const columnLinks = await db
       .select({ projectId: columnsTable.projectId })
@@ -52,14 +73,40 @@ export const POST = createHandle<GetTasksByColumnsBody>(
     const uniqProjectIds = [...new Set(columnLinks.map((c) => c.projectId))];
     await authorizeOrThrow(userId, uniqProjectIds, 'project:view');
 
+    // Optional filter — must hit both the page query and the totals so the
+    // cursor pagination and the WIP badge describe the same (filtered) set.
+    const filterConditions: SQL[] = [];
+    if (filter?.q) {
+      filterConditions.push(ilike(tasksTable.title, `%${filter.q}%`));
+    }
+    if (filter?.priorities?.length) {
+      filterConditions.push(inArray(tasksTable.priority, filter.priorities));
+    }
+    if (filter?.tags?.length) {
+      filterConditions.push(arrayOverlaps(tasksTable.tags, filter.tags));
+    }
+    if (filter?.assigneeIds?.length) {
+      filterConditions.push(
+        inArray(
+          tasksTable.id,
+          db
+            .select({ id: taskAssigneesTable.taskId })
+            .from(taskAssigneesTable)
+            .where(inArray(taskAssigneesTable.userId, filter.assigneeIds)),
+        ),
+      );
+    }
+
     // Per-column filter, shifted past the cursor when one is provided.
     const perColumn = colIds.map((colId) => {
       const cursor = cursors?.[colId];
       const inColumn = eq(tasksTable.columnId, colId);
+      // COLLATE "C" = byte order — ต้องตรงกับ fractional-indexing/JS ไม่งั้น
+      // fraction ตัวพิมพ์ใหญ่ (แทรกบนสุด) จะถูก en_US collation จัดไปท้าย list
       return cursor
         ? and(
             inColumn,
-            sql`(${tasksTable.orderFraction}, ${tasksTable.id}) > (${cursor.orderFraction}, ${cursor.id}::uuid)`,
+            sql`(${tasksTable.orderFraction} COLLATE "C" > ${cursor.orderFraction} OR (${tasksTable.orderFraction} = ${cursor.orderFraction} AND ${tasksTable.id} > ${cursor.id}::uuid))`,
           )
         : inColumn;
     });
@@ -69,12 +116,18 @@ export const POST = createHandle<GetTasksByColumnsBody>(
     const ranked = db
       .select({
         ...getTableColumns(tasksTable),
-        rn: sql<number>`row_number() over (partition by ${tasksTable.columnId} order by ${tasksTable.orderFraction} asc, ${tasksTable.id} asc)`.as(
+        rn: sql<number>`row_number() over (partition by ${tasksTable.columnId} order by ${tasksTable.orderFraction} COLLATE "C" asc, ${tasksTable.id} asc)`.as(
           'rn',
         ),
       })
       .from(tasksTable)
-      .where(and(or(...perColumn), eq(tasksTable.archived, false)))
+      .where(
+        and(
+          or(...perColumn),
+          eq(tasksTable.archived, false),
+          ...filterConditions,
+        ),
+      )
       .as('ranked');
 
     const rows = await db
@@ -90,6 +143,7 @@ export const POST = createHandle<GetTasksByColumnsBody>(
         and(
           inArray(tasksTable.columnId, colIds),
           eq(tasksTable.archived, false),
+          ...filterConditions,
         ),
       )
       .groupBy(tasksTable.columnId);

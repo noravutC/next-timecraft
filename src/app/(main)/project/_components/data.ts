@@ -1,4 +1,5 @@
-import type { ColumnCache, TaskCache, TaskPageInfo } from '@/types';
+import type { ColumnCache, TaskCache, TaskFilter, TaskPageInfo } from '@/types';
+import { taskMatchesFilter } from '@/helper/utils/task-filter';
 
 // ─── View types (for rendering) ───────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ export function deriveBoardView(
   projectId: string | null,
   pendingMove: PendingMove | null,
   taskPages: Record<string, TaskPageInfo> = {},
+  filter?: TaskFilter,
+  assigneeIdsByTask: Record<string, string[]> = {},
 ): TBoard {
   // 1. Sorted columns for this project, with pending column order applied
   const projectCols = Object.values(columnsMap)
@@ -82,6 +85,8 @@ export function deriveBoardView(
     if (task.archived) continue;
     if (pendingMove?.type === 'card' && task.id === pendingMove.taskId)
       continue;
+    // client mirror ของ server filter — ซ่อน task ที่โหลดค้างไว้แต่ไม่ตรงเงื่อนไข
+    if (!taskMatchesFilter(task, filter, assigneeIdsByTask[task.id])) continue;
     buckets[task.columnId].push({
       ...task,
       description: task.description ?? task.title ?? '',

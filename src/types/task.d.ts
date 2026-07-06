@@ -56,3 +56,11 @@ export interface PayloadMoveTask {
   orderDestination: number;
   columnDestination: string;
 }
+
+/** Server-side task filter — POST /api/task/columns applies it per column. */
+export interface TaskFilter {
+  q?: string;
+  priorities?: TaskPriority[];
+  tags?: string[];
+  assigneeIds?: string[];
+}

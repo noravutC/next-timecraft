@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useShallow } from 'zustand/react/shallow';
 import { useColumnStore } from '@/store/use-column.store';
+import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
 
 type TColumnState =
@@ -86,6 +87,11 @@ export const Column = ({
 
   const { settings } = useContext(SettingsContext);
   const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
+  // key เปลี่ยนเมื่อ filter เปลี่ยน → refetch หน้าแรกของ column ด้วยเงื่อนไขใหม่
+  const filterKey = useBoardFilterStore(
+    (s) =>
+      `${s.q}|${s.priorities.join(',')}|${s.tags.join(',')}|${s.assigneeIds.join(',')}`,
+  );
   const loadMoreTasks = useTaskStore((s) => s.loadMoreTasks);
   const isLoadingMore = useTaskStore(
     (s) => s.loadMoreLoader[column.id] ?? false,
@@ -96,10 +102,10 @@ export const Column = ({
   // composer เปิดตรงไหน การ์ดใหม่ลงตรงนั้น: '+' บน header → top, ปุ่มล่าง → bottom
   const [addingAt, setAddingAt] = useState<'top' | 'bottom' | null>(null);
 
-  // fetch task หน้าแรกของ column นี้เมื่อ mount — หน้าถัดไปโหลดตอน scroll ถึงล่างสุด
+  // fetch task หน้าแรกของ column นี้เมื่อ mount และทุกครั้งที่ filter เปลี่ยน
   useEffect(() => {
     fetchTasksByColumns([column.id], TASK_PAGE_SIZE).catch(() => {});
-  }, [column.id, fetchTasksByColumns]);
+  }, [column.id, fetchTasksByColumns, filterKey]);
 
   // เลื่อนใกล้ท้าย list แล้วยังมี task เหลือ → โหลดเพิ่มทีละ TASK_PAGE_SIZE
   useEffect(() => {
@@ -243,7 +249,7 @@ export const Column = ({
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-11rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-15rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
@@ -279,7 +285,8 @@ export const Column = ({
               type="button"
               onClick={() => setAddingAt('top')}
               aria-label="Add a card to top"
-              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-white/80 hover:text-brand"
+              disabled={isLoading}
+              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-white/80 hover:text-brand disabled:cursor-default disabled:opacity-50"
             >
               <Plus size={16} />
             </button>
@@ -357,7 +364,8 @@ export const Column = ({
               <button
                 type="button"
                 onClick={() => setAddingAt('bottom')}
-                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-lg p-2.5 text-left text-sm font-semibold text-ink-subtle hover:bg-white/80 hover:text-brand"
+                disabled={isLoading}
+                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-lg p-2.5 text-left text-sm font-semibold text-ink-subtle hover:bg-white/80 hover:text-brand disabled:cursor-default disabled:opacity-50"
               >
                 <Plus size={15} />
                 Add a card

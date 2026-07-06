@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
@@ -46,6 +47,8 @@ export const AddCardInline = ({
       await createTasks([{ columnId, title: trimmed, orderFraction }]);
       setTitle('');
       textareaRef.current?.focus();
+    } catch {
+      toast.error('Failed to add card');
     } finally {
       setIsSubmitting(false);
     }
