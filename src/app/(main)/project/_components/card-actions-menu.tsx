@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { ArrowRight, Copy, Ellipsis, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Ellipsis, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useTaskStore } from "@/store/use-task.store";
-import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
-import { TCard, TColumn } from "./data";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dropdown-menu';
+import { useTaskStore } from '@/store/use-task.store';
+import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
+import { TCard, TColumn } from './data';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 interface CardActionsMenuProps {
   card: TCard;
@@ -29,10 +29,10 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
   const handleDelete = () => {
     const base = { id: card.id, columnId: card.columnId, title: card.title };
     updateTasks([card.id], [{ ...base, archived: true }]);
-    toast("Task deleted", {
+    toast('Task deleted', {
       duration: 5000,
       action: {
-        label: "Undo",
+        label: 'Undo',
         onClick: () => updateTasks([card.id], [{ ...base, archived: false }]),
       },
     });
@@ -42,7 +42,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
     if (!nextColumn) return;
     const newOrderFraction = generateFractionBetween(
       nextColumn.cards.at(-1)?.orderFraction ?? null,
-      null,
+      nextColumn.nextCursorFraction,
     );
     updateTasks(
       [card.id],
@@ -84,10 +84,10 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          size={"xs"}
-          variant={"ghost"}
+          size={'xs'}
+          variant={'ghost'}
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-md p-0 text-ink-faint opacity-0 hover:bg-surface-hover hover:text-brand group-hover:opacity-100 data-[state=open]:opacity-100"
+          className="size-6 rounded-md p-0 text-ink-faint opacity-0 group-hover:opacity-100 hover:bg-surface-hover hover:text-brand data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
           <Ellipsis className="size-4" />
@@ -109,7 +109,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleDelete}
-          className="text-red-500 focus:text-red-500 focus:bg-red-50"
+          className="text-red-500 focus:bg-red-50 focus:text-red-500"
         >
           <Trash2 size={13} className="mr-2" />
           Delete card

@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
 import {
   draggable,
   dropTargetForElements,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
-import { unsafeOverflowAutoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element";
-import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { preserveOffsetOnSource } from "@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source";
-import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
-import { Plus } from "lucide-react";
-import { memo, useContext, useEffect, useRef, useState } from "react";
-import invariant from "tiny-invariant";
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
+import { DragLocationHistory } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { Plus } from 'lucide-react';
+import { memo, useContext, useEffect, useRef, useState } from 'react';
+import invariant from 'tiny-invariant';
 import {
   getColumnData,
   isCardData,
@@ -22,34 +22,34 @@ import {
   isDraggingAColumn,
   TCardData,
   TColumn,
-} from "./data";
-import { blockBoardPanningAttr } from "./data-attributes";
-import { isSafari } from "./is-safari";
-import { isShallowEqual } from "./is-shallow-equal";
-import { Card, CardShadow } from "./card";
-import { SettingsContext } from "@/context/kanban/setting-provider";
-import { useTaskStore } from "@/store/use-task.store";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useShallow } from "zustand/react/shallow";
-import { useColumnStore } from "@/store/use-column.store";
-import { AddCardInline } from "./add-card-inline";
+} from './data';
+import { blockBoardPanningAttr } from './data-attributes';
+import { isSafari } from './is-safari';
+import { isShallowEqual } from './is-shallow-equal';
+import { Card, CardShadow } from './card';
+import { SettingsContext } from '@/context/kanban/setting-provider';
+import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useShallow } from 'zustand/react/shallow';
+import { useColumnStore } from '@/store/use-column.store';
+import { AddCardInline } from './add-card-inline';
 
 type TColumnState =
-  | { type: "idle" }
-  | { type: "is-dragging" }
-  | { type: "is-column-over" }
-  | { type: "is-card-over"; isOverChildCard: boolean; dragging: DOMRect };
+  | { type: 'idle' }
+  | { type: 'is-dragging' }
+  | { type: 'is-column-over' }
+  | { type: 'is-card-over'; isOverChildCard: boolean; dragging: DOMRect };
 
-const stateStyles: Record<TColumnState["type"], string> = {
-  idle: "cursor-grab",
-  "is-card-over": "outline outline-2 outline-brand-line",
-  "is-dragging": "opacity-40",
-  "is-column-over": "bg-gray-200",
+const stateStyles: Record<TColumnState['type'], string> = {
+  idle: 'cursor-grab',
+  'is-card-over': 'outline outline-2 outline-brand-line',
+  'is-dragging': 'opacity-40',
+  'is-column-over': 'bg-gray-200',
 };
 
-const idle: TColumnState = { type: "idle" };
+const idle: TColumnState = { type: 'idle' };
 
 const CardList = memo(function CardList({
   column,
@@ -59,7 +59,12 @@ const CardList = memo(function CardList({
   allColumns: TColumn[];
 }) {
   return column.cards.map((card) => (
-    <Card key={card.id} card={card} columnId={column.id} allColumns={allColumns} />
+    <Card
+      key={card.id}
+      card={card}
+      columnId={column.id}
+      allColumns={allColumns}
+    />
   ));
 });
 
@@ -74,21 +79,44 @@ export const Column = ({
   const outerFullHeightRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   // ref เก็บ column ล่าสุด ป้องกัน effect re-run ทุกครั้งที่ card เปลี่ยน
   const columnRef = useRef(column);
   columnRef.current = column;
 
   const { settings } = useContext(SettingsContext);
   const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
+  const loadMoreTasks = useTaskStore((s) => s.loadMoreTasks);
+  const isLoadingMore = useTaskStore(
+    (s) => s.loadMoreLoader[column.id] ?? false,
+  );
   const columnsLoader = useColumnStore(useShallow((s) => s.columnsLoader));
   const isLoading = columnsLoader[column.id] ?? false;
   const [state, setState] = useState<TColumnState>(idle);
   const [isAdding, setIsAdding] = useState(false);
 
-  // fetch tasks ของ column นี้เมื่อ mount
+  // fetch task หน้าแรกของ column นี้เมื่อ mount — หน้าถัดไปโหลดตอน scroll ถึงล่างสุด
   useEffect(() => {
-    fetchTasksByColumns([column.id], 50).catch(() => {});
+    fetchTasksByColumns([column.id], TASK_PAGE_SIZE).catch(() => {});
   }, [column.id, fetchTasksByColumns]);
+
+  // เลื่อนใกล้ท้าย list แล้วยังมี task เหลือ → โหลดเพิ่มทีละ TASK_PAGE_SIZE
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    const root = scrollableRef.current;
+    if (!column.hasMore || isLoading || !sentinel || !root) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMoreTasks(column.id).catch(() => {});
+        }
+      },
+      { root, rootMargin: '120px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [column.id, column.hasMore, isLoading, loadMoreTasks]);
 
   useEffect(() => {
     const outer = outerFullHeightRef.current;
@@ -111,7 +139,7 @@ export const Column = ({
         isCardDropTargetData(location.current.dropTargets[0].data),
       );
       const proposed: TColumnState = {
-        type: "is-card-over",
+        type: 'is-card-over',
         dragging: data.rect,
         isOverChildCard,
       };
@@ -143,12 +171,12 @@ export const Column = ({
               const preview = inner.cloneNode(true) as HTMLElement;
               preview.style.width = `${rect.width}px`;
               preview.style.height = `${rect.height}px`;
-              if (!isSafari()) preview.style.transform = "rotate(4deg)";
+              if (!isSafari()) preview.style.transform = 'rotate(4deg)';
               container.appendChild(preview);
             },
           });
         },
-        onDragStart: () => setState({ type: "is-dragging" }),
+        onDragStart: () => setState({ type: 'is-dragging' }),
         onDrop: () => setState(idle),
       }),
       dropTargetForElements({
@@ -170,7 +198,7 @@ export const Column = ({
             isColumnData(source.data) &&
             source.data.column.id !== columnRef.current.id
           ) {
-            setState({ type: "is-column-over" });
+            setState({ type: 'is-column-over' });
           }
         },
         onDropTargetChange({ source, location }) {
@@ -207,7 +235,7 @@ export const Column = ({
 
   return (
     <div
-      className={cn("flex w-[290px] flex-shrink-0 select-none flex-col")}
+      className={cn('flex w-[290px] flex-shrink-0 flex-col select-none')}
       ref={outerFullHeightRef}
       data-testid="board-column"
       data-column-name={column.title}
@@ -220,27 +248,25 @@ export const Column = ({
         {...{ [blockBoardPanningAttr]: true }}
       >
         <div
-          className={`flex min-h-0 max-h-full flex-1 flex-col ${state.type === "is-column-over" ? "invisible" : ""}`}
+          className={`flex max-h-full min-h-0 flex-1 flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}
         >
           {/* แถบสีประจำ column */}
           <div
             className="h-1 w-full flex-shrink-0"
-            style={{ backgroundColor: column.color ?? "#94A3B8" }}
+            style={{ backgroundColor: column.color ?? '#94A3B8' }}
           />
           <div
             className="flex flex-row items-center gap-2 px-3 pt-2.5 pb-2"
             ref={headerRef}
           >
-            <div className="text-sm font-semibold text-ink">
-              {column.title}
-            </div>
+            <div className="text-sm font-semibold text-ink">{column.title}</div>
             <Badge
               variant="outline"
               className={cn(
-                "rounded-full border-transparent px-1.75 py-0.25 text-xs font-semibold",
+                'rounded-full border-transparent px-1.75 py-0.25 text-xs font-semibold',
                 column.wipLimit > 0 && column.totalTasks > column.wipLimit
-                  ? "bg-red-100/80 text-red-600"
-                  : "bg-white/80 text-ink-subtle",
+                  ? 'bg-red-100/80 text-red-600'
+                  : 'bg-white/80 text-ink-subtle',
               )}
             >
               {column.wipLimit > 0
@@ -259,7 +285,7 @@ export const Column = ({
           </div>
           <div
             className={
-              "flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [overflow-anchor:none] scrollbar-thin-y scrollbar-light"
+              'scrollbar-thin-y scrollbar-light flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [overflow-anchor:none]'
             }
             ref={scrollableRef}
           >
@@ -272,14 +298,35 @@ export const Column = ({
             ) : (
               <CardList column={column} allColumns={allColumns} />
             )}
+            {!isLoading && column.hasMore && (
+              <div
+                ref={loadMoreSentinelRef}
+                aria-hidden
+                className="h-px flex-shrink-0"
+              />
+            )}
+            {isLoadingMore && (
+              <div className="flex flex-shrink-0 justify-center py-2">
+                <span
+                  className="tc-load"
+                  style={
+                    { '--tc-h': '18px', '--tc-w': '4px' } as React.CSSProperties
+                  }
+                >
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </div>
+            )}
             {!isLoading &&
               column.cards.length === 0 &&
-              state.type !== "is-card-over" && (
+              state.type !== 'is-card-over' && (
                 <div className="px-3 py-8 text-center text-xs font-medium text-ink-faint">
                   No tasks yet
                 </div>
               )}
-            {state.type === "is-card-over" && !state.isOverChildCard && (
+            {state.type === 'is-card-over' && !state.isOverChildCard && (
               <div className="flex-shrink-0 px-3 py-1">
                 <CardShadow dragging={state.dragging} />
               </div>

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useTaskStore } from "@/store/use-task.store";
-import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
-import { blockBoardPanningAttr } from "./data-attributes";
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useTaskStore } from '@/store/use-task.store';
+import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
+import { blockBoardPanningAttr } from './data-attributes';
 
 interface AddCardInlineProps {
   columnId: string;
@@ -12,10 +12,14 @@ interface AddCardInlineProps {
   onClose: () => void;
 }
 
-export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardInlineProps) => {
+export const AddCardInline = ({
+  columnId,
+  lastOrderFraction,
+  onClose,
+}: AddCardInlineProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createTasks = useTaskStore((s) => s.createTasks);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -27,9 +31,13 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
     if (!trimmed || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const orderFraction = generateFractionBetween(lastOrderFraction, null);
+      // bound ด้วย cursor ของ column กันการ์ดใหม่ไปแทรกกลางช่วง task ที่ยังไม่โหลด
+      const orderFraction = generateFractionBetween(
+        lastOrderFraction,
+        useTaskStore.getState().columnEndBound(columnId),
+      );
       await createTasks([{ columnId, title: trimmed, orderFraction }]);
-      setTitle("");
+      setTitle('');
       textareaRef.current?.focus();
     } finally {
       setIsSubmitting(false);
@@ -37,11 +45,11 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       onClose();
     }
   };
@@ -66,7 +74,7 @@ export const AddCardInline = ({ columnId, lastOrderFraction, onClose }: AddCardI
           onClick={handleSubmit}
           className="h-8 rounded-md bg-brand text-xs font-semibold hover:bg-brand-dark"
         >
-          {isSubmitting ? "Adding..." : "Add card"}
+          {isSubmitting ? 'Adding...' : 'Add card'}
         </Button>
         <Button
           size="sm"

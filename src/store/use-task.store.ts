@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import { CreateTaskPayload, Task, TaskCache, UpdateTaskPayload } from '@/types';
+import {
+  CreateTaskPayload,
+  Task,
+  TaskCache,
+  TaskPageInfo,
+  UpdateTaskPayload,
+} from '@/types';
 import { LoaderStatus } from '@/types/global/types';
 import { taskServices } from '@/services/tasks.service';
 import { toRecord, toValueRecord } from '@/helper/utils/object';
@@ -13,6 +19,9 @@ type TaskStore = {
   tasksLoader: {
     [taskId: string]: boolean;
   };
+  // per-column pagination: what's loaded so far + where the next page starts
+  taskPages: { [columnId: string]: TaskPageInfo };
+  loadMoreLoader: { [columnId: string]: boolean };
   createTasks: (payload: CreateTaskPayload[]) => Promise<TaskCache[] | null>;
   updateTasks: (
     taskIds: string[],
@@ -23,6 +32,9 @@ type TaskStore = {
     colIds: string[],
     limitTasks: number,
   ) => Promise<TaskCache[]>;
+  loadMoreTasks: (columnId: string) => Promise<TaskCache[]>;
+  /** Upper orderFraction bound for "append at end" while the column tail is unloaded. */
+  columnEndBound: (columnId: string) => string | null;
   updateTaskFromRealtime: (task: Task) => void;
   addTasksFromRealtime: (tasks: Task[]) => void;
   removeTasksFromRealtime: (taskIds: string[]) => void;
@@ -31,10 +43,27 @@ type TaskStore = {
 let updateReqCounter = 0;
 const latestUpdateReqByTask: Record<string, number> = {};
 
-export const useTaskStore = create<TaskStore>((set) => ({
+export const TASK_PAGE_SIZE = 20;
+
+// task ที่อยู่ลึกกว่า cursor ของ column ที่ยังโหลดไม่ครบ = อยู่นอกหน้าต่างที่โหลดแล้ว
+const isBeyondLoadedWindow = (
+  taskPages: Record<string, TaskPageInfo>,
+  task: Pick<Task, 'columnId' | 'orderFraction'>,
+) => {
+  const page = taskPages[task.columnId];
+  return Boolean(
+    page?.hasMore &&
+    page.nextCursor &&
+    (task.orderFraction ?? '') > page.nextCursor.orderFraction,
+  );
+};
+
+export const useTaskStore = create<TaskStore>((set, get) => ({
   status: 'none',
   tasks: {},
   tasksLoader: {},
+  taskPages: {},
+  loadMoreLoader: {},
   createTasks: async (payload) => {
     if (payload.length === 0) {
       toast.error('No tasks to create');
@@ -74,14 +103,18 @@ export const useTaskStore = create<TaskStore>((set) => ({
       tasksLoader: { ...state.tasksLoader, ...toValueRecord(taskIds, true) },
       tasks: {
         ...state.tasks,
-        ...Object.fromEntries(taskIds.map((id, i) => [id, { ...state.tasks[id], ...payload[i] }])),
+        ...Object.fromEntries(
+          taskIds.map((id, i) => [id, { ...state.tasks[id], ...payload[i] }]),
+        ),
       },
     }));
 
     try {
       const { updated } = await taskServices.updateTasks(taskIds, payload);
       if (!updated?.length) return null;
-      const fresh = updated.filter((t) => latestUpdateReqByTask[t.id] === reqId);
+      const fresh = updated.filter(
+        (t) => latestUpdateReqByTask[t.id] === reqId,
+      );
       if (fresh.length) {
         set((state) => ({
           tasks: {
@@ -99,7 +132,10 @@ export const useTaskStore = create<TaskStore>((set) => ({
           ...state.tasks,
           ...Object.fromEntries(
             taskIds
-              .filter((id) => latestUpdateReqByTask[id] === reqId && snapshotByTask[id])
+              .filter(
+                (id) =>
+                  latestUpdateReqByTask[id] === reqId && snapshotByTask[id],
+              )
               .map((id) => [id, snapshotByTask[id]]),
           ),
         },
@@ -147,6 +183,7 @@ export const useTaskStore = create<TaskStore>((set) => ({
       const tasksData = response.data;
       set((state) => ({
         tasks: { ...state.tasks, ...toRecord(tasksData, 'id') },
+        taskPages: { ...state.taskPages, ...(response.pageInfo ?? {}) },
         status: 'none',
       }));
       // bulk fetch ส่ง assignees มาด้วย — hydrate เข้า assignee store ให้การ์ดใช้
@@ -159,35 +196,89 @@ export const useTaskStore = create<TaskStore>((set) => ({
     } finally {
       set({ status: 'none' });
       useColumnStore.setState((state) => ({
-        columnsLoader: { ...state.columnsLoader, ...toValueRecord(colIds, false) },
+        columnsLoader: {
+          ...state.columnsLoader,
+          ...toValueRecord(colIds, false),
+        },
       }));
     }
   },
 
-  // อัปเดต task จาก realtime event (Pusher) → store อัปเดต → board re-derives อัตโนมัติ
-  updateTaskFromRealtime: (task) => {
+  loadMoreTasks: async (columnId) => {
+    const { taskPages, loadMoreLoader } = get();
+    const page = taskPages[columnId];
+    if (!page?.hasMore || !page.nextCursor || loadMoreLoader[columnId]) {
+      return [];
+    }
     set((state) => ({
-      tasks: {
-        ...state.tasks,
-        [task.id]: { ...state.tasks[task.id], ...task, timestamp: Date.now() },
-      },
+      loadMoreLoader: { ...state.loadMoreLoader, [columnId]: true },
     }));
+    try {
+      const response = await taskServices.getTasksByColumns(
+        [columnId],
+        TASK_PAGE_SIZE,
+        { [columnId]: page.nextCursor },
+      );
+      const tasksData = response.data;
+      set((state) => ({
+        tasks: { ...state.tasks, ...toRecord(tasksData, 'id') },
+        taskPages: { ...state.taskPages, ...(response.pageInfo ?? {}) },
+      }));
+      useAssigneeStore.getState().ingestMany(response.assignees ?? {});
+      return tasksData;
+    } finally {
+      set((state) => ({
+        loadMoreLoader: { ...state.loadMoreLoader, [columnId]: false },
+      }));
+    }
+  },
+
+  columnEndBound: (columnId) =>
+    get().taskPages[columnId]?.nextCursor?.orderFraction ?? null,
+
+  // อัปเดต task จาก realtime event (Pusher) → store อัปเดต → board re-derives อัตโนมัติ
+  // task ใหม่ที่อยู่นอกหน้าต่างที่โหลดแล้วจะถูกข้าม — เดี๋ยว pagination โหลดมาเองตามลำดับ
+  updateTaskFromRealtime: (task) => {
+    set((state) => {
+      if (
+        !state.tasks[task.id] &&
+        isBeyondLoadedWindow(state.taskPages, task)
+      ) {
+        return state;
+      }
+      return {
+        tasks: {
+          ...state.tasks,
+          [task.id]: {
+            ...state.tasks[task.id],
+            ...task,
+            timestamp: Date.now(),
+          },
+        },
+      };
+    });
   },
 
   addTasksFromRealtime: (tasks) => {
     if (!tasks.length) return;
     const ts = Date.now();
-    set((state) => ({
-      tasks: {
-        ...state.tasks,
-        ...Object.fromEntries(
-          tasks.map((t) => [
-            t.id,
-            { ...state.tasks[t.id], ...t, timestamp: ts },
-          ]),
-        ),
-      },
-    }));
+    set((state) => {
+      const visible = tasks.filter(
+        (t) => state.tasks[t.id] || !isBeyondLoadedWindow(state.taskPages, t),
+      );
+      if (!visible.length) return state;
+      return {
+        tasks: {
+          ...state.tasks,
+          ...Object.fromEntries(
+            visible.map((t) => [
+              t.id,
+              { ...state.tasks[t.id], ...t, timestamp: ts },
+            ]),
+          ),
+        },
+      };
+    });
   },
 
   removeTasksFromRealtime: (taskIds) => {

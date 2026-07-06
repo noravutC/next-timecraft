@@ -149,7 +149,10 @@ export const TaskDetailDialog = () => {
       .map((t) => t.orderFraction)
       .sort();
     const last = fractions[fractions.length - 1] ?? null;
-    const orderFraction = generateFractionBetween(last, null);
+    const orderFraction = generateFractionBetween(
+      last,
+      useTaskStore.getState().columnEndBound(nextColumnId),
+    );
     persist({ columnId: nextColumnId, orderFraction });
   };
 
@@ -313,9 +316,7 @@ export const TaskDetailDialog = () => {
                                 setAssignees(
                                   task.id,
                                   buildAssigneeItems(
-                                    assigneeIds.filter(
-                                      (id) => id !== a.userId,
-                                    ),
+                                    assigneeIds.filter((id) => id !== a.userId),
                                   ),
                                 )
                               }
