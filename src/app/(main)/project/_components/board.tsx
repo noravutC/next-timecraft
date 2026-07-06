@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
-import { unsafeOverflowAutoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element";
-import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
-import invariant from "tiny-invariant";
-import { toast } from "sonner";
-import { SettingsContext } from "@/context/kanban/setting-provider";
-import { useColumnStore } from "@/store/use-column.store";
-import { useProjectStore } from "@/store/use-project.store";
-import { useTaskStore } from "@/store/use-task.store";
-import type { UpdateColumnPayload, UpdateTaskPayload } from "@/types";
-import { useRealtimeBoard } from "@/store/sync-live-data/useRealtimeBoard";
-import { computeCardMove, computeColumnMove } from "./board-operations";
-import { AiBreakdown } from "./ai-breakdown";
-import { Column } from "./column";
-import { useSpacebarPan } from "./use-spacebar-pan";
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import invariant from 'tiny-invariant';
+import { toast } from 'sonner';
+import { SettingsContext } from '@/context/kanban/setting-provider';
+import { useColumnStore } from '@/store/use-column.store';
+import { useProjectStore } from '@/store/use-project.store';
+import { useTaskStore } from '@/store/use-task.store';
+import type { UpdateColumnPayload, UpdateTaskPayload } from '@/types';
+import { useRealtimeBoard } from '@/store/sync-live-data/useRealtimeBoard';
+import { computeCardMove, computeColumnMove } from './board-operations';
+import { AiBreakdown } from './ai-breakdown';
+import { Column } from './column';
+import { useSpacebarPan } from './use-spacebar-pan';
 import {
   deriveBoardView,
   isCardData,
@@ -25,7 +25,7 @@ import {
   isDraggingACard,
   isDraggingAColumn,
   type PendingMove,
-} from "./data";
+} from './data';
 
 export const Board = () => {
   const scrollableRef = useRef<HTMLDivElement | null>(null);
@@ -38,6 +38,7 @@ export const Board = () => {
   const fetchColumns = useColumnStore((s) => s.fetchColumns);
   const updateColumns = useColumnStore((s) => s.updateColumns);
   const tasks = useTaskStore(useShallow((s) => s.tasks));
+  const taskPages = useTaskStore(useShallow((s) => s.taskPages));
   const updateTasks = useTaskStore((s) => s.updateTasks);
   useRealtimeBoard(projectId);
 
@@ -51,7 +52,7 @@ export const Board = () => {
         await fetchColumns(projectId);
         if (!active) return;
       } catch {
-        toast.error("Failed to load board data.");
+        toast.error('Failed to load board data.');
       }
     })();
 
@@ -61,8 +62,8 @@ export const Board = () => {
   }, [fetchColumns, projectId]);
 
   const board = useMemo(
-    () => deriveBoardView(columns, tasks, projectId, pendingMove),
-    [columns, tasks, projectId, pendingMove],
+    () => deriveBoardView(columns, tasks, projectId, pendingMove, taskPages),
+    [columns, tasks, projectId, pendingMove, taskPages],
   );
 
   // ref สำหรับ DnD callbacks เสมอใช้ข้อมูลล่าสุด
@@ -104,7 +105,7 @@ export const Board = () => {
           const originalTask = tasksRef.current[result.taskId];
           if (!originalTask) return;
 
-          setPendingMove({ type: "card", ...result });
+          setPendingMove({ type: 'card', ...result });
           void updateTasks(
             [result.taskId],
             [
@@ -118,7 +119,7 @@ export const Board = () => {
           )
             .then(() => setPendingMove(null))
             .catch(() => {
-              toast.error("Failed to move task.");
+              toast.error('Failed to move task.');
               setPendingMove(null);
             });
         },
@@ -142,14 +143,14 @@ export const Board = () => {
           );
           if (!col) return;
 
-          setPendingMove({ type: "column", ...result });
+          setPendingMove({ type: 'column', ...result });
           void updateColumns(
             [result.columnId],
             [
               {
                 id: result.columnId,
                 name: col.title,
-                color: col.color ?? "#CBD5E1",
+                color: col.color ?? '#CBD5E1',
                 wipLimit: col.wipLimit,
                 orderFraction: result.newOrderFraction,
               } as UpdateColumnPayload,
@@ -157,7 +158,7 @@ export const Board = () => {
           )
             .then(() => setPendingMove(null))
             .catch(() => {
-              toast.error("Failed to move column.");
+              toast.error('Failed to move column.');
               setPendingMove(null);
             });
         },
@@ -182,12 +183,16 @@ export const Board = () => {
 
   const panCursor = useSpacebarPan(scrollableRef);
 
-  const boardCls = settings.isBoardMoreObvious ? "px-32 py-20" : "";
-  const scrollCls = `flex h-full flex-row items-start gap-4.5 overflow-x-auto p-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? "rounded border-2 border-dashed" : ""}`;
+  const boardCls = settings.isBoardMoreObvious ? 'px-32 py-20' : '';
+  const scrollCls = `flex h-full flex-row items-start gap-4.5 overflow-x-auto p-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? 'rounded border-2 border-dashed' : ''}`;
 
   return (
     <div className={`relative flex h-full flex-col bg-surface ${boardCls}`}>
-      <div ref={scrollableRef} className={scrollCls} style={{ cursor: panCursor !== "default" ? panCursor : undefined }}>
+      <div
+        ref={scrollableRef}
+        className={scrollCls}
+        style={{ cursor: panCursor !== 'default' ? panCursor : undefined }}
+      >
         {board.columns.map((column) => (
           <Column key={column.id} column={column} allColumns={board.columns} />
         ))}

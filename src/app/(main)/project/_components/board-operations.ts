@@ -1,11 +1,11 @@
-import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
+import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import {
   isCardDropTargetData,
   isColumnData,
   type TCard,
   type TColumn,
-} from "./data";
+} from './data';
 
 type DropData = Record<string | symbol, unknown>;
 
@@ -37,7 +37,7 @@ export const computeCardMove = (
   );
   if (sourceIndex === -1) return null;
 
-  let destinationColumnId = "";
+  let destinationColumnId = '';
   let insertIndex = -1;
 
   if (isCardDropTargetData(dropData)) {
@@ -48,7 +48,7 @@ export const computeCardMove = (
     const cardIdx = destCol.cards.findIndex((c) => c.id === dropData.card.id);
     if (cardIdx === -1) return null;
     destinationColumnId = destCol.id;
-    insertIndex = edge === "bottom" ? cardIdx + 1 : cardIdx;
+    insertIndex = edge === 'bottom' ? cardIdx + 1 : cardIdx;
   } else if (isColumnData(dropData)) {
     destinationColumnId = dropData.column.id;
     insertIndex =
@@ -72,7 +72,12 @@ export const computeCardMove = (
       : destCol.cards;
 
   const prevOrder = neighborCards[finalIndex - 1]?.orderFraction ?? null;
-  const nextOrder = neighborCards[finalIndex]?.orderFraction ?? null;
+  // Dropping past the last loaded card: bound by the first unloaded task so
+  // the card can't land in the middle of the column's unloaded tail.
+  const nextOrder =
+    neighborCards[finalIndex]?.orderFraction ??
+    destCol.nextCursorFraction ??
+    null;
 
   return {
     taskId: dragging.card.id,

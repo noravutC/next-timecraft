@@ -1,32 +1,37 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronDown, Settings2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader } from "@/components/ui/loader";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ChevronDown, Settings2, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader } from '@/components/ui/loader';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { aiServices } from "@/services/ai.service";
-import type { AiSettingsStatus } from "@/app/api/ai/settings/route";
-import { useTaskStore } from "@/store/use-task.store";
-import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
+} from '@/components/ui/dropdown-menu';
+import { aiServices } from '@/services/ai.service';
+import type { AiSettingsStatus } from '@/app/api/ai/settings/route';
+import { useTaskStore } from '@/store/use-task.store';
+import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 
 type BoardColumnLike = {
   id: string;
   title: string;
+  nextCursorFraction: string | null;
   cards: { orderFraction: string | null }[];
 };
 
-const PROVIDER_LABELS = { claude: "Claude", gemini: "Gemini" } as const;
+const PROVIDER_LABELS = { claude: 'Claude', gemini: 'Gemini' } as const;
 type Provider = keyof typeof PROVIDER_LABELS;
 
 const AiSettingsView = ({
@@ -39,11 +44,11 @@ const AiSettingsView = ({
   onBack: () => void;
 }) => {
   const [provider, setProvider] = useState<Provider>(settings.provider);
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const hasKey =
-    provider === "claude" ? settings.hasClaudeKey : settings.hasGeminiKey;
+    provider === 'claude' ? settings.hasClaudeKey : settings.hasGeminiKey;
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -53,18 +58,18 @@ const AiSettingsView = ({
       const { updated } = await aiServices.updateSettings({
         provider,
         ...(trimmed
-          ? provider === "claude"
+          ? provider === 'claude'
             ? { claudeApiKey: trimmed }
             : { geminiApiKey: trimmed }
           : {}),
       });
       if (updated) onSaved(updated);
-      setApiKey("");
-      toast.success("AI settings saved");
+      setApiKey('');
+      toast.success('AI settings saved');
       onBack();
     } catch (error) {
-      console.error("Save AI settings failed:", error);
-      toast.error("Failed to save AI settings");
+      console.error('Save AI settings failed:', error);
+      toast.error('Failed to save AI settings');
     } finally {
       setIsSaving(false);
     }
@@ -84,7 +89,7 @@ const AiSettingsView = ({
           {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
             <Button
               key={p}
-              variant={provider === p ? "default" : "outline"}
+              variant={provider === p ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
               onClick={() => setProvider(p)}
@@ -102,19 +107,21 @@ const AiSettingsView = ({
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder={
-            hasKey ? "•••••••• (saved — enter to replace)" : "Paste your API key"
+            hasKey
+              ? '•••••••• (saved — enter to replace)'
+              : 'Paste your API key'
           }
           autoComplete="off"
         />
         <p className="text-xs text-muted-foreground">
           Stored encrypted on the server and only used for your own requests.
-          {!hasKey && settings.hasServerFallback && provider === "claude"
+          {!hasKey && settings.hasServerFallback && provider === 'claude'
             ? " Leave empty to use the server's shared Claude key."
-            : ""}
+            : ''}
         </p>
       </div>
       <Button size="sm" onClick={handleSave} disabled={isSaving}>
-        {isSaving ? <Loader size="xs" onColor /> : "Save"}
+        {isSaving ? <Loader size="xs" onColor /> : 'Save'}
       </Button>
     </div>
   );
@@ -123,9 +130,9 @@ const AiSettingsView = ({
 export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
   const createTasks = useTaskStore((s) => s.createTasks);
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"generate" | "settings">("generate");
+  const [view, setView] = useState<'generate' | 'settings'>('generate');
   const [settings, setSettings] = useState<AiSettingsStatus | null>(null);
-  const [goal, setGoal] = useState("");
+  const [goal, setGoal] = useState('');
   const [columnId, setColumnId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -153,13 +160,16 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
         { goal: goal.trim(), columnId: targetColumn.id },
         {
           onTask: async (task) => {
-            lastFraction = generateFractionBetween(lastFraction, null);
+            lastFraction = generateFractionBetween(
+              lastFraction,
+              targetColumn.nextCursorFraction,
+            );
             await createTasks([
               {
                 columnId: targetColumn.id,
                 title: task.title,
                 description: task.description ?? null,
-                priority: task.priority ?? "medium",
+                priority: task.priority ?? 'medium',
                 orderFraction: lastFraction,
                 tags: [],
                 dueDate: null,
@@ -171,19 +181,19 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
             toast.success(
               count > 0
                 ? `Added ${count} tasks to ${targetColumn.title}`
-                : "AI returned no tasks — try a more specific goal",
+                : 'AI returned no tasks — try a more specific goal',
             );
           },
           onError: (message) => toast.error(message),
         },
       );
       if (created > 0) {
-        setGoal("");
+        setGoal('');
         setOpen(false);
       }
     } catch (error) {
-      console.error("AI breakdown failed:", error);
-      toast.error("AI request failed");
+      console.error('AI breakdown failed:', error);
+      toast.error('AI request failed');
     } finally {
       setIsGenerating(false);
     }
@@ -192,7 +202,10 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
   const providerLabel = settings ? PROVIDER_LABELS[settings.provider] : null;
 
   return (
-    <Popover open={open} onOpenChange={(next) => !isGenerating && setOpen(next)}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => !isGenerating && setOpen(next)}
+    >
       <PopoverTrigger asChild>
         <Button
           size="sm"
@@ -204,11 +217,11 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-80">
-        {view === "settings" && settings ? (
+        {view === 'settings' && settings ? (
           <AiSettingsView
             settings={settings}
             onSaved={setSettings}
-            onBack={() => setView("generate")}
+            onBack={() => setView('generate')}
           />
         ) : (
           <div className="flex flex-col gap-3">
@@ -218,7 +231,7 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
                 variant="ghost"
                 size="icon"
                 className="size-7"
-                onClick={() => setView("settings")}
+                onClick={() => setView('settings')}
                 disabled={isGenerating || !settings}
                 aria-label="AI settings"
               >
@@ -263,7 +276,7 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
                     Generating…
                   </>
                 ) : (
-                  "Generate tasks"
+                  'Generate tasks'
                 )}
               </Button>
             </div>
