@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 const STEPS = [
   {
     number: '01',
@@ -31,8 +33,15 @@ export function HowItWorksSection() {
         </h2>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
-        {STEPS.map((step) => (
-          <div key={step.number} className="mk-reveal">
+        {STEPS.map((step, i) => (
+          <div
+            key={step.number}
+            className={cn(
+              'mk-reveal',
+              i === 1 && 'mk-reveal-d1',
+              i === 2 && 'mk-reveal-d2',
+            )}
+          >
             <div
               className={`mk-display mb-4 flex size-10 items-center justify-center rounded-xl text-md font-bold text-white ${step.numberClass}`}
             >
