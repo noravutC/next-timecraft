@@ -21,6 +21,56 @@
   }
 }
 
+/* Stagger variants — same fade-up, shifted deeper into the scroll range so
+   grid siblings in the same row land one after another. */
+.mk-reveal-d1 {
+  animation-range: entry 8% cover 26%;
+}
+.mk-reveal-d2 {
+  animation-range: entry 16% cover 34%;
+}
+
+/* Directional reveals for side-by-side layouts. The shared mk-reveal
+   keyframes only set the end state, so the slide-in start lives here. */
+.mk-reveal-left,
+.mk-reveal-right {
+  opacity: 0;
+  animation: mk-reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 22%;
+}
+.mk-reveal-left {
+  transform: translateX(-36px);
+}
+.mk-reveal-right {
+  transform: translateX(36px);
+}
+
+/* Gentle scale-in for full-width cards. */
+.mk-reveal-scale {
+  opacity: 0;
+  transform: translateY(24px) scale(0.96);
+  animation: mk-reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 24%;
+}
+
+/* Sticky nav gains depth once the page is scrolled. Browsers without
+   animation-timeline keep the (subtle) end-state shadow permanently. */
+.mk-nav {
+  animation: mk-nav-scrolled linear both;
+  animation-timeline: scroll();
+  animation-range: 0px 120px;
+}
+@keyframes mk-nav-scrolled {
+  from {
+    box-shadow: 0 12px 32px -24px rgba(29, 30, 38, 0);
+  }
+  to {
+    box-shadow: 0 12px 32px -24px rgba(29, 30, 38, 0.35);
+  }
+}
+
 @keyframes mk-float-a {
   0%,
   100% {
@@ -97,7 +147,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mk-reveal {
+  .mk-reveal,
+  .mk-reveal-left,
+  .mk-reveal-right,
+  .mk-reveal-scale {
     animation: none;
     opacity: 1;
     transform: none;
@@ -107,7 +160,8 @@
   .mk-blob,
   .mk-blob-reverse,
   .mk-pulse-dot,
-  .mk-drag {
+  .mk-drag,
+  .mk-nav {
     animation: none;
   }
 }
