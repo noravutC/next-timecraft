@@ -8,7 +8,7 @@ export function CtaSection() {
       id="cta"
       className="mx-auto max-w-6xl scroll-mt-20 px-7 pt-10 pb-24"
     >
-      <div className="relative overflow-hidden rounded-3xl bg-ink p-11 text-center lg:p-20">
+      <div className="mk-reveal-scale relative overflow-hidden rounded-3xl bg-ink p-11 text-center lg:p-20">
         <div
           className="mk-blob pointer-events-none absolute -top-20 -left-10 size-80 rounded-full"
           style={{

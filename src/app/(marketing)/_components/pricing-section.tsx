@@ -96,11 +96,13 @@ export function PricingSection() {
       </div>
 
       <div className="grid items-stretch gap-5 lg:grid-cols-3">
-        {TIERS.map((tier) => (
+        {TIERS.map((tier, i) => (
           <div
             key={tier.name}
             className={cn(
-              'flex flex-col rounded-2xl p-7',
+              'mk-reveal flex flex-col rounded-2xl p-7',
+              i === 1 && 'mk-reveal-d1',
+              i === 2 && 'mk-reveal-d2',
               tier.featured
                 ? 'relative bg-ink text-white shadow-[0_30px_60px_-26px_rgba(29,30,38,0.55)] lg:scale-[1.03]'
                 : 'border border-line bg-white',

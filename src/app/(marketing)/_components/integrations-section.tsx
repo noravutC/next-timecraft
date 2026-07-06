@@ -16,8 +16,8 @@ export function IntegrationsSection() {
       id="integrations"
       className="mx-auto max-w-6xl scroll-mt-20 px-7 py-14"
     >
-      <div className="mk-reveal grid items-center gap-10 rounded-3xl border border-line bg-white p-9 lg:grid-cols-2 lg:p-14">
-        <div>
+      <div className="grid items-center gap-10 overflow-x-clip rounded-3xl border border-line bg-white p-9 lg:grid-cols-2 lg:p-14">
+        <div className="mk-reveal-left">
           <div className="mb-3.5 font-mono text-xs tracking-widest text-brand">
             INTEGRATIONS — ON THE ROADMAP
           </div>
@@ -35,7 +35,7 @@ export function IntegrationsSection() {
             COMING SOON
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="mk-reveal-right grid grid-cols-3 gap-3">
           {TILES.map((tile) =>
             tile ? (
               <div

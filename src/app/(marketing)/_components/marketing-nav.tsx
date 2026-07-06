@@ -10,7 +10,7 @@ const NAV_LINKS = [
 
 export function MarketingNav() {
   return (
-    <nav className="sticky top-0 z-50 border-b border-line bg-surface/80 backdrop-blur-md">
+    <nav className="mk-nav sticky top-0 z-50 border-b border-line bg-surface/80 backdrop-blur-md">
       <div className="mx-auto flex h-[70px] max-w-6xl items-center justify-between px-7">
         <Logo size={30} textSize="lg" />
         <div className="flex items-center gap-7">

@@ -52,11 +52,12 @@ export function FeaturesSection() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {FEATURES.map((feature) => (
+        {FEATURES.map((feature, i) => (
           <div
             key={feature.title}
             className={cn(
               'mk-reveal rounded-2xl p-7 transition-transform duration-200 hover:-translate-y-1',
+              i % 2 === 1 && 'mk-reveal-d1',
               feature.dark
                 ? 'bg-ink text-white'
                 : 'border border-line bg-white hover:shadow-[0_18px_40px_-20px_rgba(29,30,38,0.28)]',
