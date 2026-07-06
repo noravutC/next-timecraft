@@ -5,16 +5,22 @@ import { Button } from '@/components/ui/button';
 import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { blockBoardPanningAttr } from './data-attributes';
+import { cn } from '@/lib/utils';
 
 interface AddCardInlineProps {
   columnId: string;
-  lastOrderFraction: string | null;
+  /** ตำแหน่งของ composer = ตำแหน่งที่การ์ดใหม่จะแทรก */
+  position: 'top' | 'bottom';
+  prevOrderFraction: string | null;
+  nextOrderFraction: string | null;
   onClose: () => void;
 }
 
 export const AddCardInline = ({
   columnId,
-  lastOrderFraction,
+  position,
+  prevOrderFraction,
+  nextOrderFraction,
   onClose,
 }: AddCardInlineProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -31,10 +37,11 @@ export const AddCardInline = ({
     if (!trimmed || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // bound ด้วย cursor ของ column กันการ์ดใหม่ไปแทรกกลางช่วง task ที่ยังไม่โหลด
+      // ขอบเขตสองข้างมาจาก parent (การ์ดเพื่อนบ้าน/cursor ของ column) — สดเสมอ
+      // เพราะ column re-render ทุกครั้งที่ store เปลี่ยน
       const orderFraction = generateFractionBetween(
-        lastOrderFraction,
-        useTaskStore.getState().columnEndBound(columnId),
+        prevOrderFraction,
+        nextOrderFraction,
       );
       await createTasks([{ columnId, title: trimmed, orderFraction }]);
       setTitle('');
@@ -56,7 +63,10 @@ export const AddCardInline = ({
 
   return (
     <div
-      className="mx-1 mt-2.5 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]"
+      className={cn(
+        'mx-1 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]',
+        position === 'top' ? 'mt-1 mb-2' : 'mt-2.5',
+      )}
       {...{ [blockBoardPanningAttr]: true }}
     >
       <textarea

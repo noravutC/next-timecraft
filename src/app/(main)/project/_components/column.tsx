@@ -93,7 +93,8 @@ export const Column = ({
   const columnsLoader = useColumnStore(useShallow((s) => s.columnsLoader));
   const isLoading = columnsLoader[column.id] ?? false;
   const [state, setState] = useState<TColumnState>(idle);
-  const [isAdding, setIsAdding] = useState(false);
+  // composer เปิดตรงไหน การ์ดใหม่ลงตรงนั้น: '+' บน header → top, ปุ่มล่าง → bottom
+  const [addingAt, setAddingAt] = useState<'top' | 'bottom' | null>(null);
 
   // fetch task หน้าแรกของ column นี้เมื่อ mount — หน้าถัดไปโหลดตอน scroll ถึงล่างสุด
   useEffect(() => {
@@ -276,13 +277,24 @@ export const Column = ({
             <div className="flex-1" />
             <button
               type="button"
-              onClick={() => setIsAdding(true)}
-              aria-label="Add a card"
+              onClick={() => setAddingAt('top')}
+              aria-label="Add a card to top"
               className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-white/80 hover:text-brand"
             >
               <Plus size={16} />
             </button>
           </div>
+          {addingAt === 'top' && (
+            <AddCardInline
+              columnId={column.id}
+              position="top"
+              prevOrderFraction={null}
+              nextOrderFraction={
+                column.cards[0]?.orderFraction ?? column.nextCursorFraction
+              }
+              onClose={() => setAddingAt(null)}
+            />
+          )}
           <div
             className={
               'scrollbar-thin-y scrollbar-light flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [overflow-anchor:none]'
@@ -332,17 +344,19 @@ export const Column = ({
               </div>
             )}
           </div>
-          {isAdding ? (
+          {addingAt === 'bottom' ? (
             <AddCardInline
               columnId={column.id}
-              lastOrderFraction={column.cards.at(-1)?.orderFraction ?? null}
-              onClose={() => setIsAdding(false)}
+              position="bottom"
+              prevOrderFraction={column.cards.at(-1)?.orderFraction ?? null}
+              nextOrderFraction={column.nextCursorFraction}
+              onClose={() => setAddingAt(null)}
             />
           ) : (
             <div className="px-1.5 pt-1 pb-1.5">
               <button
                 type="button"
-                onClick={() => setIsAdding(true)}
+                onClick={() => setAddingAt('bottom')}
                 className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-lg p-2.5 text-left text-sm font-semibold text-ink-subtle hover:bg-white/80 hover:text-brand"
               >
                 <Plus size={15} />
