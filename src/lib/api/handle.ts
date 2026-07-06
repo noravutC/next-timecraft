@@ -1,18 +1,18 @@
-import * as Sentry from "@sentry/nextjs";
-import { auth } from "@/auth";
-import { logger } from "@/lib/logger";
-import { authorizeOrThrow } from "@/lib/rbac/authorize";
-import { Permission } from "@/lib/rbac/permissions";
-import { Session } from "next-auth";
-import { NextResponse } from "next/server";
-import { ZodType } from "zod";
-import { checkRateLimit, RateLimitConfig } from "./rate-limit";
+import * as Sentry from '@sentry/nextjs';
+import { auth } from '@/auth';
+import { logger } from '@/lib/logger';
+import { authorizeOrThrow, type AuthorizeMode } from '@/lib/rbac/authorize';
+import { Permission } from '@/lib/rbac/permissions';
+import { Session } from 'next-auth';
+import { NextResponse } from 'next/server';
+import { ZodType } from 'zod';
+import { checkRateLimit, RateLimitConfig } from './rate-limit';
 import {
   AppError,
   BadRequestError,
   TooManyRequestsError,
   UnauthorizedError,
-} from "./errors";
+} from './errors';
 
 type Awaitable<T> = T | Promise<T>;
 
@@ -35,7 +35,9 @@ type ResolveProjectIds<TBody, TParams = undefined> = (input: {
 
 type BaseConfig<TBody, TParams = undefined> = {
   body?: ZodType<TBody>;
-  permission?: Permission;
+  /** one permission or several — several requires ALL unless permissionMode: "any" */
+  permission?: Permission | Permission[];
+  permissionMode?: AuthorizeMode;
   resolveProjectIds?: ResolveProjectIds<TBody, TParams>;
   /** per-user, per-path. Defaults to 120 req/min; tighten for expensive routes */
   rateLimit?: RateLimitConfig;
@@ -61,10 +63,11 @@ const errorResponse = (statusCode: number, message: string) =>
 
 const toAppError = (error: unknown): AppError => {
   if (error instanceof AppError) return error;
-  if (error instanceof SyntaxError) return new BadRequestError("Invalid JSON body");
-  logger.error({ err: error }, "unhandled api error");
+  if (error instanceof SyntaxError)
+    return new BadRequestError('Invalid JSON body');
+  logger.error({ err: error }, 'unhandled api error');
   Sentry.captureException(error);
-  return new AppError(500, "Internal server error");
+  return new AppError(500, 'Internal server error');
 };
 
 const logRequest = (
@@ -82,7 +85,7 @@ const logRequest = (
       durationMs: Date.now() - startedAt,
       userId,
     },
-    "api request",
+    'api request',
   );
 };
 
@@ -92,20 +95,24 @@ const parseBody = async <TBody>(
 ): Promise<TBody> => {
   if (!schema) return undefined as TBody;
   const json = await request.json().catch(() => {
-    throw new BadRequestError("Invalid JSON body");
+    throw new BadRequestError('Invalid JSON body');
   });
   const result = schema.safeParse(json);
   if (!result.success) {
     const first = result.error.issues[0];
-    const path = first?.path.join(".");
+    const path = first?.path.join('.');
     throw new BadRequestError(
-      path ? `${path}: ${first.message}` : first?.message ?? "Validation failed",
+      path
+        ? `${path}: ${first.message}`
+        : (first?.message ?? 'Validation failed'),
     );
   }
   return result.data;
 };
 
-const requireSession = async (): Promise<Session & { user: { id: string } }> => {
+const requireSession = async (): Promise<
+  Session & { user: { id: string } }
+> => {
   const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
   return session as Session & { user: { id: string } };
@@ -128,7 +135,9 @@ export function createHandle<TBody = undefined>(
         const projectIds = config.resolveProjectIds
           ? await config.resolveProjectIds({ body, params: undefined, userId })
           : [];
-        await authorizeOrThrow(userId, projectIds, config.permission);
+        await authorizeOrThrow(userId, projectIds, config.permission, {
+          mode: config.permissionMode,
+        });
       }
 
       const response = await handler({ request, session, userId, body });
@@ -163,10 +172,18 @@ export function createParamHandle<TParams, TBody = undefined>(
         const projectIds = config.resolveProjectIds
           ? await config.resolveProjectIds({ body, params, userId })
           : [];
-        await authorizeOrThrow(userId, projectIds, config.permission);
+        await authorizeOrThrow(userId, projectIds, config.permission, {
+          mode: config.permissionMode,
+        });
       }
 
-      const response = await handler({ request, session, userId, body, params });
+      const response = await handler({
+        request,
+        session,
+        userId,
+        body,
+        params,
+      });
       logRequest(request, response.status, startedAt, userId);
       return response;
     } catch (error) {

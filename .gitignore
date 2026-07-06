@@ -55,3 +55,5 @@ ds-bundle/
 /test-results/
 /playwright-report/
 .playwright-mcp/
+# stray screenshots dropped at the repo root (docs/ images stay tracked)
+/*.png
