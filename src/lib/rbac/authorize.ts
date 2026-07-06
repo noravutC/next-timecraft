@@ -1,16 +1,26 @@
-import { db } from "@/db";
-import { projectMembersTable, projectsTable } from "@/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
-import { ForbiddenError } from "@/lib/api/errors";
-import { can } from "./can";
-import { Permission } from "./permissions";
+import { db } from '@/db';
+import { projectMembersTable, projectsTable } from '@/db/schema';
+import { and, eq, inArray } from 'drizzle-orm';
+import { ForbiddenError } from '@/lib/api/errors';
+import { canAll, canAny } from './can';
+import { Permission } from './permissions';
+
+/** "all" = ต้องมีครบทุก permission (default), "any" = มีอันใดอันหนึ่งก็พอ */
+export type AuthorizeMode = 'all' | 'any';
+
+export interface AuthorizeOptions {
+  mode?: AuthorizeMode;
+}
 
 export async function authorize(
   userId: string,
   projectIds: string[],
-  permission: Permission,
+  permission: Permission | Permission[],
+  options: AuthorizeOptions = {},
 ): Promise<boolean> {
-  if (projectIds.length === 0) return false;
+  const { mode = 'all' } = options;
+  const permissions = Array.isArray(permission) ? permission : [permission];
+  if (projectIds.length === 0 || permissions.length === 0) return false;
 
   const memberships = await db
     .select({
@@ -30,14 +40,17 @@ export async function authorize(
     );
 
   if (memberships.length !== projectIds.length) return false;
-  return memberships.every((m) => can(m.role, permission));
+  return memberships.every((m) =>
+    mode === 'any' ? canAny(m.role, permissions) : canAll(m.role, permissions),
+  );
 }
 
 export async function authorizeOrThrow(
   userId: string,
   projectIds: string[],
-  permission: Permission,
+  permission: Permission | Permission[],
+  options: AuthorizeOptions = {},
 ): Promise<void> {
-  const ok = await authorize(userId, projectIds, permission);
+  const ok = await authorize(userId, projectIds, permission, options);
   if (!ok) throw new ForbiddenError();
 }
