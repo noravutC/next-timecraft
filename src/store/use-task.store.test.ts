@@ -207,9 +207,12 @@ describe('loadMoreTasks (column pagination)', () => {
 
     await useTaskStore.getState().loadMoreTasks('col-1');
 
-    expect(taskServices.getTasksByColumns).toHaveBeenCalledWith(['col-1'], 20, {
-      'col-1': { orderFraction: 'a5', id: 't5' },
-    });
+    expect(taskServices.getTasksByColumns).toHaveBeenCalledWith(
+      ['col-1'],
+      20,
+      { 'col-1': { orderFraction: 'a5', id: 't5' } },
+      undefined,
+    );
     expect(useTaskStore.getState().tasks['t6']).toBeDefined();
     expect(useTaskStore.getState().taskPages['col-1'].hasMore).toBe(false);
     expect(useTaskStore.getState().loadMoreLoader['col-1']).toBe(false);

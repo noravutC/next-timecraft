@@ -6,6 +6,7 @@ import {
   APIPatch,
   APIPost,
   TaskCache,
+  TaskFilter,
   TaskPageCursor,
   TaskPageInfo,
   CreateTaskPayload,
@@ -24,6 +25,7 @@ class TaskService {
     colIds: string[],
     limit: number,
     cursors?: Record<string, TaskPageCursor>,
+    filter?: TaskFilter,
   ): Promise<
     APIGet<TaskCache[]> & {
       assignees: Record<string, TaskAssigneeLite[]>;
@@ -31,7 +33,12 @@ class TaskService {
     }
   > {
     return this.client
-      .post(`/task/columns`, { colIds, limit, ...(cursors ? { cursors } : {}) })
+      .post(`/task/columns`, {
+        colIds,
+        limit,
+        ...(cursors ? { cursors } : {}),
+        ...(filter ? { filter } : {}),
+      })
       .then(
         (response) =>
           response.data as APIGet<TaskCache[]> & {

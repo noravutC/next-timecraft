@@ -14,8 +14,11 @@ import { useProjectStore } from '@/store/use-project.store';
 import { useTaskStore } from '@/store/use-task.store';
 import type { UpdateColumnPayload, UpdateTaskPayload } from '@/types';
 import { useRealtimeBoard } from '@/store/sync-live-data/useRealtimeBoard';
+import { useAssigneeStore } from '@/store/use-assignee.store';
+import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { computeCardMove, computeColumnMove } from './board-operations';
 import { AiBreakdown } from './ai-breakdown';
+import { BoardFilterBar } from './board-filter-bar';
 import { Column } from './column';
 import { useSpacebarPan } from './use-spacebar-pan';
 import {
@@ -42,6 +45,26 @@ export const Board = () => {
   const updateTasks = useTaskStore((s) => s.updateTasks);
   useRealtimeBoard(projectId);
 
+  const filterQ = useBoardFilterStore((s) => s.q);
+  const filterPriorities = useBoardFilterStore((s) => s.priorities);
+  const filterTags = useBoardFilterStore((s) => s.tags);
+  const filterAssignees = useBoardFilterStore((s) => s.assigneeIds);
+  const filter = useMemo(
+    () => useBoardFilterStore.getState().toFilterPayload(),
+    // payload สร้างจาก state พวกนี้เท่านั้น — deps ครบแล้วแม้ lint มองไม่เห็น
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filterQ, filterPriorities, filterTags, filterAssignees],
+  );
+
+  const assigneesByTask = useAssigneeStore(useShallow((s) => s.byTask));
+  const assigneeIdsByTask = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const [taskId, state] of Object.entries(assigneesByTask)) {
+      map[taskId] = state.items.map((item) => item.userId);
+    }
+    return map;
+  }, [assigneesByTask]);
+
   // โหลดข้อมูล columns ลง store ครั้งแรก (tasks โหลดใน Column แต่ละตัวเอง)
   useEffect(() => {
     let active = true;
@@ -62,8 +85,25 @@ export const Board = () => {
   }, [fetchColumns, projectId]);
 
   const board = useMemo(
-    () => deriveBoardView(columns, tasks, projectId, pendingMove, taskPages),
-    [columns, tasks, projectId, pendingMove, taskPages],
+    () =>
+      deriveBoardView(
+        columns,
+        tasks,
+        projectId,
+        pendingMove,
+        taskPages,
+        filter,
+        assigneeIdsByTask,
+      ),
+    [
+      columns,
+      tasks,
+      projectId,
+      pendingMove,
+      taskPages,
+      filter,
+      assigneeIdsByTask,
+    ],
   );
 
   // ref สำหรับ DnD callbacks เสมอใช้ข้อมูลล่าสุด
@@ -188,6 +228,7 @@ export const Board = () => {
 
   return (
     <div className={`relative flex h-full flex-col bg-surface ${boardCls}`}>
+      <BoardFilterBar />
       <div
         ref={scrollableRef}
         className={scrollCls}

@@ -207,9 +207,9 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
       onOpenChange={(next) => !isGenerating && setOpen(next)}
     >
       <PopoverTrigger asChild>
+        {/* สเกลเดียวกับปุ่มใน bottom bar (h-10 / rounded-xl / เงา brand) ให้ดูเป็นชุดเดียวกัน */}
         <Button
-          size="sm"
-          className="absolute right-5 bottom-5 z-10 gap-1.5 shadow-lg"
+          className="absolute right-5 bottom-5 z-10 h-10 gap-1.5 rounded-xl px-3.5 text-sm font-semibold shadow-[0_3px_10px_rgba(91,80,230,0.35)] hover:bg-brand-dark"
           data-testid="ai-breakdown-trigger"
         >
           <Sparkles size={15} />

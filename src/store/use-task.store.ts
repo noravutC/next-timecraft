@@ -12,6 +12,7 @@ import { toRecord, toValueRecord } from '@/helper/utils/object';
 import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
 import { useAssigneeStore } from './use-assignee.store';
+import { useBoardFilterStore } from './use-board-filter.store';
 
 type TaskStore = {
   status: LoaderStatus;
@@ -179,7 +180,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       columnsLoader: { ...state.columnsLoader, ...toValueRecord(colIds, true) },
     }));
     try {
-      const response = await taskServices.getTasksByColumns(colIds, limitTasks);
+      // filter ปัจจุบันของบอร์ดติดไปกับทุก fetch — ผลลัพธ์+pageInfo เป็นเซ็ตที่กรองแล้ว
+      const response = await taskServices.getTasksByColumns(
+        colIds,
+        limitTasks,
+        undefined,
+        useBoardFilterStore.getState().toFilterPayload(),
+      );
       const tasksData = response.data;
       set((state) => ({
         tasks: { ...state.tasks, ...toRecord(tasksData, 'id') },
@@ -218,6 +225,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         [columnId],
         TASK_PAGE_SIZE,
         { [columnId]: page.nextCursor },
+        useBoardFilterStore.getState().toFilterPayload(),
       );
       const tasksData = response.data;
       set((state) => ({

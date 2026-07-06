@@ -1,4 +1,4 @@
-import { generateNKeysBetween, generateKeyBetween } from "fractional-indexing";
+import { generateNKeysBetween, generateKeyBetween } from 'fractional-indexing';
 
 export const isValidFractionKey = (
   value: string | null | undefined,
@@ -39,4 +39,14 @@ export const assignBulkIndexes = <
 export const generateFractionBetween = (
   prevOrder: string | null | undefined,
   nextOrder: string | null | undefined,
-) => generateKeyBetween(sanitize(prevOrder), sanitize(nextOrder));
+) => {
+  const prev = sanitize(prevOrder);
+  const next = sanitize(nextOrder);
+  try {
+    return generateKeyBetween(prev, next);
+  } catch {
+    // ข้อมูลเสื่อมสภาพ (fraction ซ้ำ/สลับ เช่น bulk-seed ที่ได้ "a0" ทั้งคอลัมน์)
+    // ให้ต่อท้าย prev แทนการล้ม — ลำดับระหว่างตัวซ้ำถูก tiebreak ด้วย id อยู่แล้ว
+    return generateKeyBetween(prev, null);
+  }
+};
