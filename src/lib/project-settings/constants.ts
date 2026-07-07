@@ -9,6 +9,14 @@ export const ICON_OPTIONS: { id: string; emoji: string; label: string }[] = [
   { id: 'puzzle', emoji: '🧩', label: 'Puzzle' },
   { id: 'leaf', emoji: '🌿', label: 'Leaf' },
   { id: 'fire', emoji: '🔥', label: 'Fire' },
+  { id: 'bug', emoji: '🐞', label: 'Bug' },
+  { id: 'megaphone', emoji: '📣', label: 'Megaphone' },
+  { id: 'palette', emoji: '🎨', label: 'Palette' },
+  { id: 'bulb', emoji: '💡', label: 'Bulb' },
+  { id: 'lock', emoji: '🔒', label: 'Lock' },
+  { id: 'globe', emoji: '🌐', label: 'Globe' },
+  { id: 'chart', emoji: '📊', label: 'Chart' },
+  { id: 'compass', emoji: '🧭', label: 'Compass' },
 ];
 
 export const ACCENT_COLORS = [
