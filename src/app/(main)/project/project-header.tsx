@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { ChevronDown, UserPlus } from 'lucide-react';
-import { toast } from 'sonner';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
+import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { ProjectAvatar } from '@/components/project/project-avatar';
+import { InviteMemberDialog } from '@/components/project/invite-member-dialog';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
   Tooltip,
@@ -25,13 +27,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const AVATAR_LIMIT = 3;
 
-const roleLabel: Record<string, string> = {
-  owner: 'Owner',
-  admin: 'Admin',
-  editor: 'Editor',
-  viewer: 'Viewer',
-};
-
 // เส้นคั่นแนวตั้งของ header ตาม design (1×22px)
 const HeaderDivider = () => <div className="h-5.5 w-px shrink-0 bg-line" />;
 
@@ -39,6 +34,7 @@ export const ProjectHeader = () => {
   const { projectIsUsing, projects, status } = useProjectStore();
   const { users } = useUserStore();
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
   const members = projectValue?.members ?? [];
@@ -88,7 +84,7 @@ export const ProjectHeader = () => {
               {members.length > 0 && (
                 <AvatarGroup
                   className="cursor-pointer transition-opacity hover:opacity-90"
-                  onClick={() => toast.info('Member invites coming soon')}
+                  onClick={() => setInviteOpen(true)}
                 >
                   {visibleMembers.map((member) => {
                     const user = users[member.userId];
@@ -115,7 +111,7 @@ export const ProjectHeader = () => {
                             {user?.email}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {roleLabel[member.role] ?? member.role}
+                            {ROLE_LABELS[member.role]}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -129,11 +125,10 @@ export const ProjectHeader = () => {
                 </AvatarGroup>
               )}
 
-              {/* Invite — ปุ่ม placeholder รอฟีเจอร์ invite (ยังไม่มี endpoint) */}
               <Button
                 variant="outline"
                 className="h-8.5 gap-1.5 rounded-lg border-line px-3 text-sm font-bold text-brand-dark shadow-none hover:border-brand-line hover:bg-brand-soft/40 hover:text-brand-dark"
-                onClick={() => toast.info('Member invites coming soon')}
+                onClick={() => setInviteOpen(true)}
               >
                 <UserPlus className="size-4" />
                 Invite
@@ -148,6 +143,11 @@ export const ProjectHeader = () => {
           )}
         </div>
       </TooltipProvider>
+
+      <InviteMemberDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+      />
     </header>
   );
 };
