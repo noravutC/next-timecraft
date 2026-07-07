@@ -39,14 +39,21 @@ const formatRelative = (date: Date) => {
 
 const ACTION_LABELS: Record<Notification['type'], string> = {
   comment_mention: 'mentioned you on',
-  comment_reply: 'replied to you on',
+  comment_reply: 'commented on',
   board_invite: 'invited you to',
   member_removed: 'removed you from',
+  task_assigned: 'assigned you to',
 };
 
-// ตัวหนาท้ายประโยค: comment → ชื่อ task, เรื่องบอร์ด → ชื่อบอร์ด
+// notification ที่ผูกกับ task — กดแล้วเปิด task detail (ผ่าน stale-guard)
+const isTaskNotification = (n: Notification) =>
+  n.type === 'comment_mention' ||
+  n.type === 'comment_reply' ||
+  n.type === 'task_assigned';
+
+// ตัวหนาท้ายประโยค: เรื่อง task → ชื่อ task, เรื่องบอร์ด → ชื่อบอร์ด
 const targetLabel = (n: Notification) =>
-  n.type === 'comment_mention' || n.type === 'comment_reply'
+  isTaskNotification(n)
     ? (n.payload as CommentNotificationPayload).taskTitle
     : (n.payload as BoardInviteNotificationPayload).projectName;
 
@@ -113,6 +120,7 @@ export const NotificationBell = () => {
       removeProject(n.payload.projectId);
       return;
     }
+    // comment_mention / comment_reply / task_assigned — เปิด task
     const payload = n.payload as CommentNotificationPayload;
     try {
       // task อาจถูกลบไปแล้ว — เช็คกับ server ก่อน เพราะ client store

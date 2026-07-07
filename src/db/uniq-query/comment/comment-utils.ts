@@ -2,6 +2,7 @@ import { db } from "@/db";
 import {
   columnsTable,
   commentReadStateTable,
+  taskAssigneesTable,
   taskCommentAttachmentsTable,
   taskCommentReactionsTable,
   taskCommentsTable,
@@ -244,4 +245,24 @@ export async function getAttachmentStoragePathsByTaskIds(
     )
     .where(inArray(taskCommentsTable.taskId, taskIds));
   return rows.map((r) => r.storagePath);
+}
+
+// ผู้เกี่ยวข้องกับ task = assignees + คนที่เคยคอมเมนต์ (ยังไม่ถูกลบ) —
+// ใช้เลือกผู้รับ notification แบบ comment_reply
+export async function getTaskParticipantIds(taskId: string): Promise<string[]> {
+  const [authors, assignees] = await Promise.all([
+    db
+      .selectDistinct({ userId: taskCommentsTable.userId })
+      .from(taskCommentsTable)
+      .where(
+        and(eq(taskCommentsTable.taskId, taskId), isNull(taskCommentsTable.deletedAt)),
+      ),
+    db
+      .select({ userId: taskAssigneesTable.userId })
+      .from(taskAssigneesTable)
+      .where(eq(taskAssigneesTable.taskId, taskId)),
+  ]);
+  return [
+    ...new Set([...authors.map((r) => r.userId), ...assignees.map((r) => r.userId)]),
+  ];
 }

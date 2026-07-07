@@ -14,6 +14,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "comment_reply",
   "board_invite",
   "member_removed",
+  "task_assigned",
 ]);
 
 export type CommentNotificationPayload = {
@@ -43,10 +44,20 @@ export type MemberRemovedNotificationPayload = {
   actorName: string;
 };
 
+export type TaskAssignedNotificationPayload = {
+  taskId: string;
+  projectId: string;
+  taskTitle: string;
+  projectName: string;
+  actorUserId: string;
+  actorName: string;
+};
+
 export type NotificationPayload =
   | CommentNotificationPayload
   | BoardInviteNotificationPayload
-  | MemberRemovedNotificationPayload;
+  | MemberRemovedNotificationPayload
+  | TaskAssignedNotificationPayload;
 
 export const notificationsTable = pgTable(
   "notifications",

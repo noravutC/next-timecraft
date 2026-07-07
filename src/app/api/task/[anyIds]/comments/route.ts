@@ -13,6 +13,7 @@ import {
   countUnreadComments,
   fetchAttachmentsForComments,
   fetchCommentsPage,
+  getTaskParticipantIds,
   getTaskProjectLink,
 } from "@/db/uniq-query/comment/comment-utils";
 import {
@@ -156,6 +157,10 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
       validMentions = projectMembers.map((m) => m.userId);
     }
 
+    // ผู้เกี่ยวข้องเดิมของ task (assignees + คนเคยคอมเมนต์) — รับ comment_reply
+    // ยกเว้นคนโพสต์เองและคนถูก mention (ซึ่งได้ comment_mention อยู่แล้ว)
+    const participantIds = await getTaskParticipantIds(taskId);
+
     const result = await db.transaction(async (tx) => {
       const existing = await tx
         .select()
@@ -203,9 +208,12 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         .where(eq(tasksTable.id, taskId));
 
       const recipients = validMentions.filter((u) => u !== userId);
+      const replyRecipients = participantIds.filter(
+        (u) => u !== userId && !recipients.includes(u),
+      );
       let notifications: { id: string; userId: string }[] = [];
 
-      if (recipients.length > 0) {
+      if (recipients.length > 0 || replyRecipients.length > 0) {
         const [project] = await tx
           .select({ name: projectsTable.name })
           .from(projectsTable)
@@ -223,33 +231,52 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           snippet: text.slice(0, 200),
         };
 
-        notifications = await tx
-          .insert(notificationsTable)
-          .values(
-            recipients.map((uid) => ({
-              userId: uid,
-              type: "comment_mention" as const,
-              payload,
-            })),
-          )
-          .returning({
-            id: notificationsTable.id,
-            userId: notificationsTable.userId,
-          });
+        if (recipients.length > 0) {
+          notifications = await tx
+            .insert(notificationsTable)
+            .values(
+              recipients.map((uid) => ({
+                userId: uid,
+                type: "comment_mention" as const,
+                payload,
+              })),
+            )
+            .returning({
+              id: notificationsTable.id,
+              userId: notificationsTable.userId,
+            });
 
-        await tx.insert(jobQueueTable).values(
-          recipients.map((uid) => ({
-            jobType: "send_notification" as const,
-            payload: {
-              kind: "comment_mention",
-              mentionedUserId: uid,
-              ...payload,
-            },
-            idempotencyKey: `comment_mention:${comment.id}:${uid}`,
-            priority: 5,
-            scheduledAt: new Date(),
-          })),
-        );
+          await tx.insert(jobQueueTable).values(
+            recipients.map((uid) => ({
+              jobType: "send_notification" as const,
+              payload: {
+                kind: "comment_mention",
+                mentionedUserId: uid,
+                ...payload,
+              },
+              idempotencyKey: `comment_mention:${comment.id}:${uid}`,
+              priority: 5,
+              scheduledAt: new Date(),
+            })),
+          );
+        }
+
+        if (replyRecipients.length > 0) {
+          const replyRows = await tx
+            .insert(notificationsTable)
+            .values(
+              replyRecipients.map((uid) => ({
+                userId: uid,
+                type: "comment_reply" as const,
+                payload,
+              })),
+            )
+            .returning({
+              id: notificationsTable.id,
+              userId: notificationsTable.userId,
+            });
+          notifications = notifications.concat(replyRows);
+        }
       }
 
       return { comment, notifications, dedup: false };
