@@ -37,7 +37,7 @@ export async function sendBoardInviteEmail(input: {
 
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.EMAIL_FROM ?? 'TimeCraft <onboarding@resend.dev>',
+      from: process.env.EMAIL_FROM ?? 'noravut.ch@gmail.com',
       to: input.to,
       subject: `${input.inviterName} invited you to "${input.boardName}" on TimeCraft`,
       html,
