@@ -136,7 +136,7 @@ export const CreateFirstProject = () => {
 
           <h1 className="text-4xl font-extrabold text-gray-900 mb-6 leading-tight">
             Organize your work efficiently <br />
-            <span className="text-blue-600">
+            <span className="text-brand">
               Start from scratch or use a template
             </span>
           </h1>
@@ -201,7 +201,7 @@ export const CreateFirstProject = () => {
                           </Button>
                         </div>
                       ) : (
-                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600">
+                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm font-medium text-gray-600 hover:border-brand-line hover:text-brand">
                           <Upload className="size-4" />
                           Upload project image (max 2MB)
                           <input
@@ -262,7 +262,7 @@ export const CreateFirstProject = () => {
                   <button
                     // key={template.id}
                     onClick={() => setNeedCreateProject(false)}
-                    className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
+                    className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-brand/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
                   >
                     <div
                       className={`w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
@@ -286,7 +286,7 @@ export const CreateFirstProject = () => {
                       setDirection(1);
                       setSelectedTemplateId(template.id);
                     }}
-                    className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-500/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
+                    className={`group cursor-pointer relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-brand/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full`}
                   >
                     <div
                       className={`w-12 h-12 rounded-xl ${template.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
@@ -301,7 +301,7 @@ export const CreateFirstProject = () => {
                         {template.description}
                       </p>
                     </div>
-                    <div className="flex items-center text-blue-600 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center text-brand font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
                       Use Template <ArrowRight size={16} className="ml-1" />
                     </div>
                   </button>

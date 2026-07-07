@@ -24,7 +24,9 @@
   --text-5xl: 3.75rem; */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-open-sans), "Open Sans", sans-serif;
+  --font-sans:
+    var(--font-jakarta-sans), var(--font-noto-thai), "Plus Jakarta Sans",
+    "Noto Sans Thai", -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -62,6 +64,7 @@
   --color-surface: var(--surface);
   --color-surface-hover: var(--surface-hover);
   --color-surface-active: var(--surface-active);
+  --color-surface-column: var(--surface-column);
   --color-line: var(--line);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
@@ -95,7 +98,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: var(--brand);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -118,7 +121,9 @@
      brand-*  : primary purple + tints
      ink-*    : text ladder, strongest → faintest
      surface-*: gray fills (board bg, hover, active/selected)
-     line     : hairline borders */
+     line     : hairline borders
+     priority-*: task priority — solid = dot/flag, -text = chip text,
+                 -soft = tinted fill, -line = tinted border */
   --brand: #5b50e6;
   --brand-dark: #4a40d6;
   --brand-soft: #eeedfc;
@@ -127,10 +132,23 @@
   --ink-muted: #6b7180;
   --ink-subtle: #8a8f9c;
   --ink-faint: #a8adb8;
-  --surface: #f6f7f9;
+  --surface: #f6f7f9; /* board bg — ตรงกับ design source (TimeCraft Board.dc.html) */
   --surface-hover: #f2f3f6;
   --surface-active: #edeef2;
+  --surface-column: #f0f1f4; /* column fill — ตรงกับ design source */
   --line: #ecedf1;
+  --priority-low: #10b981;
+  --priority-low-soft: rgba(16, 185, 129, 0.1);
+  --priority-low-line: rgba(16, 185, 129, 0.3);
+  --priority-low-text: #047857;
+  --priority-medium: #f59e0b;
+  --priority-medium-soft: rgba(245, 158, 11, 0.1);
+  --priority-medium-line: rgba(245, 158, 11, 0.3);
+  --priority-medium-text: #b45309;
+  --priority-high: #ef4444;
+  --priority-high-soft: rgba(239, 68, 68, 0.1);
+  --priority-high-line: rgba(239, 68, 68, 0.3);
+  --priority-high-text: #b91c1c;
 }
 
 .dark {
