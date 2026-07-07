@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Check, ChevronDown, Link2, UserPlus, X } from 'lucide-react';
+import { Check, ChevronDown, Link2, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore, useUserStore } from '@/store';
+import { projectServices } from '@/services/projects.service';
 import { can } from '@/lib/rbac/can';
 import { INVITABLE_ROLES, ROLE_LABELS } from '@/lib/rbac/role-labels';
-import type { InvitableRole } from '@/types';
+import type { InvitableRole, Member, PendingInvitation } from '@/types';
 import {
   Dialog,
   DialogClose,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 
 interface InviteMemberDialogProps {
@@ -32,6 +34,9 @@ interface InviteMemberDialogProps {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const inviteLink = (token: string) =>
+  `${window.location.origin}/invite/${token}`;
 
 export const InviteMemberDialog = ({
   open,
@@ -42,12 +47,15 @@ export const InviteMemberDialog = ({
 
   const projectIsUsing = useProjectStore((s) => s.projectIsUsing);
   const projects = useProjectStore((s) => s.projects);
-  const inviteMember = useProjectStore((s) => s.inviteMember);
+  const removeMember = useProjectStore((s) => s.removeMember);
   const users = useUserStore((s) => s.users);
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<InvitableRole>('editor');
   const [inviting, setInviting] = useState(false);
+  const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   // เปิดใหม่ทุกครั้งเคลียร์ฟอร์ม (pattern เดียวกับ BoardSettingsDialog)
   const [prevOpen, setPrevOpen] = useState(open);
@@ -61,18 +69,46 @@ export const InviteMemberDialog = ({
   }
 
   const project = projectIsUsing ? projects[projectIsUsing] : null;
-  if (!project) return null;
-
-  const myRole = project.members.find((m) => m.userId === currentUserId)?.role;
+  const projectId = project?.id ?? null;
+  const myRole = project?.members.find(
+    (m) => m.userId === currentUserId,
+  )?.role;
   const canInvite = myRole ? can(myRole, 'member:invite') : false;
+  const canRemove = myRole ? can(myRole, 'member:remove') : false;
   const emailValid = EMAIL_PATTERN.test(email.trim());
+
+  // pending list เห็นเฉพาะคนที่เชิญได้ (GET ฝั่ง server ก็บังคับ member:invite)
+  useEffect(() => {
+    if (!open || !canInvite || !projectId) return;
+    let cancelled = false;
+    projectServices
+      .getInvitations(projectId)
+      .then((res) => {
+        if (!cancelled) setInvitations(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setInvitations([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, canInvite, projectId]);
+
+  if (!project) return null;
 
   const handleInvite = async () => {
     if (!emailValid || inviting) return;
     setInviting(true);
     try {
-      await inviteMember(project.id, { email: email.trim(), role });
-      toast.success('Member invited');
+      const res = await projectServices.inviteMember(project.id, {
+        email: email.trim(),
+        role,
+      });
+      const created = res.created;
+      if (created) {
+        setInvitations((prev) => [created, ...prev]);
+      }
+      toast.success('Invitation sent');
       setEmail('');
     } catch (error) {
       toast.error(
@@ -83,12 +119,43 @@ export const InviteMemberDialog = ({
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleRevoke = async (invitation: PendingInvitation) => {
+    const snapshot = invitations;
+    setInvitations((prev) => prev.filter((i) => i.id !== invitation.id));
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success('Board link copied');
+      await projectServices.revokeInvitation(invitation.token);
+      toast.success('Invitation revoked');
+    } catch (error) {
+      setInvitations(snapshot);
+      toast.error(
+        (error as { message?: string })?.message ??
+          'Unable to revoke invitation',
+      );
+    }
+  };
+
+  const copyText = async (text: string, message: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(message);
     } catch {
       toast.error('Unable to copy link');
+    }
+  };
+
+  const handleRemoveMember = async () => {
+    if (!memberToRemove || removing) return;
+    setRemoving(true);
+    try {
+      await removeMember(project.id, memberToRemove.userId);
+      toast.success('Member removed');
+      setMemberToRemove(null);
+    } catch (error) {
+      toast.error(
+        (error as { message?: string })?.message ?? 'Unable to remove member',
+      );
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -180,14 +247,6 @@ export const InviteMemberDialog = ({
             <p className="text-xs font-semibold tracking-wider text-ink-subtle uppercase">
               {project.members.length} members
             </p>
-            <button
-              type="button"
-              onClick={() => void handleCopyLink()}
-              className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-            >
-              <Link2 className="size-3.5" />
-              Copy invite link
-            </button>
           </div>
 
           <div className="flex flex-col">
@@ -219,11 +278,84 @@ export const InviteMemberDialog = ({
                   <span className="shrink-0 text-xs font-semibold text-ink-subtle">
                     {ROLE_LABELS[member.role]}
                   </span>
+                  {canRemove &&
+                    member.role !== 'owner' &&
+                    member.userId !== currentUserId && (
+                      <button
+                        type="button"
+                        onClick={() => setMemberToRemove(member)}
+                        aria-label={`Remove ${user?.fullName ?? 'member'} from board`}
+                        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
                 </div>
               );
             })}
+
+            {/* คำเชิญค้างรับ — เห็นเฉพาะคนที่มีสิทธิ์เชิญ */}
+            {canInvite &&
+              invitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center gap-3 py-2.5"
+                >
+                  <Avatar className="size-8.5">
+                    <AvatarFallback className="bg-surface text-xs font-bold text-ink-muted">
+                      {invitation.email.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">
+                      {invitation.email}
+                    </p>
+                    <p className="truncate text-xs text-ink-subtle">
+                      Invited as {ROLE_LABELS[invitation.role]}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+                    Pending
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyText(
+                        inviteLink(invitation.token),
+                        'Invite link copied',
+                      )
+                    }
+                    aria-label={`Copy invite link for ${invitation.email}`}
+                    className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-active hover:text-ink"
+                  >
+                    <Link2 className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRevoke(invitation)}
+                    aria-label={`Revoke invitation for ${invitation.email}`}
+                    className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
           </div>
         </div>
+
+        <ConfirmDialog
+          open={memberToRemove !== null}
+          onOpenChange={(next) => !next && setMemberToRemove(null)}
+          variant="destructive"
+          title={`Remove ${
+            (memberToRemove && users[memberToRemove.userId]?.fullName) ??
+            'this member'
+          } from board?`}
+          description="They will lose access to this board immediately and get a notification."
+          primaryLabel={removing ? 'Removing…' : 'Remove'}
+          onConfirm={handleRemoveMember}
+          loading={removing}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,9 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { projectMembersTable, projectsTable } from "@/db/schema";
+import type {
+  projectInvitationsTable,
+  projectMembersTable,
+  projectsTable,
+} from "@/db/schema";
 
 export type ProjectRow = InferSelectModel<typeof projectsTable>;
 export type NewProjectRow = InferInsertModel<typeof projectsTable>;
@@ -17,6 +21,31 @@ export type InvitableRole = Exclude<ProjectRole, "owner">;
 export type InviteMemberPayload = {
   email: string;
   role: InvitableRole;
+};
+
+export type ProjectInvitationRow = InferSelectModel<
+  typeof projectInvitationsTable
+>;
+export type NewProjectInvitationRow = InferInsertModel<
+  typeof projectInvitationsTable
+>;
+
+// รายการ pending ใน invite dialog — คนที่มีสิทธิ์ member:invite เห็น token
+// เพื่อ copy ลิงก์เชิญได้
+export type PendingInvitation = Pick<
+  ProjectInvitationRow,
+  "id" | "email" | "role" | "token" | "expiresAt" | "createdAt"
+>;
+
+export type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
+
+// preview ที่หน้า /invite/[token] ใช้ก่อนกด Accept
+export type InvitationPreview = {
+  projectName: string;
+  role: ProjectRole;
+  email: string;
+  status: InvitationStatus;
+  emailMatches: boolean;
 };
 
 export type Project = ProjectRow & {

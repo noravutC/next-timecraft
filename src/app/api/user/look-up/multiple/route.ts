@@ -1,86 +1,23 @@
-import { auth } from "@/auth";
-import { db } from "@/db";
-import { membershipsTable, usersTable } from "@/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import {
+  filterVisibleUserIds,
+  getPublicUsersByIds,
+} from "@/db/uniq-query/user/user-utils";
+import { createHandle } from "@/lib/api/handle";
+import {
+  lookUpUsersSchema,
+  type LookUpUsersBody,
+} from "@/validations/user.validation";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
-  const session = await auth();
-  const sessionUserId = session?.user?.id;
-  if (!sessionUserId) {
-    return NextResponse.json(
-      { data: [], message: "Not authenticated", status: 401 },
-      { status: 401 },
-    );
-  }
-
-  try {
-    const body = await request.json();
-    const userIds: string[] = Array.isArray(body?.userIds)
-      ? Array.from(
-          new Set(
-            (body.userIds as unknown[]).filter(
-              (u): u is string => typeof u === "string",
-            ),
-          ),
-        )
-      : [];
-
-    if (userIds.length === 0) {
-      return NextResponse.json(
-        { data: [], message: "No user IDs provided", status: 400 },
-        { status: 400 },
-      );
-    }
-
-    const myOrgs = await db
-      .select({ organizationId: membershipsTable.organizationId })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, sessionUserId));
-    const myOrgIds = myOrgs.map((m) => m.organizationId);
-    if (myOrgIds.length === 0) {
-      return NextResponse.json(
-        { data: [], message: "Users fetched", status: 200 },
-        { status: 200 },
-      );
-    }
-
-    const sharedRows = await db
-      .selectDistinct({ userId: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(
-        and(
-          inArray(membershipsTable.organizationId, myOrgIds),
-          inArray(membershipsTable.userId, userIds),
-        ),
-      );
-    const allowedIds = sharedRows.map((r) => r.userId);
-    if (allowedIds.length === 0) {
-      return NextResponse.json(
-        { data: [], message: "Users fetched", status: 200 },
-        { status: 200 },
-      );
-    }
-
-    const users = await db
-      .select({
-        id: usersTable.id,
-        fullName: usersTable.fullName,
-        email: usersTable.email,
-        avatar: usersTable.avatar,
-      })
-      .from(usersTable)
-      .where(inArray(usersTable.id, allowedIds));
+export const POST = createHandle<LookUpUsersBody>(
+  { body: lookUpUsersSchema },
+  async ({ userId, body }) => {
+    const visibleIds = await filterVisibleUserIds(userId, body.userIds);
+    const users = await getPublicUsersByIds(visibleIds);
 
     return NextResponse.json(
       { data: users, message: "Users fetched", status: 200 },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Error fetching users by ids:", error);
-    return NextResponse.json(
-      { data: [], message: "Failed to fetch users", status: 500 },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

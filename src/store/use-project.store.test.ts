@@ -1,20 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Member, ProjectCache } from '@/types';
 
-const { fetchUsersMock } = vi.hoisted(() => ({ fetchUsersMock: vi.fn() }));
-
 vi.mock('@/services/projects.service', () => ({
   projectServices: {
     getProjects: vi.fn(),
     createProject: vi.fn(),
     updateProject: vi.fn(),
     deleteProject: vi.fn(),
-    inviteMember: vi.fn(),
+    removeMember: vi.fn(),
   },
-}));
-
-vi.mock('./use-user.store', () => ({
-  useUserStore: { getState: () => ({ fetchUsers: fetchUsersMock }) },
 }));
 
 import { useProjectStore } from './use-project.store';
@@ -47,59 +41,40 @@ beforeEach(() => {
   seedStore([]);
 });
 
-describe('inviteMember', () => {
-  it('appends the created member and seeds the invited user profile', async () => {
-    seedStore([makeProject('p1', [makeMember('u1')])]);
-    const created = makeMember('u2', 'editor');
-    vi.mocked(projectServices.inviteMember).mockResolvedValue({
-      created,
+describe('removeMember (pessimistic delete)', () => {
+  it('removes only the target member after the API confirms', async () => {
+    seedStore([
+      makeProject('p1', [makeMember('u1'), makeMember('u2', 'editor')]),
+    ]);
+    vi.mocked(projectServices.removeMember).mockResolvedValue({
+      deleted: makeMember('u2', 'editor'),
       message: 'ok',
-      status: 201,
+      status: 200,
     });
 
-    await useProjectStore
-      .getState()
-      .inviteMember('p1', { email: 'u2@example.com', role: 'editor' });
+    await useProjectStore.getState().removeMember('p1', 'u2');
 
     const members = useProjectStore.getState().projects['p1'].members;
-    expect(members).toHaveLength(2);
-    expect(members[1]).toMatchObject({ userId: 'u2', role: 'editor' });
+    expect(members).toHaveLength(1);
+    expect(members[0].userId).toBe('u1');
     expect(useProjectStore.getState().status).toBe('none');
-    expect(fetchUsersMock).toHaveBeenCalledWith(['u2']);
+    expect(projectServices.removeMember).toHaveBeenCalledWith('p1', 'u2');
   });
 
-  it('keeps members unchanged and sets error status when the API fails', async () => {
-    seedStore([makeProject('p1', [makeMember('u1')])]);
-    vi.mocked(projectServices.inviteMember).mockRejectedValue({
-      message: 'No TimeCraft account found for this email',
-      status: 404,
+  it('keeps members and sets error status when the API fails', async () => {
+    seedStore([
+      makeProject('p1', [makeMember('u1'), makeMember('u2', 'viewer')]),
+    ]);
+    vi.mocked(projectServices.removeMember).mockRejectedValue({
+      message: 'The board owner cannot be removed',
+      status: 400,
     });
 
     await expect(
-      useProjectStore
-        .getState()
-        .inviteMember('p1', { email: 'ghost@example.com', role: 'viewer' }),
-    ).rejects.toMatchObject({ status: 404 });
+      useProjectStore.getState().removeMember('p1', 'u2'),
+    ).rejects.toMatchObject({ status: 400 });
 
-    expect(useProjectStore.getState().projects['p1'].members).toHaveLength(1);
+    expect(useProjectStore.getState().projects['p1'].members).toHaveLength(2);
     expect(useProjectStore.getState().status).toBe('error');
-    expect(fetchUsersMock).not.toHaveBeenCalled();
-  });
-
-  it('is a no-op when the response has no created member', async () => {
-    seedStore([makeProject('p1', [makeMember('u1')])]);
-    vi.mocked(projectServices.inviteMember).mockResolvedValue({
-      created: null,
-      message: 'ok',
-      status: 201,
-    });
-
-    await useProjectStore
-      .getState()
-      .inviteMember('p1', { email: 'u2@example.com', role: 'editor' });
-
-    expect(useProjectStore.getState().projects['p1'].members).toHaveLength(1);
-    expect(useProjectStore.getState().status).toBe('none');
-    expect(fetchUsersMock).not.toHaveBeenCalled();
   });
 });
