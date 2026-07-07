@@ -5,6 +5,8 @@ import {
   APIDelete,
   APIPatch,
   APIPost,
+  InviteMemberPayload,
+  Member,
   ProjectCache,
   ProjectRow,
 } from "@/types";
@@ -66,6 +68,18 @@ class ProjectService {
       .then((response) => response.data as APIDelete<ProjectRow>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to delete project");
+      });
+  }
+
+  async inviteMember(
+    projectId: string,
+    payload: InviteMemberPayload,
+  ): Promise<APIPost<Member>> {
+    return this.client
+      .post(`/project/${projectId}/members`, payload)
+      .then((response) => response.data as APIPost<Member>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to invite member");
       });
   }
 

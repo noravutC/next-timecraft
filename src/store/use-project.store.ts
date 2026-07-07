@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ProjectCache } from "@/types";
+import { InviteMemberPayload, ProjectCache } from "@/types";
 import { LoaderStatus } from "@/types/global/types";
 import {
   CreateProjectPayload,
@@ -7,6 +7,7 @@ import {
   projectServices,
 } from "@/services/projects.service";
 import { toRecord } from "@/helper/utils/object";
+import { useUserStore } from "./use-user.store";
 
 type ProjectStore = {
   status: LoaderStatus;
@@ -26,6 +27,10 @@ type ProjectStore = {
   ) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   removeProject: (projectId: string) => void;
+  inviteMember: (
+    projectId: string,
+    payload: InviteMemberPayload,
+  ) => Promise<void>;
   fetchProjects: (
     projectIds: string[],
     fetchAll?: boolean,
@@ -133,6 +138,37 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
           status: "none",
         };
       });
+    } catch (error) {
+      set({ status: "error" });
+      throw error;
+    }
+  },
+  inviteMember: async (projectId, payload) => {
+    set({ status: "creating" });
+    try {
+      const response = await projectServices.inviteMember(projectId, payload);
+      const created = response.created;
+      if (!created) {
+        set({ status: "none" });
+        return;
+      }
+      set((state) => {
+        const project = state.projects[projectId];
+        if (!project) return { status: "none" as const };
+        return {
+          projects: {
+            ...state.projects,
+            [projectId]: {
+              ...project,
+              members: [...project.members, created],
+              timestamp: Date.now(),
+            },
+          },
+          status: "none" as const,
+        };
+      });
+      // เติมโปรไฟล์คนที่เพิ่งเชิญ ให้ avatar/ชื่อแสดงได้ทันที
+      void useUserStore.getState().fetchUsers([created.userId]);
     } catch (error) {
       set({ status: "error" });
       throw error;

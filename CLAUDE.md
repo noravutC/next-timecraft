@@ -7,6 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev          # Start dev server with Turbopack
 pnpm build        # Production build
+pnpm test         # Vitest unit tests (colocated *.test.ts)
+pnpm lint         # ESLint (flat config)
 pnpm format       # Prettier + Tailwind class sorting
 
 # Database (Drizzle)
@@ -16,7 +18,9 @@ pnpm db:push      # Push schema directly (dev only)
 pnpm db:studio    # Open Drizzle Studio
 ```
 
-No test runner is configured. No ESLint is configured — only Prettier.
+Do not run `pnpm format` repo-wide from a feature branch: `.prettierrc` enforces
+single quotes but most older files are double-quoted and were never formatted, so
+a full run rewrites ~230 files. Format only the files you touched.
 
 ## Tech Stack
 
