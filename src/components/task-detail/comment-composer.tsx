@@ -162,8 +162,9 @@ export const CommentComposer = ({
         onFiles={upload.addFiles}
       />
 
+      {/* relative จำเป็น — MentionDropdown เป็น absolute bottom-full ต้องยึดกล่องนี้ */}
       <div
-        className="flex flex-col rounded-md border border-border bg-background p-2 px-3 shadow-sm focus-within:border-primary focus-within:shadow-md"
+        className="relative flex flex-col rounded-md border border-border bg-background p-2 px-3 shadow-sm focus-within:border-primary focus-within:shadow-md"
         onDragOver={(e) => e.preventDefault()}
         onDrop={upload.onDrop}
       >
