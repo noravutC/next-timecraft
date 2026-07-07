@@ -1,8 +1,9 @@
 // src/lib/services/tasks.service.ts
 import apiClient from '@/lib/axios';
-import { APIGet } from '@/types/global';
+
 import {
   APIDelete,
+  APIGet,
   APIPatch,
   APIPost,
   TaskCache,
@@ -27,7 +28,7 @@ class TaskService {
     cursors?: Record<string, TaskPageCursor>,
     filter?: TaskFilter,
   ): Promise<
-    APIGet<TaskCache[]> & {
+    APIGet<TaskCache> & {
       assignees: Record<string, TaskAssigneeLite[]>;
       pageInfo: Record<string, TaskPageInfo>;
     }
@@ -41,7 +42,7 @@ class TaskService {
       })
       .then(
         (response) =>
-          response.data as APIGet<TaskCache[]> & {
+          response.data as APIGet<TaskCache> & {
             assignees: Record<string, TaskAssigneeLite[]>;
             pageInfo: Record<string, TaskPageInfo>;
           },

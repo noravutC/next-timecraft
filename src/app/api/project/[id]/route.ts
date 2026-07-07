@@ -5,37 +5,16 @@ import { projectsTable } from "@/db/schema";
 import { BadRequestError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { projectSettingsSchema } from "@/types/project-settings";
+import {
+  isValidProjectCoverImage,
+  normalizeCoverImage,
+  updateProjectSchema,
+  type UpdateProjectBody,
+} from "@/validations/project.validation";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const DATA_URL_IMAGE_PATTERN =
-  /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
-const HTTP_URL_PATTERN = /^https?:\/\/\S+$/i;
-const MAX_PROJECT_COVER_IMAGE_LENGTH = 2_900_000;
-
-const normalizeCoverImage = (value?: string | null) => {
-  const normalized = value?.trim() ?? "";
-  return normalized.length > 0 ? normalized : null;
-};
-
-const isValidProjectCoverImage = (value: string) => {
-  if (value.length > MAX_PROJECT_COVER_IMAGE_LENGTH) return false;
-  return DATA_URL_IMAGE_PATTERN.test(value) || HTTP_URL_PATTERN.test(value);
-};
 
 type RouteParams = { id: string };
-
-const updateProjectSchema = z.object({
-  name: z.string().optional(),
-  description: z.string().optional(),
-  coverImage: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional(),
-  archived: z.boolean().optional(),
-  settings: z.unknown().optional(),
-});
-
-type UpdateProjectBody = z.infer<typeof updateProjectSchema>;
 
 export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
   {

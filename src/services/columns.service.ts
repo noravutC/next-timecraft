@@ -1,8 +1,8 @@
 // src/services/columns.service.ts
 import apiClient from "@/lib/axios";
-import { APIGet } from "@/types/global";
 import {
   APIDelete,
+  APIGet,
   APIPatch,
   APIPost,
   ColumnCache,
@@ -16,10 +16,10 @@ class ColumnService {
   async getColumnsByProjectId(
     projectId: string,
     limit: number,
-  ): Promise<APIGet<ColumnCache[]>> {
+  ): Promise<APIGet<ColumnCache>> {
     return this.client
       .get(`/column/${projectId}/?limit=${limit}`)
-      .then((response) => response.data as APIGet<ColumnCache[]>)
+      .then((response) => response.data as APIGet<ColumnCache>)
       .catch((error) => {
         throw (
           error?.response?.data ||
