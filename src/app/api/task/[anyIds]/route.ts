@@ -1,9 +1,12 @@
 import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
+import { getAttachmentStoragePathsByTaskIds } from "@/db/uniq-query/comment/comment-utils";
+import { getTasksByIds } from "@/db/uniq-query/task/task-utils";
 import { BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
+import { removeStorageObjects } from "@/lib/supabase-storage";
 import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -161,6 +164,31 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
   },
 );
 
+export const GET = createParamHandle<RouteParams>(
+  {},
+  async ({ params, userId }) => {
+    const taskIds = parseIds(params.anyIds);
+    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
+
+    const existingTaskLinks = await getTaskProjectLinks(taskIds);
+    if (existingTaskLinks.length === 0) {
+      throw new NotFoundError("Tasks not found");
+    }
+
+    const uniqProjectIds = [
+      ...new Set(existingTaskLinks.map((task) => task.projectId)),
+    ];
+    await authorizeOrThrow(userId, uniqProjectIds, "project:view");
+
+    const data = await getTasksByIds(taskIds);
+
+    return NextResponse.json(
+      { data, message: "Get tasks success", status: 200 },
+      { status: 200 },
+    );
+  },
+);
+
 export const DELETE = createParamHandle<RouteParams>(
   {},
   async ({ request, params, userId }) => {
@@ -177,10 +205,18 @@ export const DELETE = createParamHandle<RouteParams>(
     ];
     await authorizeOrThrow(userId, uniqProjectIds, "task:delete");
 
+    // เก็บ path ไฟล์แนบก่อนลบ — cascade จะพาแถว attachment (และ path) หายไป
+    // ถ้าไม่เก็บตอนนี้ ไฟล์ใน storage จะกลายเป็นขยะที่ตามลบย้อนหลังไม่ได้
+    const attachmentPaths = await getAttachmentStoragePathsByTaskIds(taskIds);
+
     const deletedRows = await db
       .delete(tasksTable)
       .where(inArray(tasksTable.id, taskIds))
       .returning({ id: tasksTable.id });
+
+    if (deletedRows.length > 0) {
+      await removeStorageObjects(attachmentPaths);
+    }
 
     const deletedIdSet = new Set(deletedRows.map((r) => r.id));
     const groupedByProject = new Map<string, string[]>();

@@ -2,6 +2,7 @@ import { db } from "@/db";
 import {
   columnsTable,
   commentReadStateTable,
+  taskAssigneesTable,
   taskCommentAttachmentsTable,
   taskCommentReactionsTable,
   taskCommentsTable,
@@ -227,4 +228,41 @@ export async function countUnreadComments(args: {
     .from(taskCommentsTable)
     .where(and(...conds));
   return Number(value);
+}
+
+// path ไฟล์แนบทั้งหมดใต้ tasks เหล่านี้ (รวม comment ที่ soft-delete แล้ว) —
+// ต้องเก็บก่อนลบ task เพราะ cascade จะพาแถว attachment (และ path) หายไปด้วย
+export async function getAttachmentStoragePathsByTaskIds(
+  taskIds: string[],
+): Promise<string[]> {
+  if (taskIds.length === 0) return [];
+  const rows = await db
+    .select({ storagePath: taskCommentAttachmentsTable.storagePath })
+    .from(taskCommentAttachmentsTable)
+    .innerJoin(
+      taskCommentsTable,
+      eq(taskCommentAttachmentsTable.commentId, taskCommentsTable.id),
+    )
+    .where(inArray(taskCommentsTable.taskId, taskIds));
+  return rows.map((r) => r.storagePath);
+}
+
+// ผู้เกี่ยวข้องกับ task = assignees + คนที่เคยคอมเมนต์ (ยังไม่ถูกลบ) —
+// ใช้เลือกผู้รับ notification แบบ comment_reply
+export async function getTaskParticipantIds(taskId: string): Promise<string[]> {
+  const [authors, assignees] = await Promise.all([
+    db
+      .selectDistinct({ userId: taskCommentsTable.userId })
+      .from(taskCommentsTable)
+      .where(
+        and(eq(taskCommentsTable.taskId, taskId), isNull(taskCommentsTable.deletedAt)),
+      ),
+    db
+      .select({ userId: taskAssigneesTable.userId })
+      .from(taskAssigneesTable)
+      .where(eq(taskAssigneesTable.taskId, taskId)),
+  ]);
+  return [
+    ...new Set([...authors.map((r) => r.userId), ...assignees.map((r) => r.userId)]),
+  ];
 }

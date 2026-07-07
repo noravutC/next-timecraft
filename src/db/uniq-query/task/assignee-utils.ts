@@ -11,6 +11,7 @@ export async function getTaskColumnLink(taskId: string) {
   const [row] = await db
     .select({
       taskId: tasksTable.id,
+      taskTitle: tasksTable.title,
       columnId: tasksTable.columnId,
       projectId: columnsTable.projectId,
     })
@@ -65,7 +66,7 @@ export async function fetchAssigneesForTasks(
 export async function setAssignees(
   taskId: string,
   userIds: string[],
-): Promise<AssigneeWithUser[]> {
+): Promise<{ assignees: AssigneeWithUser[]; added: string[] }> {
   return db.transaction(async (tx) => {
     const current = await tx
       .select({ userId: taskAssigneesTable.userId })
@@ -97,7 +98,7 @@ export async function setAssignees(
         .onConflictDoNothing();
     }
 
-    return tx
+    const assignees = await tx
       .select({
         userId: taskAssigneesTable.userId,
         fullName: usersTable.fullName,
@@ -107,5 +108,7 @@ export async function setAssignees(
       .from(taskAssigneesTable)
       .innerJoin(usersTable, eq(taskAssigneesTable.userId, usersTable.id))
       .where(eq(taskAssigneesTable.taskId, taskId));
+
+    return { assignees, added: toAdd };
   });
 }

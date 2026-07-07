@@ -86,3 +86,21 @@ export async function createNotification(args: {
     .returning();
   return notification;
 }
+
+export async function createNotifications(args: {
+  recipientIds: string[];
+  type: Notification["type"];
+  payload: NotificationPayload;
+}): Promise<Notification[]> {
+  if (args.recipientIds.length === 0) return [];
+  return db
+    .insert(notificationsTable)
+    .values(
+      args.recipientIds.map((userId) => ({
+        userId,
+        type: args.type,
+        payload: args.payload,
+      })),
+    )
+    .returning();
+}

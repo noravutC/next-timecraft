@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Bell } from 'lucide-react';
+import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { taskServices } from '@/services/tasks.service';
 import { useNotificationStore } from '@/store/use-notification.store';
 import { useNotifications } from '@/store/sync-live-data/useNotifications';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
@@ -37,14 +39,21 @@ const formatRelative = (date: Date) => {
 
 const ACTION_LABELS: Record<Notification['type'], string> = {
   comment_mention: 'mentioned you on',
-  comment_reply: 'replied to you on',
+  comment_reply: 'commented on',
   board_invite: 'invited you to',
   member_removed: 'removed you from',
+  task_assigned: 'assigned you to',
 };
 
-// ตัวหนาท้ายประโยค: comment → ชื่อ task, เรื่องบอร์ด → ชื่อบอร์ด
+// notification ที่ผูกกับ task — กดแล้วเปิด task detail (ผ่าน stale-guard)
+const isTaskNotification = (n: Notification) =>
+  n.type === 'comment_mention' ||
+  n.type === 'comment_reply' ||
+  n.type === 'task_assigned';
+
+// ตัวหนาท้ายประโยค: เรื่อง task → ชื่อ task, เรื่องบอร์ด → ชื่อบอร์ด
 const targetLabel = (n: Notification) =>
-  n.type === 'comment_mention' || n.type === 'comment_reply'
+  isTaskNotification(n)
     ? (n.payload as CommentNotificationPayload).taskTitle
     : (n.payload as BoardInviteNotificationPayload).projectName;
 
@@ -97,7 +106,7 @@ export const NotificationBell = () => {
         ? items.filter((n) => n.type === 'comment_mention')
         : items;
 
-  const handleClick = (n: Notification) => {
+  const handleClick = async (n: Notification) => {
     if (!n.readAt) markRead([n.id]);
     setOpen(false);
     if (n.type === 'board_invite') {
@@ -111,8 +120,18 @@ export const NotificationBell = () => {
       removeProject(n.payload.projectId);
       return;
     }
-    setProjectIsUsing(n.payload.projectId);
-    openTask((n.payload as CommentNotificationPayload).taskId);
+    // comment_mention / comment_reply / task_assigned — เปิด task
+    const payload = n.payload as CommentNotificationPayload;
+    try {
+      // task อาจถูกลบไปแล้ว — เช็คกับ server ก่อน เพราะ client store
+      // ไม่รู้จัก task ของโปรเจกต์ที่ยังไม่ได้โหลด
+      await taskServices.getTasksByIds([payload.taskId]);
+    } catch {
+      toast.error('This task is no longer available');
+      return;
+    }
+    setProjectIsUsing(payload.projectId);
+    openTask(payload.taskId);
   };
 
   return (
@@ -205,7 +224,7 @@ export const NotificationBell = () => {
                   <li key={n.id}>
                     <button
                       type="button"
-                      onClick={() => handleClick(n)}
+                      onClick={() => void handleClick(n)}
                       className="flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface/60"
                     >
                       <Avatar className="size-9 shrink-0 rounded-lg">

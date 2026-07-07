@@ -64,6 +64,13 @@
       "when": 1783426608079,
       "tag": "0009_wooden_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783429502414,
+      "tag": "0010_cheerful_sister_grimm",
+      "breakpoints": true
     }
   ]
 }

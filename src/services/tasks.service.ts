@@ -54,6 +54,15 @@ class TaskService {
         );
       });
   }
+  async getTasksByIds(taskIds: string[]): Promise<APIGet<TaskCache[]>> {
+    return this.client
+      .get(`/task/${taskIds.join(',')}`)
+      .then((response) => response.data as APIGet<TaskCache[]>)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to fetch tasks');
+      });
+  }
+
   async createTasks(
     payload: CreateTaskPayload[],
   ): Promise<APIPost<TaskCache[]>> {

@@ -1,12 +1,15 @@
 import { db } from "@/db";
 import { projectMembersTable } from "@/db/schema";
-import { NotFoundError } from "@/lib/api/errors";
-import { createParamHandle } from "@/lib/api/handle";
+import type { TaskAssignedNotificationPayload } from "@/db/schema";
+import { createNotifications } from "@/db/uniq-query/notification/notification-utils";
+import { getProjectNameById } from "@/db/uniq-query/project/project-utils";
 import {
   fetchAssignees,
   getTaskColumnLink,
   setAssignees,
 } from "@/db/uniq-query/task/assignee-utils";
+import { NotFoundError } from "@/lib/api/errors";
+import { createParamHandle } from "@/lib/api/handle";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { and, eq, inArray } from "drizzle-orm";
@@ -40,7 +43,7 @@ type UpdateAssigneesBody = z.infer<typeof updateAssigneesSchema>;
 
 export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
   { body: updateAssigneesSchema },
-  async ({ request, params, body, userId }) => {
+  async ({ request, params, body, userId, session }) => {
     const taskId = params.anyIds;
     const requested = [...new Set(body.userIds)];
 
@@ -63,13 +66,43 @@ export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
       validUserIds = members.map((m) => m.userId);
     }
 
-    const updated = await setAssignees(taskId, validUserIds);
+    const { assignees: updated, added } = await setAssignees(
+      taskId,
+      validUserIds,
+    );
     triggerExclusive(
       request,
       `project-${link.projectId}`,
       "task-assignees-updated",
       { taskId, assignees: updated },
     ).catch((e) => console.error("Pusher assignees failed:", e));
+
+    // แจ้งเฉพาะคนที่เพิ่งถูก assign (ไม่นับตัวคนกด)
+    const notifyIds = added.filter((id) => id !== userId);
+    if (notifyIds.length > 0) {
+      const payload: TaskAssignedNotificationPayload = {
+        taskId,
+        projectId: link.projectId,
+        taskTitle: link.taskTitle,
+        projectName:
+          (await getProjectNameById(link.projectId)) ?? "a board",
+        actorUserId: userId,
+        actorName: session.user?.name ?? "A teammate",
+      };
+      const notifications = await createNotifications({
+        recipientIds: notifyIds,
+        type: "task_assigned",
+        payload,
+      });
+      for (const n of notifications) {
+        triggerExclusive(
+          request,
+          `user-${n.userId}`,
+          "notification-added",
+          n,
+        ).catch((e) => console.error("Pusher notif failed:", e));
+      }
+    }
 
     return NextResponse.json(
       { updated, message: "Update assignees success", status: 200 },
