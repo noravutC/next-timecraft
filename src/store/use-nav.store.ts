@@ -15,12 +15,20 @@ export const viewMeta: Record<WorkspaceView, ViewMetaItem> = {
   settings: { label: 'Settings', icon: Settings2, iconClass: 'size-3.5' },
 };
 
+// dialog ชุด bottom bar (switch/create/settings) — อยู่ใน store เพราะเปิดได้
+// จากหลายที่ (bottom bar และชื่อโปรเจกต์บน header)
+export type BoardDialog = 'switch' | 'create' | 'settings' | null;
+
 interface NavState {
   view: WorkspaceView;
   setView: (view: WorkspaceView) => void;
+  boardDialog: BoardDialog;
+  setBoardDialog: (dialog: BoardDialog) => void;
 }
 
 export const useNavStore = create<NavState>((set) => ({
   view: 'board',
   setView: (view) => set({ view }),
+  boardDialog: null,
+  setBoardDialog: (boardDialog) => set({ boardDialog }),
 }));

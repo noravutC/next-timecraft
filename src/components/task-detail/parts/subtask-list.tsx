@@ -60,7 +60,7 @@ export const SubtaskList = ({ taskId }: Props) => {
       {total > 0 && (
         <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
           <div
-            className={cn("h-full bg-blue-600 transition-[width]")}
+            className={cn("h-full bg-brand transition-[width]")}
             style={{ width: `${pct}%` }}
           />
         </div>

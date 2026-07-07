@@ -42,7 +42,7 @@ export const PriorityPill = ({
               isPlain ? 'size-4' : size === 'sm' ? 'size-3' : 'size-3.5',
             )}
             style={
-              isPlain ? { color: s.text } : undefined
+              isPlain ? { color: s.dot } : undefined
             }
             fill="currentColor"
           />
@@ -58,7 +58,7 @@ export const PriorityPill = ({
               onClick={() => onChange(p)}
               className="gap-2"
             >
-              <Flag className="size-3.5" fill={ps.text} color={ps.text} />
+              <Flag className="size-3.5" fill={ps.dot} color={ps.dot} />
               <span style={{ color: ps.text }}>{ps.label}</span>
             </DropdownMenuItem>
           );

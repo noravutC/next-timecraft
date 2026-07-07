@@ -1,7 +1,8 @@
 'use client';
 
+import { ChevronDown, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
-import { Globe, Star } from 'lucide-react';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { ProjectAvatar } from '@/components/project/project-avatar';
@@ -12,10 +13,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
 
 const AVATAR_LIMIT = 3;
 
@@ -26,11 +32,13 @@ const roleLabel: Record<string, string> = {
   viewer: 'Viewer',
 };
 
+// เส้นคั่นแนวตั้งของ header ตาม design (1×22px)
+const HeaderDivider = () => <div className="h-5.5 w-px shrink-0 bg-line" />;
+
 export const ProjectHeader = () => {
   const { projectIsUsing, projects, status } = useProjectStore();
   const { users } = useUserStore();
-  const { setView } = useNavStore();
-  const [starred, setStarred] = useState(false);
+  const setBoardDialog = useNavStore((s) => s.setBoardDialog);
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
   const members = projectValue?.members ?? [];
@@ -39,194 +47,107 @@ export const ProjectHeader = () => {
   const loading = status === 'fetching';
 
   return (
-    <div className="flex w-full flex-col">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-4">
-        {/* LEFT — app logo + project identity */}
-        <div className="flex items-center gap-2">
-          <Logo size={20} textSize="base" />
-          <Separator orientation="vertical" className="mx-1.5 h-4" />
+    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-5">
+      {/* LEFT — logo | board identity (กดเปิด switcher แบบ design) */}
+      <div className="flex items-center gap-4.5">
+        <Logo size={20} textSize="base" />
+        <HeaderDivider />
+        {loading ? (
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-6 rounded-md" />
+            <Skeleton className="h-5 w-36 rounded" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setBoardDialog('switch')}
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-surface-hover"
+          >
+            {projectValue && (
+              <ProjectAvatar
+                project={projectValue}
+                size="size-6"
+                rounded="rounded-md"
+              />
+            )}
+            <span className="text-md font-bold text-ink">
+              {projectValue?.name ?? '—'}
+            </span>
+            <ChevronDown className="size-4 text-ink-faint" />
+          </button>
+        )}
+      </div>
+
+      {/* RIGHT — avatars | invite | bell | user */}
+      <TooltipProvider delayDuration={200}>
+        <div className="flex items-center gap-3.5">
           {loading ? (
-            <>
-              <Skeleton className="size-5 rounded" />
-              <Skeleton className="h-5 w-40 rounded" />
-            </>
+            <Skeleton className="h-7.5 w-44 rounded-full" />
           ) : (
             <>
-              {projectValue && (
-                <ProjectAvatar
-                  project={projectValue}
-                  size="size-6"
-                  rounded="rounded"
-                />
+              {members.length > 0 && (
+                <AvatarGroup
+                  className="cursor-pointer transition-opacity hover:opacity-90"
+                  onClick={() => toast.info('Member invites coming soon')}
+                >
+                  {visibleMembers.map((member) => {
+                    const user = users[member.userId];
+                    const initials =
+                      user?.fullName?.slice(0, 2).toUpperCase() ?? '?';
+                    return (
+                      <Tooltip key={member.userId}>
+                        <TooltipTrigger asChild>
+                          <Avatar className="size-7.5 ring-2 ring-background">
+                            <AvatarImage
+                              src={user?.avatar ?? undefined}
+                              alt={user?.fullName}
+                            />
+                            <AvatarFallback className="text-xs font-bold">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="space-y-0.5">
+                          <p className="text-sm font-semibold">
+                            {user?.fullName ?? '…'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {user?.email}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {roleLabel[member.role] ?? member.role}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                  {overflowCount > 0 && (
+                    <AvatarGroupCount className="size-7.5 bg-surface-active text-xs font-bold text-ink-muted ring-2 ring-background">
+                      +{overflowCount}
+                    </AvatarGroupCount>
+                  )}
+                </AvatarGroup>
               )}
-              <span className="text-md rounded px-1 py-0.5 font-semibold text-foreground transition-colors">
-                {projectValue?.name ?? '—'}
-              </span>
 
-              <Separator orientation="vertical" className="mx-0.5 h-4" />
+              {/* Invite — ปุ่ม placeholder รอฟีเจอร์ invite (ยังไม่มี endpoint) */}
+              <Button
+                variant="outline"
+                className="h-8.5 gap-1.5 rounded-lg border-line px-3 text-sm font-bold text-brand-dark shadow-none hover:border-brand-line hover:bg-brand-soft/40 hover:text-brand-dark"
+                onClick={() => toast.info('Member invites coming soon')}
+              >
+                <UserPlus className="size-4" />
+                Invite
+              </Button>
 
-              <TooltipProvider delayDuration={200}>
-                {/* Star */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 hover:bg-surface-hover"
-                      onClick={() => setStarred((s) => !s)}
-                    >
-                      <Star
-                        className={`size-3.5 transition-colors ${starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {starred ? 'Remove from starred' : 'Star this project'}
-                  </TooltipContent>
-                </Tooltip>
+              <HeaderDivider />
 
-                {/* Visibility */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 hover:bg-surface-hover hover:text-brand"
-                    >
-                      <Globe className="size-3.5 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Visibility</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <NotificationBell />
+
+              <UserMenu />
             </>
           )}
         </div>
-
-        {/* RIGHT — members + actions */}
-        <TooltipProvider delayDuration={200}>
-          <div className="flex items-center gap-1.5">
-            {loading ? (
-              <Skeleton className="h-6 w-28 rounded-full" />
-            ) : (
-              <>
-                <NotificationBell />
-                {/* Member avatars */}
-                {/* {members.length > 0 && (
-                  <AvatarGroup>
-                    {visibleMembers.map((member) => {
-                      const user = users[member.userId];
-                      const initials =
-                        user?.fullName?.slice(0, 2).toUpperCase() ?? '?';
-                      return (
-                        <Tooltip key={member.userId}>
-                          <TooltipTrigger asChild>
-                            <Avatar className="size-7 cursor-pointer">
-                              <AvatarImage
-                                src={user?.avatar ?? undefined}
-                                alt={user?.fullName}
-                              />
-                              <AvatarFallback className="text-xs">
-                                {initials}
-                              </AvatarFallback>
-                            </Avatar>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="space-y-0.5">
-                            <p className="text-sm font-semibold">
-                              {user?.fullName ?? '...'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {user?.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {roleLabel[member.role] ?? member.role}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                    {overflowCount > 0 && (
-                      <AvatarGroupCount className="size-7 text-xs">
-                        +{overflowCount}
-                      </AvatarGroupCount>
-                    )}
-                  </AvatarGroup>
-                )} */}
-
-                <Separator orientation="vertical" className="h-4" />
-
-                <UserMenu />
-
-                {/* Filter */}
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-7">
-                      <SlidersHorizontal className="size-3.5 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Filter</TooltipContent>
-                </Tooltip> */}
-
-                {/* Settings */}
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7"
-                      onClick={() => setView('settings')}
-                    >
-                      <Settings2 className="size-3.5 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Settings</TooltipContent>
-                </Tooltip> */}
-
-                {/* More */}
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-7">
-                      <MoreHorizontal className="size-3.5 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">More</TooltipContent>
-                </Tooltip> */}
-
-                {/* <Separator orientation="vertical" className="h-4" /> */}
-
-                {/* Share / Invite */}
-                {/* <Button
-                  // variant="outline"
-                  size="sm"
-                  className="h-7 gap-1.5 text-sm"
-                  onClick={() => setView('projects')}
-                >
-                  <UserPlus className="size-3.5" />
-                  Share
-                </Button> */}
-              </>
-            )}
-          </div>
-        </TooltipProvider>
-      </header>
-
-      {/* Breadcrumb sub-bar */}
-      {/* {menuValue.key !== 'none' && (
-        <div className="flex shrink-0 items-center px-4 py-2">
-          <nav className="flex items-center gap-1 text-xs">
-            <div
-              onClick={() => setMenuValue('none')}
-              className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {barValue.label}
-            </div>
-            <ChevronRight className="size-3 text-muted-foreground/50" />
-            <span className="font-medium text-foreground">
-              {menuValue.label}
-            </span>
-          </nav>
-        </div>
-      )} */}
-    </div>
+      </TooltipProvider>
+    </header>
   );
 };

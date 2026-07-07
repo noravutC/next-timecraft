@@ -143,9 +143,9 @@ Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Hook `useRea
 - **`ProjectMenuProvider`** (`src/context/project/project-menu-provider.tsx`) — menu state: `'settings' | 'new-project' | 'none'`
 - **`LoadingProvider`** (`src/context/loading-provider.tsx`) — global loading flag
 
-### Project Layout / Settings Slide Transition
+### Bottom-Bar Dialogs (Board Settings / Switch Boards / Create Board)
 
-`ProjectMenuProvider` holds menu state. `ProjectToolsLayout` (`src/app/(main)/project/project-layout.tsx`) uses `AnimatePresence` (framer-motion) to slide `ProjectSettingsPanel` in from the right over the Board — **do not use a Dialog or Sheet for project settings**.
+Board settings, board switcher, and board creation are centered Dialogs opened from the bottom bar — all in `src/components/bottom-menu/` (`board-settings-dialog.tsx`, `project-switcher-panel.tsx`, `create-board-dialog.tsx`). They share one skeleton: `h-[560px] sm:max-w-2xl`, header with brand-soft icon tile + round `DialogClose`, `border-b`/`border-t` section dividers. Keep new bottom-bar dialogs on this same skeleton so switching between them doesn't jump.
 
 ### Drag-and-Drop
 

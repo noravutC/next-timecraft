@@ -107,3 +107,99 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] &
     template_3: templates[2],
   });
 })();
+
+// ─── Board templates (Create-Board dialog) ──────────────────────────────
+// ข้อมูลล้วน ไม่มี JSX — dialog เอาไปประกอบ CreateColumnPayload เอง
+
+export type BoardTemplate = {
+  id: string;
+  name: string;
+  tagline: string;
+  emoji: string;
+  emojiBg: string; // tailwind class ของกล่องไอคอน
+  columns: { name: string; color: string }[];
+};
+
+export const BOARD_TEMPLATES: BoardTemplate[] = [
+  {
+    id: "kanban",
+    name: "Kanban Board",
+    tagline: "Classic task flow",
+    emoji: "📋",
+    emojiBg: "bg-red-50",
+    columns: [
+      { name: "Backlog", color: "#94A3B8" },
+      { name: "To Do", color: "#FBBF24" },
+      { name: "In Progress", color: "#F97316" },
+      { name: "Review", color: "#60A5FA" },
+      { name: "Done", color: "#34D399" },
+    ],
+  },
+  {
+    id: "scrum",
+    name: "Scrum Sprint",
+    tagline: "Sprint-based workflow",
+    emoji: "🏃",
+    emojiBg: "bg-emerald-50",
+    columns: [
+      { name: "Product Backlog", color: "#94A3B8" },
+      { name: "Sprint Backlog", color: "#FBBF24" },
+      { name: "In Progress", color: "#F97316" },
+      { name: "In Review", color: "#60A5FA" },
+      { name: "Done", color: "#34D399" },
+    ],
+  },
+  {
+    id: "bug",
+    name: "Bug Tracking",
+    tagline: "Triage & fix issues",
+    emoji: "🐞",
+    emojiBg: "bg-rose-50",
+    columns: [
+      { name: "Reported", color: "#F87171" },
+      { name: "Confirmed", color: "#FB923C" },
+      { name: "In Progress", color: "#FBBF24" },
+      { name: "Testing", color: "#60A5FA" },
+      { name: "Resolved", color: "#34D399" },
+    ],
+  },
+  {
+    id: "roadmap",
+    name: "Product Roadmap",
+    tagline: "Plan by quarter",
+    emoji: "🚀",
+    emojiBg: "bg-pink-50",
+    columns: [
+      { name: "Ideas", color: "#94A3B8" },
+      { name: "Planned", color: "#FBBF24" },
+      { name: "This Quarter", color: "#F97316" },
+      { name: "Shipped", color: "#34D399" },
+    ],
+  },
+  {
+    id: "content",
+    name: "Content Calendar",
+    tagline: "Plan & publish content",
+    emoji: "🎨",
+    emojiBg: "bg-orange-50",
+    columns: [
+      { name: "Ideas", color: "#94A3B8" },
+      { name: "Drafting", color: "#FBBF24" },
+      { name: "Editing", color: "#F97316" },
+      { name: "Scheduled", color: "#60A5FA" },
+      { name: "Published", color: "#34D399" },
+    ],
+  },
+  {
+    id: "blank",
+    name: "Blank Board",
+    tagline: "Start from scratch",
+    emoji: "◻️",
+    emojiBg: "bg-brand-soft/60",
+    columns: [
+      { name: "To Do", color: "#94A3B8" },
+      { name: "Doing", color: "#FBBF24" },
+      { name: "Done", color: "#34D399" },
+    ],
+  },
+];

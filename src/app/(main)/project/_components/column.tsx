@@ -249,7 +249,7 @@ export const Column = ({
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-15rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-active/60 text-gray-800 ${stateStyles[state.type]}`,
+          `flex max-h-[calc(100vh-15.5rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-column text-gray-800 shadow-[0_1px_2px_rgba(20,22,35,0.03),0_6px_16px_rgba(20,22,35,0.05)] ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
@@ -259,14 +259,14 @@ export const Column = ({
         >
           {/* แถบสีประจำ column */}
           <div
-            className="h-1 w-full flex-shrink-0"
+            className="h-1.5 w-full flex-shrink-0"
             style={{ backgroundColor: column.color ?? '#94A3B8' }}
           />
           <div
             className="flex flex-row items-center gap-2 px-3 pt-2.5 pb-2"
             ref={headerRef}
           >
-            <div className="text-sm font-semibold text-ink">{column.title}</div>
+            <div className="text-md font-bold text-ink">{column.title}</div>
             <Badge
               variant="outline"
               className={cn(
