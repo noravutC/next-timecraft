@@ -1,28 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ChevronDown, Settings2, Sparkles } from 'lucide-react';
+import { Settings2, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Loader } from '@/components/ui/loader';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { aiServices } from '@/services/ai.service';
 import type { AiSettingsStatus } from '@/app/api/ai/settings/route';
 import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
+import { AiBreakdownSettings } from './ai-breakdown-settings';
 
 type BoardColumnLike = {
   id: string;
@@ -34,107 +32,27 @@ type BoardColumnLike = {
 const PROVIDER_LABELS = { claude: 'Claude', gemini: 'Gemini' } as const;
 type Provider = keyof typeof PROVIDER_LABELS;
 
-const AiSettingsView = ({
-  settings,
-  onSaved,
-  onBack,
-}: {
-  settings: AiSettingsStatus;
-  onSaved: (next: AiSettingsStatus) => void;
-  onBack: () => void;
-}) => {
-  const [provider, setProvider] = useState<Provider>(settings.provider);
-  const [apiKey, setApiKey] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  const hasKey =
-    provider === 'claude' ? settings.hasClaudeKey : settings.hasGeminiKey;
-
-  const handleSave = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      const trimmed = apiKey.trim();
-      const { updated } = await aiServices.updateSettings({
-        provider,
-        ...(trimmed
-          ? provider === 'claude'
-            ? { claudeApiKey: trimmed }
-            : { geminiApiKey: trimmed }
-          : {}),
-      });
-      if (updated) onSaved(updated);
-      setApiKey('');
-      toast.success('AI settings saved');
-      onBack();
-    } catch (error) {
-      console.error('Save AI settings failed:', error);
-      toast.error('Failed to save AI settings');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="size-7" onClick={onBack}>
-          <ArrowLeft size={14} />
-        </Button>
-        <span className="text-sm font-semibold">AI settings</span>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label>Provider</Label>
-        <div className="flex gap-2">
-          {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
-            <Button
-              key={p}
-              variant={provider === p ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setProvider(p)}
-            >
-              {PROVIDER_LABELS[p]}
-            </Button>
-          ))}
-        </div>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="ai-api-key">{PROVIDER_LABELS[provider]} API key</Label>
-        <Input
-          id="ai-api-key"
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={
-            hasKey
-              ? '•••••••• (saved — enter to replace)'
-              : 'Paste your API key'
-          }
-          autoComplete="off"
-        />
-        <p className="text-xs text-muted-foreground">
-          Stored encrypted on the server and only used for your own requests.
-          {!hasKey && settings.hasServerFallback && provider === 'claude'
-            ? " Leave empty to use the server's shared Claude key."
-            : ''}
-        </p>
-      </div>
-      <Button size="sm" onClick={handleSave} disabled={isSaving}>
-        {isSaving ? <Loader size="xs" onColor /> : 'Save'}
-      </Button>
-    </div>
-  );
-};
+const TABS = [
+  { key: 'generate', label: 'Generate', icon: Sparkles },
+  { key: 'settings', label: 'Settings', icon: Settings2 },
+] as const;
+type TabKey = (typeof TABS)[number]['key'];
 
 export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
   const createTasks = useTaskStore((s) => s.createTasks);
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<'generate' | 'settings'>('generate');
+  const [tab, setTab] = useState<TabKey>('generate');
   const [settings, setSettings] = useState<AiSettingsStatus | null>(null);
   const [goal, setGoal] = useState('');
   const [columnId, setColumnId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // เปิด sheet ใหม่ให้กลับมาแท็บ Generate เสมอ (adjust-state-on-prop-change)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setTab('generate');
+  }
 
   useEffect(() => {
     if (!open || settings) return;
@@ -147,9 +65,28 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
   if (columns.length === 0) return null;
 
   const targetColumn = columns.find((c) => c.id === columnId) ?? columns[0];
+  const provider: Provider = settings?.provider ?? 'claude';
+  // Claude มี key ฝั่ง server ให้ fallback ได้ — Gemini ต้องมี key ของตัวเอง
+  const keyReady = settings
+    ? provider === 'claude'
+      ? settings.hasClaudeKey || settings.hasServerFallback
+      : settings.hasGeminiKey
+    : false;
+  const canGenerate =
+    !isGenerating && keyReady && goal.trim().length >= 3 && Boolean(settings);
+
+  const switchProvider = (next: Provider) => {
+    if (!settings || settings.provider === next) return;
+    const prev = settings;
+    setSettings({ ...settings, provider: next });
+    aiServices.updateSettings({ provider: next }).catch(() => {
+      setSettings(prev);
+      toast.error('Failed to switch model');
+    });
+  };
 
   const handleGenerate = async () => {
-    if (isGenerating || goal.trim().length < 3) return;
+    if (!canGenerate) return;
     setIsGenerating(true);
 
     let lastFraction = targetColumn.cards.at(-1)?.orderFraction ?? null;
@@ -199,76 +136,142 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
     }
   };
 
-  const providerLabel = settings ? PROVIDER_LABELS[settings.provider] : null;
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => !isGenerating && setOpen(next)}
-    >
-      <PopoverTrigger asChild>
+    <Sheet open={open} onOpenChange={(next) => !isGenerating && setOpen(next)}>
+      <SheetTrigger asChild>
         {/* สเกลเดียวกับปุ่มใน bottom bar (h-10 / rounded-xl / เงา brand) ให้ดูเป็นชุดเดียวกัน */}
         <Button
-          className="absolute right-5 bottom-5 z-10 h-10 gap-1.5 rounded-xl px-3.5 text-sm font-semibold shadow-[0_3px_10px_rgba(91,80,230,0.35)] hover:bg-brand-dark"
+          className="absolute right-5 bottom-5 z-10 h-10 gap-4 rounded-xl !p-5.5 text-sm font-semibold shadow-[0_3px_10px_rgba(91,80,230,0.35)] hover:bg-brand-dark"
           data-testid="ai-breakdown-trigger"
         >
           <Sparkles size={15} />
-          AI breakdown
+          AI Breakdown
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-80">
-        {view === 'settings' && settings ? (
-          <AiSettingsView
-            settings={settings}
-            onSaved={setSettings}
-            onBack={() => setView('generate')}
-          />
-        ) : (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="ai-goal">What do you want to get done?</Label>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => setView('settings')}
-                disabled={isGenerating || !settings}
-                aria-label="AI settings"
-              >
-                <Settings2 size={14} />
-              </Button>
-            </div>
-            <Textarea
-              id="ai-goal"
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              placeholder="e.g. Launch the marketing site by end of month"
-              rows={3}
-              disabled={isGenerating}
-            />
-            <div className="flex items-center justify-between gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={isGenerating}>
-                    {targetColumn.title}
-                    <ChevronDown size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {columns.map((col) => (
-                    <DropdownMenuItem
-                      key={col.id}
-                      onClick={() => setColumnId(col.id)}
+      </SheetTrigger>
+
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+      >
+        <SheetHeader className="flex-row items-center gap-3 space-y-0 border-b px-5 py-4 text-left">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-violet-500">
+            <Sparkles className="size-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <SheetTitle className="text-lg font-semibold text-ink">
+              AI Breakdown
+            </SheetTitle>
+            <SheetDescription className="text-sm text-ink-subtle">
+              Generate tasks with Claude or Gemini
+            </SheetDescription>
+          </div>
+          <SheetClose className="ml-auto flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface text-ink-muted transition-colors hover:bg-surface-active hover:text-ink">
+            <X className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetClose>
+        </SheetHeader>
+
+        <div className="flex gap-6 border-b px-5">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              className={cn(
+                '-mb-px flex cursor-pointer items-center gap-1.5 border-b-2 py-3 text-sm font-semibold transition-colors',
+                tab === key
+                  ? 'border-brand text-brand'
+                  : 'border-transparent text-ink-subtle hover:text-ink',
+              )}
+            >
+              <Icon className="size-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="scrollbar-thin-y scrollbar-light min-h-0 flex-1 overflow-y-auto px-5 py-5 [overflow-anchor:none]">
+          {tab === 'settings' && settings ? (
+            <AiBreakdownSettings settings={settings} onSaved={setSettings} />
+          ) : (
+            <div className="flex flex-col">
+              <p className="mb-2 text-sm font-semibold text-ink">
+                Describe what you want to build
+              </p>
+              <Textarea
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder="e.g. Set up SSO login with Okta, including provisioning, tests, and docs"
+                rows={5}
+                disabled={isGenerating}
+                className="rounded-xl border-line text-sm placeholder:text-ink-faint"
+              />
+
+              <div className="mt-5 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold tracking-wider text-ink-subtle uppercase">
+                    Model
+                  </p>
+                  <div className="flex rounded-lg bg-surface-active p-1">
+                    {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => switchProvider(p)}
+                        disabled={isGenerating || !settings}
+                        className={cn(
+                          'flex-1 cursor-pointer rounded-md py-1.5 text-sm font-semibold transition-colors',
+                          provider === p
+                            ? 'bg-white text-brand shadow-sm'
+                            : 'text-ink-subtle hover:text-ink',
+                        )}
+                      >
+                        {PROVIDER_LABELS[p]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold tracking-wider text-ink-subtle uppercase">
+                    Add to
+                  </p>
+                  <select
+                    value={targetColumn.id}
+                    onChange={(e) => setColumnId(e.target.value)}
+                    disabled={isGenerating}
+                    className="h-9.5 w-full cursor-pointer rounded-lg border border-line bg-white px-3 text-sm text-ink"
+                  >
+                    {columns.map((col) => (
+                      <option key={col.id} value={col.id}>
+                        {col.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {settings && !keyReady && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                  <TriangleAlert className="size-4 shrink-0" />
+                  <span>
+                    No API key for {PROVIDER_LABELS[provider]}. Add one in{' '}
+                    <button
+                      type="button"
+                      onClick={() => setTab('settings')}
+                      className="cursor-pointer font-semibold underline underline-offset-2"
                     >
-                      {col.title}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      Settings
+                    </button>
+                    .
+                  </span>
+                </div>
+              )}
+
               <Button
-                size="sm"
-                onClick={handleGenerate}
-                disabled={isGenerating || goal.trim().length < 3}
+                onClick={() => void handleGenerate()}
+                disabled={!canGenerate}
+                className="mt-5 h-11 w-full gap-2 rounded-xl text-sm font-semibold shadow-[0_8px_24px_rgba(91,80,230,0.3)] hover:bg-brand-dark disabled:shadow-none"
               >
                 {isGenerating ? (
                   <>
@@ -276,18 +279,16 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
                     Generating…
                   </>
                 ) : (
-                  'Generate tasks'
+                  <>
+                    <Sparkles className="size-4" />
+                    Generate tasks
+                  </>
                 )}
               </Button>
             </div>
-            {providerLabel && (
-              <p className="text-xs text-muted-foreground">
-                Using {providerLabel}
-              </p>
-            )}
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
