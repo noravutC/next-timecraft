@@ -228,3 +228,20 @@ export async function countUnreadComments(args: {
     .where(and(...conds));
   return Number(value);
 }
+
+// path ไฟล์แนบทั้งหมดใต้ tasks เหล่านี้ (รวม comment ที่ soft-delete แล้ว) —
+// ต้องเก็บก่อนลบ task เพราะ cascade จะพาแถว attachment (และ path) หายไปด้วย
+export async function getAttachmentStoragePathsByTaskIds(
+  taskIds: string[],
+): Promise<string[]> {
+  if (taskIds.length === 0) return [];
+  const rows = await db
+    .select({ storagePath: taskCommentAttachmentsTable.storagePath })
+    .from(taskCommentAttachmentsTable)
+    .innerJoin(
+      taskCommentsTable,
+      eq(taskCommentAttachmentsTable.commentId, taskCommentsTable.id),
+    )
+    .where(inArray(taskCommentsTable.taskId, taskIds));
+  return rows.map((r) => r.storagePath);
+}

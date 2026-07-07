@@ -45,3 +45,26 @@ export const classifyMime = (mime: string): AttachmentKind | null => {
 
 export const maxBytesFor = (kind: AttachmentKind): number =>
   kind === "image" ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+
+const REMOVE_BATCH = 100;
+
+// ลบไฟล์ใน bucket แบบ best-effort — ไม่ throw เพราะเรียกหลังลบ DB row ไปแล้ว
+// (ลบไฟล์พลาด = ไฟล์กำพร้าเท่าเดิม แต่ห้ามทำให้ request หลักล้ม)
+export async function removeStorageObjects(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  if (!supabaseAdmin) {
+    console.warn(
+      `[supabase-storage] client missing — skipped removing ${paths.length} objects`,
+    );
+    return;
+  }
+  for (let i = 0; i < paths.length; i += REMOVE_BATCH) {
+    const batch = paths.slice(i, i + REMOVE_BATCH);
+    const { error } = await supabaseAdmin.storage
+      .from(COMMENT_MEDIA_BUCKET)
+      .remove(batch);
+    if (error) {
+      console.error("[supabase-storage] failed to remove objects:", error.message);
+    }
+  }
+}
