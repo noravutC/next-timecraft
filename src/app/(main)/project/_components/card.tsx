@@ -152,14 +152,14 @@ export function CardDisplay({
       >
         {palette && (
           <div
-            className="mb-2.5 h-[5px] w-6.5 rounded-full"
+            className="mb-2.5 h-1 w-6.5 rounded-full"
             style={{ backgroundColor: palette.value }}
           />
         )}
 
         <div className="flex items-start">
           <div
-            className="line-clamp-3 flex-1 text-sm leading-tight font-semibold tracking-tight text-ink"
+            className="line-clamp-3 flex-1 text-sm leading-tight font-semibold"
             onClick={(e) => {
               if (state.type !== 'idle') return;
               if ((e.target as HTMLElement).closest('[data-card-action]'))
@@ -169,8 +169,8 @@ export function CardDisplay({
           >
             {priorityStyle && (
               <Flag
-                className="mr-1.5 -mt-px inline size-3.5 align-middle"
-                style={{ color: priorityStyle.text }}
+                className="mr-1.5 -mt-px inline size-3 align-middle"
+                style={{ color: priorityStyle.dot }}
                 fill="currentColor"
                 aria-label={`${priorityStyle.label} priority`}
               />
