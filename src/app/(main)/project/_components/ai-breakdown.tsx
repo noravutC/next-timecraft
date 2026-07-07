@@ -1,12 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Settings2, Sparkles, TriangleAlert, X } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  Settings2,
+  Sparkles,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetClose,
@@ -236,18 +249,34 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
                   <p className="mb-1.5 text-xs font-semibold tracking-wider text-ink-subtle uppercase">
                     Add to
                   </p>
-                  <select
-                    value={targetColumn.id}
-                    onChange={(e) => setColumnId(e.target.value)}
-                    disabled={isGenerating}
-                    className="h-9.5 w-full cursor-pointer rounded-lg border border-line bg-white px-3 text-sm text-ink"
-                  >
-                    {columns.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.title}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild disabled={isGenerating}>
+                      <button
+                        type="button"
+                        className="flex h-9.5 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 text-sm font-medium text-ink transition-colors hover:border-brand-line data-[state=open]:border-brand-line disabled:cursor-default disabled:opacity-50"
+                      >
+                        <span className="truncate">{targetColumn.title}</span>
+                        <ChevronDown className="size-4 shrink-0 text-ink-faint" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="max-h-64 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
+                    >
+                      {columns.map((col) => (
+                        <DropdownMenuItem
+                          key={col.id}
+                          onClick={() => setColumnId(col.id)}
+                          className="justify-between gap-2"
+                        >
+                          <span className="truncate">{col.title}</span>
+                          {col.id === targetColumn.id && (
+                            <Check className="size-4 shrink-0 text-brand" />
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
