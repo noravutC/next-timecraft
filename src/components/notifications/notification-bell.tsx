@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Bell } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,7 +17,11 @@ import { useNotificationStore } from '@/store/use-notification.store';
 import { useNotifications } from '@/store/sync-live-data/useNotifications';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useProjectStore, useUserStore } from '@/store';
-import type { Notification } from '@/types';
+import type {
+  BoardInviteNotificationPayload,
+  CommentNotificationPayload,
+  Notification,
+} from '@/types';
 
 const formatRelative = (date: Date) => {
   const ms = Date.now() - date.getTime();
@@ -33,7 +38,15 @@ const formatRelative = (date: Date) => {
 const ACTION_LABELS: Record<Notification['type'], string> = {
   comment_mention: 'mentioned you on',
   comment_reply: 'replied to you on',
+  board_invite: 'invited you to',
+  member_removed: 'removed you from',
 };
+
+// ตัวหนาท้ายประโยค: comment → ชื่อ task, เรื่องบอร์ด → ชื่อบอร์ด
+const targetLabel = (n: Notification) =>
+  n.type === 'comment_mention' || n.type === 'comment_reply'
+    ? (n.payload as CommentNotificationPayload).taskTitle
+    : (n.payload as BoardInviteNotificationPayload).projectName;
 
 type TabKey = 'all' | 'unread' | 'mentions';
 
@@ -44,6 +57,7 @@ const TAB_LABELS: Record<TabKey, string> = {
 };
 
 export const NotificationBell = () => {
+  const router = useRouter();
   const { data: session } = useSession();
   const userId = session?.user?.id ?? null;
   useNotifications(userId);
@@ -63,6 +77,7 @@ export const NotificationBell = () => {
 
   const openTask = useTaskDetailStore((s) => s.open);
   const setProjectIsUsing = useProjectStore((s) => s.setProjectIsUsing);
+  const removeProject = useProjectStore((s) => s.removeProject);
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabKey>('all');
@@ -83,10 +98,21 @@ export const NotificationBell = () => {
         : items;
 
   const handleClick = (n: Notification) => {
-    setProjectIsUsing(n.payload.projectId);
-    openTask(n.payload.taskId);
     if (!n.readAt) markRead([n.id]);
     setOpen(false);
+    if (n.type === 'board_invite') {
+      router.push(
+        `/invite/${(n.payload as BoardInviteNotificationPayload).token}`,
+      );
+      return;
+    }
+    if (n.type === 'member_removed') {
+      // ไม่มีที่ให้เปิดแล้ว — sync state ฝั่งเรา: เอาบอร์ดออกจาก list
+      removeProject(n.payload.projectId);
+      return;
+    }
+    setProjectIsUsing(n.payload.projectId);
+    openTask((n.payload as CommentNotificationPayload).taskId);
   };
 
   return (
@@ -198,7 +224,7 @@ export const NotificationBell = () => {
                           </span>{' '}
                           {ACTION_LABELS[n.type]}{' '}
                           <span className="font-bold text-ink">
-                            {n.payload.taskTitle}
+                            {targetLabel(n)}
                           </span>
                         </p>
                         <p className="mt-0.5 text-xs font-semibold text-ink-subtle">

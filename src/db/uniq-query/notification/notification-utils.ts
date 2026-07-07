@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { notificationsTable } from "@/db/schema";
-import type { Notification } from "@/types";
+import type { Notification, NotificationPayload } from "@/types";
 import { and, count, desc, eq, isNull, lt } from "drizzle-orm";
 
 type CursorParts = { createdAt: Date; id: string };
@@ -69,4 +69,20 @@ export async function countUnreadNotifications(userId: string): Promise<number> 
       ),
     );
   return Number(value);
+}
+
+export async function createNotification(args: {
+  recipientId: string;
+  type: Notification["type"];
+  payload: NotificationPayload;
+}): Promise<Notification> {
+  const [notification] = await db
+    .insert(notificationsTable)
+    .values({
+      userId: args.recipientId,
+      type: args.type,
+      payload: args.payload,
+    })
+    .returning();
+  return notification;
 }

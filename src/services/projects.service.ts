@@ -1,12 +1,15 @@
 // src/services/project.service.ts
 import apiClient from "@/lib/axios";
-import { APIGet } from "@/types/global";
 import {
   APIDelete,
+  APIGet,
   APIPatch,
   APIPost,
+  APISingleGet,
+  InvitationPreview,
   InviteMemberPayload,
   Member,
+  PendingInvitation,
   ProjectCache,
   ProjectRow,
 } from "@/types";
@@ -41,10 +44,10 @@ class ProjectService {
   async getProjects(
     projectIds: string[],
     fetchAll: boolean = false,
-  ): Promise<APIGet<ProjectCache[]>> {
+  ): Promise<APIGet<ProjectCache>> {
     return this.client
       .post("/project", { projectIds: projectIds.join(","), fetchAll })
-      .then((response) => response.data as APIGet<ProjectCache[]>)
+      .then((response) => response.data as APIGet<ProjectCache>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to fetch projects");
       });
@@ -74,12 +77,62 @@ class ProjectService {
   async inviteMember(
     projectId: string,
     payload: InviteMemberPayload,
-  ): Promise<APIPost<Member>> {
+  ): Promise<APIPost<PendingInvitation>> {
     return this.client
-      .post(`/project/${projectId}/members`, payload)
-      .then((response) => response.data as APIPost<Member>)
+      .post(`/project/${projectId}/invitations`, payload)
+      .then((response) => response.data as APIPost<PendingInvitation>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to invite member");
+      });
+  }
+
+  async getInvitations(projectId: string): Promise<APIGet<PendingInvitation>> {
+    return this.client
+      .get(`/project/${projectId}/invitations`)
+      .then((response) => response.data as APIGet<PendingInvitation>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to fetch invitations");
+      });
+  }
+
+  async getInvitation(token: string): Promise<APISingleGet<InvitationPreview>> {
+    return this.client
+      .get(`/invite/${token}`)
+      .then((response) => response.data as APISingleGet<InvitationPreview>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to fetch invitation");
+      });
+  }
+
+  async acceptInvitation(
+    token: string,
+  ): Promise<APIPost<{ projectId: string }>> {
+    return this.client
+      .post(`/invite/${token}`)
+      .then((response) => response.data as APIPost<{ projectId: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to accept invitation");
+      });
+  }
+
+  async removeMember(
+    projectId: string,
+    memberUserId: string,
+  ): Promise<APIDelete<Member>> {
+    return this.client
+      .delete(`/project/${projectId}/members/${memberUserId}`)
+      .then((response) => response.data as APIDelete<Member>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to remove member");
+      });
+  }
+
+  async revokeInvitation(token: string): Promise<APIDelete<{ id: string }>> {
+    return this.client
+      .delete(`/invite/${token}`)
+      .then((response) => response.data as APIDelete<{ id: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to revoke invitation");
       });
   }
 

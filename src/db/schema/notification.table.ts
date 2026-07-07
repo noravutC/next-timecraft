@@ -12,9 +12,11 @@ import { usersTable } from "./user.table";
 export const notificationTypeEnum = pgEnum("notification_type", [
   "comment_mention",
   "comment_reply",
+  "board_invite",
+  "member_removed",
 ]);
 
-export type NotificationPayload = {
+export type CommentNotificationPayload = {
   taskId: string;
   commentId: string;
   projectId: string;
@@ -24,6 +26,27 @@ export type NotificationPayload = {
   projectName: string;
   snippet: string;
 };
+
+export type BoardInviteNotificationPayload = {
+  projectId: string;
+  projectName: string;
+  actorUserId: string;
+  actorName: string;
+  role: string;
+  token: string;
+};
+
+export type MemberRemovedNotificationPayload = {
+  projectId: string;
+  projectName: string;
+  actorUserId: string;
+  actorName: string;
+};
+
+export type NotificationPayload =
+  | CommentNotificationPayload
+  | BoardInviteNotificationPayload
+  | MemberRemovedNotificationPayload;
 
 export const notificationsTable = pgTable(
   "notifications",

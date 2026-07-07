@@ -178,6 +178,9 @@ PUSHER_CLUSTER=
 NEXT_PUBLIC_PUSHER_KEY=
 NEXT_PUBLIC_PUSHER_CLUSTER=
 ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns 503 without it)
+RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
+EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
+APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
 ```
 
 ## Skills system
