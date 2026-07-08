@@ -37,7 +37,10 @@ export async function sendBoardInviteEmail(input: {
 
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.EMAIL_FROM ?? 'noravut.ch@gmail.com',
+      // Resend rejects sending from a plain gmail address; fall back to its
+      // shared test sender (only delivers to your own Resend account email).
+      // Set EMAIL_FROM to a verified-domain address to send to anyone.
+      from: process.env.EMAIL_FROM ?? 'onboarding@resend.dev',
       to: input.to,
       subject: `${input.inviterName} invited you to "${input.boardName}" on TimeCraft`,
       html,
