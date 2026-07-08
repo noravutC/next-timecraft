@@ -50,7 +50,33 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push the image to GHCR
     steps:
       - uses: actions/checkout@v4
-      - name: Build production image
-        run: docker build -t timecraft:ci .
+
+      # Only main pushes a real image; PRs just build to validate the Dockerfile.
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image (push on main)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ghcr.io/noravutc/next-timecraft:latest
+            ghcr.io/noravutc/next-timecraft:${{ github.sha }}
+          # NEXT_PUBLIC_* are inlined into the public client bundle at build
+          # time, so they are not secret — safe to keep in the repo. If the
+          # Pusher key ever rotates, edit it here. (Real secrets like
+          # PUSHER_SECRET / DATABASE_URL stay in .env.production on the server.)
+          build-args: |
+            NEXT_PUBLIC_PUSHER_KEY=5d804b66a55a28f9aeb7
+            NEXT_PUBLIC_PUSHER_CLUSTER=ap1
