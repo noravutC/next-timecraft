@@ -49,20 +49,21 @@ const FilterDropdown = ({
     <DropdownMenuTrigger asChild disabled={disabled}>
       <Button
         variant="ghost"
+        size="sm"
         className={cn(
-          'gap-1.5 rounded-lg border border-line bg-white px-3 text-sm font-medium text-ink-muted hover:bg-surface-hover hover:text-ink',
+          'gap-1.5 rounded-md border border-line bg-white px-2.5 text-sm font-medium text-ink-muted hover:bg-surface-hover hover:text-ink',
           activeCount > 0 &&
             'border-brand-line bg-brand-soft text-brand hover:bg-brand-soft hover:text-brand',
         )}
       >
-        <Icon className="size-4" />
+        <Icon className="size-3.5" />
         {label}
         {activeCount > 0 && (
-          <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-brand px-1 text-xs font-semibold text-white">
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-xs font-semibold text-white">
             {activeCount}
           </span>
         )}
-        <ChevronDown className="size-3.5 opacity-60" />
+        <ChevronDown className="size-3 opacity-60" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
@@ -127,7 +128,10 @@ const FilterChip = ({
     }
   >
     <span
-      className={cn('size-2 shrink-0 rounded-full', !dotColor && 'bg-ink-faint')}
+      className={cn(
+        'size-2 shrink-0 rounded-full',
+        !dotColor && 'bg-ink-faint',
+      )}
       style={dotColor ? { backgroundColor: dotColor } : undefined}
     />
     {label}
@@ -165,7 +169,9 @@ export function BoardFilterBar() {
   const project = useProjectStore((s) => s.viewProjectUsing());
   const projectSettings = useProjectStore(
     useShallow((s) =>
-      s.projectIsUsing ? (s.projects[s.projectIsUsing]?.settings ?? null) : null,
+      s.projectIsUsing
+        ? (s.projects[s.projectIsUsing]?.settings ?? null)
+        : null,
     ),
   );
   const tagColors = withSettingsDefaults(projectSettings).tagColors;
@@ -194,16 +200,16 @@ export function BoardFilterBar() {
     priorities.length + tags.length + assigneeIds.length + (q.trim() ? 1 : 0);
 
   return (
-    <div className="border-b bg-background px-5 py-3">
+    <div className="border-b bg-background px-5 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-faint" />
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-faint" />
           <Input
-            inputSize="md"
+            inputSize="sm"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Search tasks…"
-            className="w-72 rounded-lg border-line bg-surface pl-9 text-sm shadow-none placeholder:text-ink-faint focus-visible:bg-white"
+            className="w-64 rounded-md border-line bg-surface pl-8 text-sm shadow-none placeholder:text-ink-faint focus-visible:bg-white"
             data-testid="board-filter-search"
           />
         </div>
