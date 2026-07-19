@@ -102,7 +102,9 @@ export function CardDisplay({
   );
   const projectSettings = useProjectStore(
     useShallow((s) =>
-      s.projectIsUsing ? (s.projects[s.projectIsUsing]?.settings ?? null) : null,
+      s.projectIsUsing
+        ? (s.projects[s.projectIsUsing]?.settings ?? null)
+        : null,
     ),
   );
   const tagColors = withSettingsDefaults(projectSettings).tagColors;
@@ -119,8 +121,7 @@ export function CardDisplay({
   const dueDate = card.dueDate ? new Date(card.dueDate) : null;
   const dueInDays = dueDate ? daysUntil(dueDate) : null;
   // โชว์ธงเฉพาะ high — การ์ดต้องเหลือแต่สัญญาณที่สำคัญจริง
-  const priorityStyle =
-    card.priority === 'high' ? PRIORITY_STYLES.high : null;
+  const priorityStyle = card.priority === 'high' ? PRIORITY_STYLES.high : null;
   const hasMeta =
     !!dueDate || commentCount > 0 || assignees.length > 0 || isLoading;
 
@@ -157,7 +158,7 @@ export function CardDisplay({
           />
         )}
 
-        <div className="flex items-start">
+        <div className="flex items-start gap-2">
           <div
             className="line-clamp-3 flex-1 text-sm leading-tight font-semibold"
             onClick={(e) => {
@@ -169,7 +170,7 @@ export function CardDisplay({
           >
             {priorityStyle && (
               <Flag
-                className="mr-1.5 -mt-px inline size-3 align-middle"
+                className="-mt-px mr-1.5 inline size-3 align-middle"
                 style={{ color: priorityStyle.dot }}
                 fill="currentColor"
                 aria-label={`${priorityStyle.label} priority`}
@@ -178,10 +179,7 @@ export function CardDisplay({
             {card.title}
           </div>
           {allColumns && (
-            <div
-              data-card-action
-              className="absolute top-2.5 right-2"
-            >
+            <div data-card-action className="-mt-1 -mr-1.5 shrink-0">
               <CardActionsMenu card={card} allColumns={allColumns} />
             </div>
           )}
@@ -245,7 +243,10 @@ export function CardDisplay({
                 <AvatarGroup className="-space-x-1.5">
                   {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
                     <Avatar key={a.userId} className="size-5">
-                      <AvatarImage src={a.avatar ?? undefined} alt={a.fullName} />
+                      <AvatarImage
+                        src={a.avatar ?? undefined}
+                        alt={a.fullName}
+                      />
                       <AvatarFallback className="text-xs font-semibold">
                         {a.fullName?.[0]?.toUpperCase() ?? '?'}
                       </AvatarFallback>
