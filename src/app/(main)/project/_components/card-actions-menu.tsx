@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowRight, Copy, Ellipsis, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, Flag, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -28,7 +29,8 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
   const createTasks = useTaskStore((s) => s.createTasks);
 
   const currentIndex = allColumns.findIndex((c) => c.id === card.columnId);
-  const nextColumn = allColumns[currentIndex + 1] ?? null;
+  const otherColumns = allColumns.filter((c) => c.id !== card.columnId);
+  const isFlagged = card.priority === 'high';
 
   const handleDelete = () => {
     const base = { id: card.id, columnId: card.columnId, title: card.title };
@@ -42,20 +44,33 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
     });
   };
 
-  const handleMoveNext = () => {
-    if (!nextColumn) return;
+  const handleMoveTo = (target: TColumn) => {
     const newOrderFraction = generateFractionBetween(
-      nextColumn.cards.at(-1)?.orderFraction ?? null,
-      nextColumn.nextCursorFraction,
+      target.cards.at(-1)?.orderFraction ?? null,
+      target.nextCursorFraction,
     );
     updateTasks(
       [card.id],
       [
         {
           id: card.id,
-          columnId: nextColumn.id,
+          columnId: target.id,
           title: card.title,
           orderFraction: newOrderFraction,
+        },
+      ],
+    );
+  };
+
+  const handleToggleFlag = () => {
+    updateTasks(
+      [card.id],
+      [
+        {
+          id: card.id,
+          columnId: card.columnId,
+          title: card.title,
+          priority: isFlagged ? 'medium' : 'high',
         },
       ],
     );
@@ -91,7 +106,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           size={'xs'}
           variant={'ghost'}
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-lg bg-white p-0 text-ink-faint opacity-0 group-hover:opacity-100 hover:bg-surface-hover hover:text-brand data-[state=open]:bg-surface-hover data-[state=open]:text-brand data-[state=open]:opacity-100"
+          className="size-6 rounded-lg p-0 text-ink-faint opacity-0 group-hover:opacity-100 hover:bg-brand-soft hover:text-brand data-[state=open]:bg-brand-soft data-[state=open]:text-brand data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
           <Ellipsis className="size-4" />
@@ -103,18 +118,35 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
         className="w-52 rounded-xl border-line p-1.5 shadow-[0_10px_34px_rgba(20,22,35,0.13)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuItem
-          onClick={handleMoveNext}
-          disabled={!nextColumn}
-          className={menuItemClass}
-        >
-          <ArrowRight />
-          Move to next column
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDuplicate} className={menuItemClass}>
           <Copy />
           Duplicate
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleToggleFlag} className={menuItemClass}>
+          <Flag />
+          {isFlagged ? 'Remove flag' : 'Add flag'}
+        </DropdownMenuItem>
+        {otherColumns.length > 0 && (
+          <>
+            <DropdownMenuSeparator className="mx-1 bg-line/70" />
+            <DropdownMenuLabel className="px-2.5 pt-2 pb-1 text-xs font-semibold tracking-wider text-ink-faint uppercase">
+              Move to
+            </DropdownMenuLabel>
+            {otherColumns.map((column) => (
+              <DropdownMenuItem
+                key={column.id}
+                onClick={() => handleMoveTo(column)}
+                className={menuItemClass}
+              >
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: column.color ?? '#94a3b8' }}
+                />
+                {column.title}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
         <DropdownMenuSeparator className="mx-1 bg-line/70" />
         <DropdownMenuItem
           onClick={handleDelete}
@@ -124,7 +156,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           )}
         >
           <Trash2 />
-          Delete card
+          Delete task
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
