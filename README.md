@@ -41,7 +41,7 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 | Styling | Tailwind CSS v4, shadcn/ui, Framer Motion |
 | State | Zustand 5 |
 | Database | PostgreSQL (Supabase) via Drizzle ORM |
-| Auth | NextAuth 4 — Google OAuth, JWT |
+| Auth | Auth.js v5 (NextAuth) — Google OAuth, JWT |
 | Real-time | Pusher WebSocket |
 | Drag & Drop | Atlaskit pragmatic-drag-and-drop |
 | Package Manager | pnpm |

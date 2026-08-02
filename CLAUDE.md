@@ -44,7 +44,7 @@ a full run rewrites ~230 files. Format only the files you touched.
 
 ### Authentication
 
-**File:** `src/auth.ts` — NextAuth 4 config, Google OAuth only, JWT strategy, 48h session.
+**File:** `src/auth.ts` — Auth.js v5 (NextAuth) config, Google OAuth only, JWT strategy, 48h session.
 
 JWT callback (`hydrateTokenFromDb`) upserts the user into the DB on sign-in, then enriches the token with:
 - `organizationId` (owner org or first membership org)
