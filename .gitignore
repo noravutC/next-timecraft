@@ -43,6 +43,9 @@ next-env.d.ts
 # claude
 .claude/
 
+# resume (personal files, not part of the app)
+.resume/
+
 # design-sync (staged converter, build output, machine state — durable inputs are committed)
 .ds-sync/
 ds-bundle/
