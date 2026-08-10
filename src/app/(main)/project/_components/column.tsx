@@ -47,7 +47,7 @@ const stateStyles: Record<TColumnState['type'], string> = {
   idle: 'cursor-grab',
   'is-card-over': 'outline outline-2 outline-brand-line',
   'is-dragging': 'opacity-40',
-  'is-column-over': 'bg-gray-200',
+  'is-column-over': 'bg-gray-50',
 };
 
 const idle: TColumnState = { type: 'idle' };
@@ -257,7 +257,6 @@ export const Column = ({
         <div
           className={`flex max-h-full min-h-0 flex-1 flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}
         >
-          {/* แถบสีประจำ column */}
           <div
             className="h-1.5 w-full flex-shrink-0"
             style={{ backgroundColor: column.color ?? '#94A3B8' }}
