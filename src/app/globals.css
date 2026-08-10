@@ -135,7 +135,7 @@
   --surface: #f6f7f9; /* board bg — ตรงกับ design source (TimeCraft Board.dc.html) */
   --surface-hover: #f2f3f6;
   --surface-active: #edeef2;
-  --surface-column: #f0f1f4; /* column fill — ตรงกับ design source */
+  --surface-column: #ffffff; /* column fill — เปลี่ยนเป็นขาวตามที่ตกลง (เดิม #f0f1f4 จาก design source) */
   --line: #ecedf1;
   --priority-low: #10b981;
   --priority-low-soft: rgba(16, 185, 129, 0.1);
