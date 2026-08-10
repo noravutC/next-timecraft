@@ -1,5 +1,3 @@
-'use client';
-
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -17,9 +15,6 @@ import { useRealtimeBoard } from '@/store/sync-live-data/useRealtimeBoard';
 import { useAssigneeStore } from '@/store/use-assignee.store';
 import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { computeCardMove, computeColumnMove } from './board-operations';
-import { AiBreakdown } from './ai-breakdown';
-import { BoardFilterBar } from './board-filter-bar';
-import { Column } from './column';
 import { useSpacebarPan } from './use-spacebar-pan';
 import {
   deriveBoardView,
@@ -30,7 +25,12 @@ import {
   type PendingMove,
 } from './data';
 
-export const Board = () => {
+/**
+ * State + wiring ทั้งหมดของหน้าบอร์ด: โหลด columns, realtime, filter payload,
+ * derive board view, DnD monitors (card/column move + optimistic pending),
+ * auto-scroll และ spacebar pan — หน้า page เอาไป render อย่างเดียว
+ */
+export function useBoard() {
   const scrollableRef = useRef<HTMLDivElement | null>(null);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
 
@@ -223,22 +223,5 @@ export const Board = () => {
 
   const panCursor = useSpacebarPan(scrollableRef);
 
-  const boardCls = settings.isBoardMoreObvious ? 'px-32 py-20' : '';
-  const scrollCls = `flex h-full flex-row items-start gap-4.5 overflow-x-auto p-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? 'rounded border-2 border-dashed' : ''}`;
-
-  return (
-    <div className={`relative flex h-full flex-col bg-surface ${boardCls}`}>
-      <BoardFilterBar />
-      <div
-        ref={scrollableRef}
-        className={scrollCls}
-        style={{ cursor: panCursor !== 'default' ? panCursor : undefined }}
-      >
-        {board.columns.map((column) => (
-          <Column key={column.id} column={column} allColumns={board.columns} />
-        ))}
-      </div>
-      <AiBreakdown columns={board.columns} />
-    </div>
-  );
-};
+  return { scrollableRef, board, panCursor, settings };
+}
