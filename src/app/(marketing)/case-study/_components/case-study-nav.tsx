@@ -4,6 +4,7 @@ const NAV_LINKS = [
   { label: 'Interaction', href: '#board' },
   { label: 'Optimistic UI', href: '#sync' },
   { label: 'Decisions', href: '#decisions' },
+  { label: 'Contact', href: '#contact' },
 ];
 
 export function CaseStudyNav() {
