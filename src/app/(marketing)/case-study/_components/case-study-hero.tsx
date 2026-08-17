@@ -4,10 +4,10 @@ export function CaseStudyHero() {
   return (
     <header className="mx-auto max-w-270 px-8 pt-12 pb-3 text-center">
       <div className="cs-mono mb-5.5 inline-block rounded-full border border-brand-line bg-brand-soft px-3 py-1.25 text-sm text-brand">
-        UI engineering case study — everything below is live, drag the card
+        UI engineering case study: everything below is live, drag the card
       </div>
       <h1 className="mk-display mb-4.5 text-4xl leading-none font-extrabold tracking-tight text-balance md:text-6xl">
-        TimeCraft — designing
+        TimeCraft: designing
         <br />
         a board that moves.
       </h1>

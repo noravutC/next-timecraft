@@ -80,7 +80,7 @@ export function SyncDemoSection() {
               )}
             >
               <span className="w-16 text-right">0 ms</span>
-              <span>card lands in DONE — your board, everyone&apos;s screen</span>
+              <span>card lands in DONE: your board, everyone&apos;s screen</span>
             </div>
             <div
               className={cn(

@@ -2,17 +2,17 @@ const DECISIONS = [
   {
     tag: 'motion',
     title: 'One hero moment, not scattered fades',
-    body: 'All motion budget went to the draggable card — the product’s core verb. Scroll reveals appear only where they explain sequence. Reduced-motion is respected end to end.',
+    body: 'All motion budget went to the draggable card, the product’s core verb. Scroll reveals appear only where they explain sequence. Reduced-motion is respected end to end.',
   },
   {
     tag: 'background',
     title: 'A grid, not a gradient blob',
-    body: 'The ambient layer is an isometric dot grid on canvas — cursor-lit, cached offscreen for one blit per frame. It quotes the board metaphor instead of decorating around it.',
+    body: 'The ambient layer is an isometric dot grid on canvas: cursor-lit, cached offscreen for one blit per frame. It quotes the board metaphor instead of decorating around it.',
   },
   {
     tag: 'type & color',
     title: 'Purple system, mono metadata',
-    body: 'Bricolage Grotesque for voice, Space Mono for card IDs and timestamps — the “craft/tooling” cue. One purple ramp on near-white; no invented accent colors.',
+    body: 'Bricolage Grotesque for voice, Space Mono for card IDs and timestamps, the “craft/tooling” cue. One purple ramp on near-white; no invented accent colors.',
   },
 ];
 

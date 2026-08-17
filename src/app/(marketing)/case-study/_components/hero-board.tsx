@@ -123,7 +123,7 @@ export function HeroBoard() {
       <div className="px-8 pt-8.5 pb-18 text-center">
         <div className="cs-mono mx-auto max-w-140 text-xs leading-relaxed text-ink-muted">
           ↑ pointer events + spring integration (rAF loop) · velocity-based
-          tilt · nearest-column snap · simulated server ack — no drag library
+          tilt · nearest-column snap · simulated server ack · no drag library
         </div>
       </div>
     </>
