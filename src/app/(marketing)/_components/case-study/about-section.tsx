@@ -2,7 +2,10 @@ import { Logo } from '@/components/logo-space/logo';
 
 const IDENTITY_LINKS = [
   { label: 'github.com/noravutC', href: 'https://github.com/noravutC' },
-  { label: 'linkedin', href: 'https://www.linkedin.com/in/noravut-chanthalay-2396672b6/' },
+  {
+    label: 'linkedin',
+    href: 'https://www.linkedin.com/in/noravut-chanthalay-2396672b6/',
+  },
   { label: 'noravut.ch@gmail.com', href: 'mailto:noravut.ch@gmail.com' },
 ];
 
