@@ -1,7 +1,6 @@
 const FOOTER_LINKS = [
   { label: 'github', href: 'https://github.com/noravutC' },
-  { label: 'linkedin', href: 'https://linkedin.com/in/noravutchanthalay' },
-  { label: 'noravut.dev', href: 'https://noravut.dev' },
+  { label: 'linkedin', href: 'https://www.linkedin.com/in/noravut-chanthalay-2396672b6/' },
 ];
 
 export function CaseStudyFooter() {

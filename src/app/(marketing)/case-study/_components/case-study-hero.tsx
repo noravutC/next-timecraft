@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function CaseStudyHero() {
   return (
     <header className="mx-auto max-w-270 px-8 pt-12 pb-3 text-center">
@@ -15,12 +17,12 @@ export function CaseStudyHero() {
         hand-rolled drag physics, an optimistic-UI simulation, and a
         cursor-reactive canvas background. No libraries, no video mockups.
       </p>
-      <a
-        href="#board"
+      <Link
+        href="/login"
         className="mt-6.5 inline-flex items-center gap-3 rounded-xl bg-brand px-11 py-5 text-xl font-extrabold text-white shadow-[0_6px_22px_rgba(91,80,230,0.30)] transition-colors hover:bg-brand-dark hover:shadow-[0_8px_28px_rgba(91,80,230,0.40)]"
       >
         <span aria-hidden>▶</span> Try the live demo
-      </a>
+      </Link>
     </header>
   );
 }
