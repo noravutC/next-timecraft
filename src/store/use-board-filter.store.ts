@@ -20,6 +20,10 @@ type BoardFilterStore = {
 const toggle = <T>(list: T[], item: T): T[] =>
   list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
 
+/** key เปลี่ยนเมื่อ filter เปลี่ยน — ใช้เป็น dependency สำหรับ refetch ต่อ column */
+export const selectFilterKey = (s: BoardFilterStore): string =>
+  `${s.q}|${s.priorities.join(',')}|${s.tags.join(',')}|${s.assigneeIds.join(',')}`;
+
 export const useBoardFilterStore = create<BoardFilterStore>((set, get) => ({
   q: '',
   priorities: [],

@@ -1,10 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, Lock, Plus, Settings2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { Check, Lock, Settings2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProjectStore } from '@/store';
 import {
   Dialog,
   DialogClose,
@@ -17,35 +14,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { TagChip } from '@/components/task-detail/parts/tag-chip';
-import {
-  ACCENT_COLORS,
-  ICON_OPTIONS,
-  TAG_LIMIT,
-  TAG_PALETTE,
-} from '@/lib/project-settings/constants';
-import {
-  withSettingsDefaults,
-  type ProjectSettings,
-} from '@/types/project-settings';
+import { ACCENT_COLORS, ICON_OPTIONS } from '@/lib/project-settings/constants';
+import { FieldLabel } from './parts/field-label';
+import { BoardTagsEditor } from './parts/board-tags-editor';
+import { BoardDangerZone } from './parts/board-danger-zone';
+import { useBoardSettingsDraft } from './use-board-settings-draft';
 
 interface BoardSettingsDialogProps {
   open: boolean;
   onClose: () => void;
 }
-
-type Draft = {
-  name: string;
-  description: string;
-  tags: string[];
-  settings: Required<ProjectSettings>;
-};
-
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-2 text-xs font-semibold tracking-wider text-ink-subtle uppercase">
-    {children}
-  </p>
-);
 
 // ขนาด h-[560px]/max-w-2xl ต้องตรงกับ SwitchBoards/CreateBoard dialog —
 // ชุด dialog จาก bottom bar ต้องสูงเท่ากันจะได้ไม่กระตุกตอนสลับ
@@ -53,125 +31,28 @@ export const BoardSettingsDialog = ({
   open,
   onClose,
 }: BoardSettingsDialogProps) => {
-  const projectIsUsing = useProjectStore((s) => s.projectIsUsing);
-  const projects = useProjectStore((s) => s.projects);
-  const updateProject = useProjectStore((s) => s.updateProject);
-  const deleteProject = useProjectStore((s) => s.deleteProject);
-
-  const project = projectIsUsing ? projects[projectIsUsing] : null;
-
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [draftTag, setDraftTag] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [confirmArchive, setConfirmArchive] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  // เปิดใหม่ทุกครั้ง snapshot ค่าโปรเจกต์ปัจจุบันเป็น draft (แก้แล้วกด Save ค่อยยิง)
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open && project) {
-      setDraft({
-        name: project.name,
-        description: project.description ?? '',
-        tags: project.tags ?? [],
-        settings: withSettingsDefaults(project.settings),
-      });
-      setDraftTag('');
-      setSaving(false);
-    }
-  }
+  const {
+    project,
+    draft,
+    setDraft,
+    draftTag,
+    setDraftTag,
+    saving,
+    deleting,
+    confirmArchive,
+    setConfirmArchive,
+    confirmDelete,
+    setConfirmDelete,
+    patchSettings,
+    iconEmoji,
+    addTag,
+    removeTag,
+    handleSave,
+    handleArchive,
+    handleDelete,
+  } = useBoardSettingsDraft({ open, onClose });
 
   if (!project || !draft) return null;
-
-  const patchSettings = (next: Partial<ProjectSettings>) =>
-    setDraft((d) => d && { ...d, settings: { ...d.settings, ...next } });
-
-  const iconEmoji =
-    ICON_OPTIONS.find((i) => i.id === draft.settings.icon)?.emoji ?? '📁';
-
-  const addTag = () => {
-    const next = draftTag.trim();
-    if (!next) return;
-    if (draft.tags.some((t) => t.toLowerCase() === next.toLowerCase())) {
-      toast.error('This tag already exists');
-      return;
-    }
-    if (next.length > TAG_LIMIT) {
-      toast.error(`Tags must be ${TAG_LIMIT} characters or fewer`);
-      return;
-    }
-    setDraft((d) => {
-      if (!d) return d;
-      return {
-        ...d,
-        tags: [...d.tags, next],
-        settings: {
-          ...d.settings,
-          tagColors: { ...d.settings.tagColors, [next]: d.settings.nextTagColor },
-        },
-      };
-    });
-    setDraftTag('');
-  };
-
-  const removeTag = (tag: string) => {
-    setDraft((d) => {
-      if (!d) return d;
-      const tagColors = { ...d.settings.tagColors };
-      delete tagColors[tag];
-      return {
-        ...d,
-        tags: d.tags.filter((t) => t !== tag),
-        settings: { ...d.settings, tagColors },
-      };
-    });
-  };
-
-  const handleSave = async () => {
-    if (saving || !draft.name.trim()) return;
-    setSaving(true);
-    try {
-      await updateProject(project.id, {
-        name: draft.name.trim(),
-        description: draft.description.trim(),
-        tags: draft.tags,
-        settings: draft.settings,
-      });
-      toast.success('Board settings saved');
-      onClose();
-    } catch {
-      toast.error('Unable to save board settings');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleArchive = async () => {
-    try {
-      await updateProject(project.id, { archived: !project.archived });
-      toast.success(project.archived ? 'Board unarchived' : 'Board archived');
-    } catch {
-      toast.error('Unable to update archive state');
-    } finally {
-      setConfirmArchive(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteProject(project.id);
-      toast.success('Board deleted');
-      onClose();
-    } catch {
-      toast.error('Unable to delete board');
-    } finally {
-      setDeleting(false);
-      setConfirmDelete(false);
-    }
-  };
 
   return (
     <>
@@ -291,78 +172,18 @@ export const BoardSettingsDialog = ({
               />
             </div>
 
-            <div className="mt-5">
-              <FieldLabel>Tags</FieldLabel>
-              {draft.tags.length > 0 && (
-                <div className="mb-2.5 flex flex-wrap gap-1.5">
-                  {draft.tags.map((tag) => (
-                    <TagChip
-                      key={tag}
-                      tag={tag}
-                      tagColors={draft.settings.tagColors}
-                      size="sm"
-                      onRemove={() => removeTag(tag)}
-                    />
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <span
-                    className="pointer-events-none absolute top-1/2 left-3 size-2 -translate-y-1/2 rounded-full"
-                    style={{ backgroundColor: draft.settings.nextTagColor }}
-                  />
-                  <Input
-                    inputSize="md"
-                    value={draftTag}
-                    onChange={(e) => setDraftTag(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                    placeholder="Add a tag…"
-                    maxLength={TAG_LIMIT}
-                    className="rounded-lg border-line bg-surface pl-7 text-sm shadow-none placeholder:text-ink-faint focus-visible:bg-white"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addTag}
-                  disabled={!draftTag.trim()}
-                  className="h-9 gap-1 rounded-lg"
-                >
-                  <Plus className="size-3.5" />
-                  Add tag
-                </Button>
-              </div>
-              {/* เลือกสีก่อนสร้าง — จุดสีหน้า input พรีวิวสีที่ tag ใหม่จะได้ */}
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {TAG_PALETTE.map((option) => {
-                  const isActive =
-                    draft.settings.nextTagColor === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() =>
-                        patchSettings({ nextTagColor: option.value })
-                      }
-                      aria-pressed={isActive}
-                      aria-label={`Next tag color ${option.value}`}
-                      className={cn(
-                        'size-5 cursor-pointer rounded-full transition-transform hover:scale-110',
-                        isActive &&
-                          'ring-2 ring-brand ring-offset-2 ring-offset-background',
-                      )}
-                      style={{ backgroundColor: option.value }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+            <BoardTagsEditor
+              tags={draft.tags}
+              tagColors={draft.settings.tagColors}
+              nextTagColor={draft.settings.nextTagColor}
+              draftTag={draftTag}
+              onDraftTagChange={setDraftTag}
+              onAddTag={addTag}
+              onRemoveTag={removeTag}
+              onPickNextColor={(color) =>
+                patchSettings({ nextTagColor: color })
+              }
+            />
 
             <div className="mt-5 flex items-center gap-3 rounded-xl border border-line p-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-muted">
@@ -396,49 +217,11 @@ export const BoardSettingsDialog = ({
               </button>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-xl border border-destructive/25">
-              <p className="border-b border-destructive/25 bg-destructive/5 px-4 py-2.5 text-xs font-semibold tracking-wider text-destructive uppercase">
-                Danger zone
-              </p>
-              <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink">
-                    {project.archived ? 'Unarchive board' : 'Archive board'}
-                  </p>
-                  <p className="text-xs text-ink-subtle">
-                    {project.archived
-                      ? 'Restore it to your active boards.'
-                      : 'Hide it from your active boards. You can restore it later.'}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setConfirmArchive(true)}
-                  className="shrink-0 rounded-lg"
-                >
-                  {project.archived ? 'Unarchive' : 'Archive'}
-                </Button>
-              </div>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-destructive">
-                    Delete board
-                  </p>
-                  <p className="text-xs text-ink-subtle">
-                    Permanently remove this board and all its tasks.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setConfirmDelete(true)}
-                  className="shrink-0 rounded-lg border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
+            <BoardDangerZone
+              archived={!!project.archived}
+              onArchiveClick={() => setConfirmArchive(true)}
+              onDeleteClick={() => setConfirmDelete(true)}
+            />
           </div>
 
           <footer className="flex items-center justify-end gap-2 border-t px-6 py-4">
