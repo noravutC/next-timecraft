@@ -1,0 +1,18 @@
+/* Case-study page (/case-study) — Space Mono utility + demo-card slide.
+   Colors come from the app theme tokens in globals.css; headings reuse
+   .mk-display from marketing.css (Bricolage). */
+
+.cs-mono {
+  font-family: var(--font-space-mono), monospace;
+}
+
+/* Optimistic-UI demo card slide (design token: 0.22s springy ease-out). */
+.cs-demo-card {
+  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-demo-card {
+    transition: none;
+  }
+}
