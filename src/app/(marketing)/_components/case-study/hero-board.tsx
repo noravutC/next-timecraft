@@ -1,131 +1,98 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { deriveBoardVisuals, COLUMN_KEYS } from './case-study-operations';
+import { LANES } from './case-study-content';
+import { COLUMN_KEYS, heroMeta } from './case-study-operations';
 import { useHeroDrag } from './use-hero-drag';
 
-const COLUMNS = {
-  backlog: {
-    label: 'BACKLOG',
-    cards: [
-      { title: 'Rate-limit the sync endpoint', meta: 'TC-139 · 3d ago' },
-      { title: 'Dark mode for the board view', meta: 'TC-127 · 5d ago' },
-    ],
-    done: false,
-  },
-  doing: {
-    label: 'DOING',
-    cards: [{ title: 'Presence cursors on card hover', meta: 'TC-131 · 1d ago' }],
-    done: false,
-  },
-  done: {
-    label: 'DONE',
-    cards: [{ title: 'Board keyboard shortcuts', meta: 'TC-118 · synced ✓' }],
-    done: true,
-  },
-} as const;
-
-const columnStateStyles = {
-  idle: 'border-solid border-line bg-surface',
-  hovered: 'border-dashed border-brand bg-brand-soft',
+const laneStyles = {
+  idle: 'border-line',
+  hovered: 'border-dashed border-ink-faint',
 } as const;
 
 export function HeroBoard() {
-  const { boardRef, cardRef, slotRefs, board, onCardPointerDown } =
-    useHeroDrag();
-  const visuals = deriveBoardVisuals(board.col, board.sync);
+  const {
+    boardRef,
+    cardRef,
+    slotRefs,
+    board,
+    onCardPointerDown,
+    onCardKeyDown,
+  } = useHeroDrag();
 
   return (
-    <>
-      <div
-        id="board"
-        ref={boardRef}
-        className="relative mx-auto mt-7 max-w-230 touch-pan-y scroll-mt-6 px-8"
-      >
-        <div className="grid grid-cols-3 gap-4">
-          {COLUMN_KEYS.map((key) => {
-            const col = COLUMNS[key];
-            return (
+    <section
+      id="board"
+      aria-label="Interactive board demo"
+      className="mx-auto max-w-292 scroll-mt-16 px-6 pt-6 pb-24"
+    >
+      <div className="cs-dots rounded-xl border border-line bg-surface p-5">
+        <div ref={boardRef} className="relative touch-pan-y">
+          <div className="grid gap-3.5 md:grid-cols-3">
+            {COLUMN_KEYS.map((key) => (
               <div
                 key={key}
                 className={cn(
-                  'flex min-h-60 flex-col gap-2.5 rounded-2xl border p-3',
-                  columnStateStyles[
-                    board.hoverCol === key ? 'hovered' : 'idle'
-                  ],
+                  'flex flex-col gap-2.5 rounded-popover border bg-background p-2.5 md:min-h-60.5',
+                  laneStyles[board.hoverCol === key ? 'hovered' : 'idle'],
                 )}
               >
-                <div className="flex items-center justify-between px-1 py-0.5">
-                  <span className="cs-mono text-xs font-bold text-ink-muted">
-                    {col.label}
-                  </span>
-                  <span className="cs-mono text-xs text-ink-subtle">
-                    {visuals.counts[key]}
+                <div className="flex items-center gap-2 px-1 py-0.5">
+                  <span
+                    className="size-1.75 rounded-full"
+                    style={{ backgroundColor: LANES[key].color }}
+                  />
+                  <span className="font-mono text-2xs leading-6 tracking-wide text-ink-muted">
+                    {LANES[key].name}
                   </span>
                 </div>
-                <div ref={slotRefs[key]} className="h-23 rounded-xl" />
-                {col.cards.map((card) => (
+                {LANES[key].cards.map((title) => (
                   <div
-                    key={card.meta}
-                    className={cn(
-                      'rounded-xl border border-line bg-white p-3',
-                      col.done && 'opacity-70',
-                    )}
+                    key={title}
+                    className="rounded-lg border border-line-soft px-3 py-2.5 text-sm leading-6 text-ink-muted"
                   >
-                    <div
-                      className={cn(
-                        'text-sm leading-snug font-semibold',
-                        col.done && 'text-ink-muted line-through',
-                      )}
-                    >
-                      {card.title}
-                    </div>
-                    <div className="cs-mono mt-2 text-xs text-ink-subtle">
-                      {card.meta}
-                    </div>
+                    {title}
                   </div>
                 ))}
+                {/* where the live card rests in this lane */}
+                <div ref={slotRefs[key]} className="h-23 rounded-lg" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
 
-        {/* THE live card */}
-        <div
-          ref={cardRef}
-          onPointerDown={onCardPointerDown}
-          className="absolute top-0 left-0 box-border w-25 cursor-grab touch-none rounded-xl border border-brand-line bg-white p-3 shadow-[0_2px_10px_rgba(91,80,230,0.10)] select-none will-change-transform"
+          {/* the live card: dragged by useHeroDrag via transform */}
+          <div
+            ref={cardRef}
+            role="button"
+            tabIndex={0}
+            aria-describedby="hero-board-hint"
+            data-dragging="false"
+            onPointerDown={onCardPointerDown}
+            onKeyDown={onCardKeyDown}
+            className="absolute top-0 left-0 box-border flex w-25 cursor-grab touch-none flex-col gap-2.5 rounded-lg border border-ink bg-background p-3 ring-3 ring-brand/12 will-change-transform outline-none select-none focus-visible:ring-brand/40 data-[dragging=true]:cursor-grabbing data-[dragging=true]:shadow-card-drag"
+          >
+            <span className="text-base font-medium">
+              Ship the drag physics for hero card
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="inline-flex h-5.5 items-center gap-1.25 rounded-full border border-line px-1.75 text-2xs text-ink-muted">
+                <span className="size-1.25 rounded-full bg-brand" />
+                feature
+              </span>
+              <span className="font-mono text-2xs leading-6 text-ink-subtle">
+                {heroMeta(board.sync)}
+              </span>
+            </span>
+          </div>
+        </div>
+        <p
+          id="hero-board-hint"
+          className="mt-3.5 text-center font-mono text-xs leading-6 text-ink-subtle"
         >
-          <div className="mb-2 flex gap-1.5">
-            <span className="cs-mono rounded-md bg-brand-soft px-1.75 py-0.5 text-xs font-bold text-brand">
-              feature
-            </span>
-          </div>
-          <div className="text-sm leading-snug font-semibold">
-            Ship the drag physics for hero card
-          </div>
-          <div className="mt-2.25 flex items-center justify-between">
-            <span className="cs-mono text-xs text-ink-subtle">
-              TC-142 · now
-            </span>
-            <span
-              className={cn(
-                'cs-mono text-xs font-bold',
-                visuals.syncPending ? 'text-ink-subtle' : 'text-emerald-600',
-              )}
-            >
-              {visuals.syncLabel}
-            </span>
-          </div>
-        </div>
+          Drag the card to another lane, or focus it and press Enter. Pointer
+          events and a spring, no drag library.
+        </p>
       </div>
-
-      <div className="px-8 pt-8.5 pb-18 text-center">
-        <div className="cs-mono mx-auto max-w-140 text-xs leading-relaxed text-ink-muted">
-          ↑ pointer events + spring integration (rAF loop) · velocity-based
-          tilt · nearest-column snap · simulated server ack · no drag library
-        </div>
-      </div>
-    </>
+    </section>
   );
 }

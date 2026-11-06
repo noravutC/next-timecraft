@@ -1,31 +1,23 @@
-import { Logo } from '@/components/logo-space/logo';
-
-const FOOTER_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Integrations', href: '#integrations' },
-  { label: 'Sign up', href: '#cta' },
-];
+import { LogoMark } from '@/components/logo-space/logo-mark';
+import { FOOTER_NAV } from './landing-content';
 
 export function MarketingFooter() {
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-7 py-10">
-        <div className="flex items-center gap-2.5">
-          <Logo size={26} textSize="sm" />
-          <span className="text-sm text-ink-subtle">© 2026</span>
-        </div>
-        <div className="flex gap-6 text-sm">
-          {FOOTER_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-ink-muted transition-colors hover:text-ink"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
+      <div className="mx-auto flex max-w-312 flex-wrap items-center gap-5 px-6 py-7 text-sm leading-6 text-ink-subtle">
+        <span className="flex items-center gap-2">
+          <LogoMark size={18} />© 2026 TimeCraft
+        </span>
+        <span className="flex-1" />
+        {FOOTER_NAV.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="transition-colors hover:text-ink"
+          >
+            {link.label}
+          </a>
+        ))}
       </div>
     </footer>
   );

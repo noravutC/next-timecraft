@@ -1,6 +1,5 @@
-/* Pure logic for the /case-study page — ported 1:1 from the design's
-   DCLogic reference (spring drag, dot-grid canvas, optimistic-UI demo).
-   Keep constants byte-identical to that reference. */
+/* Pure logic for the case-study page: spring drag for the hero card and the
+   optimistic-UI timeline. Kept out of the render files. */
 
 export type ColumnKey = 'backlog' | 'doing' | 'done';
 export type SyncState = 'synced' | 'pending';
@@ -13,19 +12,12 @@ export const COLUMN_KEYS = ['backlog', 'doing', 'done'] as const;
 export const SYNC_DELAY_MS = 450;
 export const NUDGE_INTERVAL_MS = 7000;
 export const INIT_MEASURE_DELAY_MS = 120;
-export const DEMO_REPLAY_RESET_MS = 60;
 export const DEMO_IO_THRESHOLD = 0.3;
 
 const SPRING_K = 0.11;
 const SPRING_DAMP = 0.82;
 const DRAG_FOLLOW_BASE = 0.72;
 const TILT_CLAMP_DEG = 6;
-
-export const GRID_SPACING = 28;
-export const GRID_ROW_STEP = GRID_SPACING * 0.62;
-export const GRID_DOT_R = 1.3;
-export const GLOW_RADIUS = 150;
-export const IDLE_AFTER_MS = 2500;
 
 export const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -80,17 +72,19 @@ export function springStep(
   return clampTilt(vel.x * 0.35);
 }
 
-/** Column whose horizontal center is nearest to the card's center. */
-export function nearestColumn(slots: Slots, cardX: number): ColumnKey | null {
+/** Lane whose slot center is nearest the card's center. Works for side-by-side
+    lanes (desktop) and stacked lanes (mobile). */
+export function nearestColumn(slots: Slots, card: Vec): ColumnKey | null {
   const backlog = slots.backlog;
   if (!backlog) return null;
-  const cx = cardX + backlog.w / 2;
+  const cx = card.x + backlog.w / 2;
+  const cy = card.y + backlog.h / 2;
   let best: ColumnKey | null = null;
   let bd = Infinity;
   for (const k of COLUMN_KEYS) {
     const s = slots[k];
     if (!s) continue;
-    const d = Math.abs(cx - (s.x + s.w / 2));
+    const d = Math.hypot(cx - (s.x + s.w / 2), cy - (s.y + s.h / 2));
     if (d < bd) {
       bd = d;
       best = k;
@@ -99,90 +93,54 @@ export function nearestColumn(slots: Slots, cardX: number): ColumnKey | null {
   return best;
 }
 
-/* ---------- dot-grid canvas ---------- */
+/** Keyboard move: the lane after `col`, wrapping back to the first. */
+export const nextColumn = (col: ColumnKey): ColumnKey =>
+  COLUMN_KEYS[(COLUMN_KEYS.indexOf(col) + 1) % COLUMN_KEYS.length];
 
-/** Static isometric dot grid — drawn once into an offscreen canvas, blitted per frame. */
-export function drawBaseGrid(c: CanvasRenderingContext2D, w: number, h: number) {
-  c.fillStyle = 'rgba(91,80,230,0.09)';
-  const sp = GRID_SPACING;
-  for (let row = 0, y = 10; y < h + sp; row++, y += GRID_ROW_STEP) {
-    const off = row % 2 ? sp / 2 : 0;
-    for (let x = off; x < w + sp; x += sp) {
-      c.beginPath();
-      c.arc(x, y, GRID_DOT_R, 0, 6.2832);
-      c.fill();
-    }
-  }
-}
+export const heroMeta = (sync: SyncState) =>
+  sync === 'pending' ? 'TC-142 · syncing…' : 'TC-142 · now';
 
-/** Cursor glow: brightness 0.10+e*0.55, radius +e*1.5, e=(1-dist/R)^2. */
-export function drawGlow(
-  ctx: CanvasRenderingContext2D,
-  glow: Vec,
-  w: number,
-  h: number,
-) {
-  const R = GLOW_RADIUS;
-  const gx = glow.x;
-  const gy = glow.y;
-  if (gx < -1000) return;
-  const sp = GRID_SPACING;
-  for (let row = 0, y = 10; y < h + sp; row++, y += GRID_ROW_STEP) {
-    if (Math.abs(y - gy) > R) continue;
-    const off = row % 2 ? sp / 2 : 0;
-    for (let x = off; x < w + sp; x += sp) {
-      const dx = x - gx;
-      const dy = y - gy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > R) continue;
-      const t = 1 - dist / R;
-      const e = t * t;
-      ctx.fillStyle = 'rgba(108,92,231,' + (0.1 + e * 0.55).toFixed(3) + ')';
-      ctx.beginPath();
-      ctx.arc(x, y, GRID_DOT_R + e * 1.5, 0, 6.2832);
-      ctx.fill();
-    }
-  }
-}
+/* ---------- optimistic-UI timeline ---------- */
 
-/** Autonomous sine drift target for the glow when the cursor has been idle. */
-export function driftMouse(t: number, w: number, h: number): Vec {
-  const s = t / 1000;
-  return {
-    x: w * 0.5 + Math.sin(s * 0.23) * w * 0.34,
-    y: h * 0.42 + Math.sin(s * 0.31 + 1.3) * h * 0.3,
-  };
-}
+export type Phase = 'idle' | 'moved' | 'syncing' | 'synced';
 
-/* ---------- render-value derivation ---------- */
+const PHASE_ORDER: Phase[] = ['idle', 'moved', 'syncing', 'synced'];
 
-export type BoardVisuals = {
-  counts: Record<ColumnKey, number>;
-  syncLabel: string;
-  syncPending: boolean;
-};
+/** Simulated timings in ms after the card moves (the "design tokens"). */
+export const TIMELINE_MS = { syncing: 120, synced: 640 } as const;
+/** Pause on the idle state before the replayed move starts. */
+export const REPLAY_LEAD_MS = 400;
 
-export function deriveBoardVisuals(
-  col: ColumnKey,
-  sync: SyncState,
-): BoardVisuals {
-  const counts: Record<ColumnKey, number> = { backlog: 2, doing: 1, done: 1 };
-  counts[col] += 1;
-  return {
-    counts,
-    syncLabel: sync === 'pending' ? 'syncing…' : 'synced ✓',
-    syncPending: sync === 'pending',
-  };
-}
+const PHASE_ROWS: { phase: Phase; time: string; label: string }[] = [
+  { phase: 'idle', time: 't0', label: 'Card waits in DOING' },
+  {
+    phase: 'moved',
+    time: '0 ms',
+    label: 'Card lands in DONE: your board, everyone’s screen',
+  },
+  {
+    phase: 'syncing',
+    time: `+${TIMELINE_MS.syncing} ms`,
+    label: 'Request in flight, UI already updated',
+  },
+  {
+    phase: 'synced',
+    time: `+${TIMELINE_MS.synced} ms`,
+    label: 'Server ack · synced',
+  },
+];
 
-export type DemoPhase = 0 | 1 | 2;
+export type PhaseStatus = 'current' | 'reached' | 'pending';
 
-export function deriveDemoVisuals(demo: DemoPhase) {
-  return {
-    transform: demo >= 1 ? 'translateX(calc(100% + 40px))' : 'translateX(0)',
-    syncLabel: demo === 2 ? 'synced ✓' : demo === 1 ? 'syncing…' : 'idle',
-    moved: demo >= 1,
-    synced: demo === 2,
-    ackMs: SYNC_DELAY_MS,
-  };
+/** Rows for the timeline with each row's status relative to `current`. */
+export function phaseRows(current: Phase) {
+  const at = PHASE_ORDER.indexOf(current);
+  return PHASE_ROWS.map((row, i) => ({
+    ...row,
+    status: (i === at
+      ? 'current'
+      : i < at
+        ? 'reached'
+        : 'pending') as PhaseStatus,
+  }));
 }

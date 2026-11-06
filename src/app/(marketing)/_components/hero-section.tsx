@@ -1,91 +1,45 @@
 import Link from 'next/link';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HeroBoardPreview } from './hero-board-preview';
-
-const AVATAR_COLORS = [
-  'bg-brand',
-  'bg-emerald-500',
-  'bg-amber-500',
-  'bg-sky-500',
-];
+import { ProductPreview } from './product-preview';
 
 export function HeroSection() {
   return (
-    <section className="relative mx-auto max-w-6xl px-7 pt-20 pb-10">
-      {/* ambient blobs */}
-      <div
-        className="mk-blob pointer-events-none absolute top-10 -left-16 size-[340px] rounded-full blur-lg"
-        style={{
-          background:
-            'radial-gradient(circle, color-mix(in srgb, var(--brand) 20%, transparent), transparent 70%)',
-        }}
-      />
-      <div
-        className="mk-blob-reverse pointer-events-none absolute top-56 right-10 size-[300px] rounded-full blur-lg"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(16,185,129,0.16), transparent 70%)',
-        }}
-      />
-
-      <div className="relative grid items-center gap-11 lg:grid-cols-2">
-        {/* copy */}
-        <div>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 font-mono text-xs tracking-widest text-ink-muted">
-            <span className="size-2 rounded-full bg-emerald-500" />
-            KANBAN · REALTIME · AI
-          </div>
-          <h1 className="mk-display mb-5 text-5xl leading-none font-bold tracking-tight text-balance md:text-6xl lg:text-7xl">
-            Every task,
-            <br />
-            in motion.
-          </h1>
-          <p className="mb-8 max-w-md text-lg leading-normal text-ink-muted lg:text-xl">
-            TimeCraft is a kanban board for small teams. Drag cards across
-            lanes, watch teammates&apos; changes land live, and let AI break big
-            fuzzy tasks into subtasks you can actually start on.
-          </p>
-          <div className="flex flex-wrap items-center gap-3.5">
-            <Button
-              asChild
-              className="h-12 rounded-xl px-6 text-md font-semibold shadow-lg shadow-brand/30 transition-transform hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand/40"
-            >
-              <Link href="/login">
-                Start free — no card
-                <ArrowRight />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="white"
-              className="h-12 rounded-xl border-line px-5 text-md font-semibold transition-transform hover:-translate-y-0.5"
-            >
-              <Link href="/login">
-                <Play className="fill-ink text-ink" />
-                Try the guest demo
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-6 flex items-center gap-2.5 text-sm text-ink-muted">
-            <div className="flex">
-              {AVATAR_COLORS.map((color, i) => (
-                <span
-                  key={color}
-                  className={`size-6 rounded-full border-2 border-surface ${color} ${i > 0 ? '-ml-2' : ''}`}
-                />
-              ))}
-            </div>
-            <span>
-              Built for small teams — every move syncs{' '}
-              <strong className="text-ink">live</strong> for everyone on the
-              board
-            </span>
-          </div>
+    <>
+      <section className="mx-auto flex max-w-312 flex-col items-center gap-6 px-6 pt-24 pb-14 text-center">
+        <span className="inline-flex h-7.5 items-center gap-2 rounded-full border border-line px-3 font-mono text-xs text-ink-muted">
+          <span className="size-1.5 rounded-full bg-brand" />
+          Kanban · Realtime · AI
+        </span>
+        <h1 className="max-w-205 text-5xl leading-none font-semibold tracking-tighter text-balance sm:text-6xl lg:text-7xl">
+          Every task, in motion.
+        </h1>
+        <p className="max-w-155 text-lg leading-7 text-pretty text-ink-muted">
+          TimeCraft is a kanban board for small teams. Drag cards across lanes,
+          watch teammates&rsquo; changes land live, and let AI break big fuzzy
+          goals into tasks you can actually start on.
+        </p>
+        <div className="mt-2 flex flex-wrap justify-center gap-2.5">
+          <Button asChild size="lg" className="h-11 gap-2 px-5 text-md">
+            <Link href="/login">
+              Start free
+              <ArrowRight className="size-3.75" />
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="h-11 px-5 text-md"
+          >
+            <Link href="/login">Try the guest demo</Link>
+          </Button>
         </div>
-
-        <HeroBoardPreview />
-      </div>
-    </section>
+        <span className="text-sm leading-6 text-ink-subtle">
+          Free while in development. No card required.
+        </span>
+      </section>
+      <ProductPreview />
+    </>
   );
 }

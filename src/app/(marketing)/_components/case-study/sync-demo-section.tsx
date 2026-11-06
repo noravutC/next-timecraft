@@ -1,98 +1,80 @@
 'use client';
 
+import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { deriveDemoVisuals } from './case-study-operations';
+import { phaseRows, type PhaseStatus } from './case-study-operations';
 import { useSyncDemo } from './use-sync-demo';
+import { SectionIntro } from '../section-intro';
+
+const rowStyles: Record<PhaseStatus, string> = {
+  current: 'border-ink bg-background',
+  reached: 'border-line bg-surface',
+  pending: 'border-line bg-surface',
+};
+
+const dotStyles: Record<PhaseStatus, string> = {
+  current: 'bg-brand',
+  reached: 'bg-ink',
+  pending: 'bg-input',
+};
+
+const labelStyles: Record<PhaseStatus, string> = {
+  current: 'text-ink',
+  reached: 'text-ink',
+  pending: 'text-ink-faint',
+};
 
 export function SyncDemoSection() {
-  const { sectionRef, cardRef, demo, replay } = useSyncDemo();
-  const v = deriveDemoVisuals(demo);
+  const { sectionRef, phase, replay } = useSyncDemo();
 
   return (
     <section
       id="sync"
       ref={sectionRef}
-      className="border-y border-line bg-white px-8 py-20"
+      className="scroll-mt-16 border-t border-line bg-surface"
     >
-      <div className="mx-auto grid max-w-270 items-center gap-16 md:grid-cols-2">
-        <div>
-          <div className="cs-mono mb-3.5 text-xs font-bold text-brand">
-            EXPLAINING OPTIMISTIC UI
-          </div>
-          <h2 className="mk-display mb-4 text-4xl leading-tight font-extrabold tracking-tight">
-            The card moves first. The server catches up.
-          </h2>
-          <p className="mb-5 text-base leading-relaxed text-pretty text-ink-muted">
-            This section demonstrates how I communicate a technical concept
-            visually: the card commits to its new column in 0&nbsp;ms while a
-            simulated server ack lands a beat later. State machine: idle →
-            moved → syncing → synced, with the delay exposed as a design token
-            you can tweak.
-          </p>
+      <div className="mx-auto grid max-w-292 items-center gap-12 px-6 py-24 lg:grid-cols-2">
+        <div className="flex flex-col gap-3.5">
+          <SectionIntro
+            eyebrow="Explaining optimistic UI"
+            title="The card moves first. The server catches up."
+            body="The card commits to its new column in 0 ms while a simulated server ack lands a beat later. State machine: idle, moved, syncing, synced, with the delay exposed as a design token you can tweak."
+          />
           <Button
             type="button"
             variant="outline"
             onClick={replay}
-            className="cs-mono h-auto rounded-lg border-brand-line bg-brand-soft px-4.5 py-2.5 text-sm font-bold whitespace-nowrap text-brand shadow-none hover:bg-brand-line hover:text-brand"
+            className="mt-1.5 h-10 gap-2 self-start rounded-lg px-3.5 text-base"
           >
-            ↻ replay the move
+            <RotateCcw className="size-3.75" />
+            Replay the move
           </Button>
         </div>
-        <div>
-          <div className="relative grid grid-cols-2 gap-4">
-            <div className="min-h-37.5 rounded-2xl border border-line bg-surface p-3">
-              <div className="cs-mono mb-2.5 px-1 py-0.5 text-xs font-bold text-ink-muted">
-                DOING
-              </div>
-            </div>
-            <div className="min-h-37.5 rounded-2xl border border-line bg-surface p-3">
-              <div className="cs-mono mb-2.5 px-1 py-0.5 text-xs font-bold text-ink-muted">
-                DONE
-              </div>
-            </div>
-            <div
-              ref={cardRef}
-              className="cs-demo-card absolute top-10.5 left-3 box-border w-[calc(50%-32px)] rounded-xl border border-brand-line bg-white p-3 shadow-[0_2px_10px_rgba(91,80,230,0.10)]"
-              style={{ transform: v.transform }}
-            >
-              <div className="text-sm leading-snug font-semibold">
-                Merge the sync retry patch
-              </div>
-              <div className="mt-2.25 flex items-center justify-between">
-                <span className="cs-mono text-xs text-ink-subtle">TC-140</span>
-                <span
-                  className={cn(
-                    'cs-mono text-xs font-bold',
-                    v.synced ? 'text-emerald-600' : 'text-ink-subtle',
-                  )}
-                >
-                  {v.syncLabel}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="cs-mono mt-5.5 flex flex-col gap-2 text-xs">
-            <div
+        <ol className="flex flex-col gap-2.5 rounded-xl border border-line bg-background p-5">
+          {phaseRows(phase).map((row) => (
+            <li
+              key={row.phase}
               className={cn(
-                'flex items-baseline gap-3',
-                v.moved ? 'text-ink' : 'text-ink-faint',
+                'flex h-11.5 items-center gap-3 rounded-lg border px-3 transition-colors',
+                rowStyles[row.status],
               )}
             >
-              <span className="w-16 text-right">0 ms</span>
-              <span>card lands in DONE: your board, everyone&apos;s screen</span>
-            </div>
-            <div
-              className={cn(
-                'flex items-baseline gap-3',
-                v.synced ? 'text-emerald-600' : 'text-ink-faint',
-              )}
-            >
-              <span className="w-16 text-right">{v.ackMs} ms</span>
-              <span>server ack · synced ✓</span>
-            </div>
-          </div>
-        </div>
+              <span
+                className={cn(
+                  'size-2 shrink-0 rounded-full',
+                  dotStyles[row.status],
+                )}
+              />
+              <span className="w-16 shrink-0 font-mono text-xs text-ink-subtle">
+                {row.time}
+              </span>
+              <span className={cn('text-base', labelStyles[row.status])}>
+                {row.label}
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

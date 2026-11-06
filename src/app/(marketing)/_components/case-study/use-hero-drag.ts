@@ -5,6 +5,7 @@ import {
   dragStep,
   INIT_MEASURE_DELAY_MS,
   nearestColumn,
+  nextColumn,
   NUDGE_INTERVAL_MS,
   prefersReducedMotion,
   springStep,
@@ -35,8 +36,8 @@ type Physics = {
 };
 
 /** Hero-board drag: pointer events + rAF spring integrator, velocity tilt,
-    nearest-column snap, idle nudge every 7s, simulated sync ack (450ms).
-    Ported 1:1 from the design's DCLogic reference. */
+    nearest-lane snap, idle nudge every 7s, simulated sync ack (450ms).
+    Enter/Space moves the card to the next lane for keyboard users. */
 export function useHeroDrag() {
   const boardRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -166,36 +167,49 @@ export function useHeroDrag() {
     startLoop();
   }, [startLoop]);
 
+  const moveTo = useCallback(
+    (dest: ColumnKey) => {
+      const p = phys.current;
+      const moved = dest !== st.current.col;
+      setState({
+        col: dest,
+        hoverCol: null,
+        sync: moved ? 'pending' : st.current.sync,
+      });
+      const s = p.slots[dest];
+      if (s) p.target = { x: s.x, y: s.y };
+      if (prefersReducedMotion()) {
+        p.pos = { ...p.target };
+        p.vel = { x: 0, y: 0 };
+        apply(0);
+      } else startLoop();
+      if (moved) {
+        if (syncT.current) clearTimeout(syncT.current);
+        syncT.current = setTimeout(
+          () => setState({ sync: 'synced' }),
+          SYNC_DELAY_MS,
+        );
+      }
+    },
+    [apply, setState, startLoop],
+  );
+
   const drop = useCallback(() => {
     const p = phys.current;
     p.dragging = false;
-    const card = cardRef.current;
-    if (card) {
-      card.style.cursor = 'grab';
-      card.style.boxShadow = '0 2px 10px rgba(91,80,230,0.10)';
-    }
-    const dest = nearestColumn(p.slots, p.pos.x) ?? st.current.col;
-    const moved = dest !== st.current.col;
-    setState({
-      col: dest,
-      hoverCol: null,
-      sync: moved ? 'pending' : st.current.sync,
-    });
-    const s = p.slots[dest];
-    if (s) p.target = { x: s.x, y: s.y };
-    if (prefersReducedMotion()) {
-      p.pos = { ...p.target };
-      p.vel = { x: 0, y: 0 };
-      apply(0);
-    } else startLoop();
-    if (moved) {
-      if (syncT.current) clearTimeout(syncT.current);
-      syncT.current = setTimeout(
-        () => setState({ sync: 'synced' }),
-        SYNC_DELAY_MS,
-      );
-    }
-  }, [apply, setState, startLoop]);
+    if (cardRef.current) cardRef.current.dataset.dragging = 'false';
+    moveTo(nearestColumn(p.slots, p.pos) ?? st.current.col);
+  }, [moveTo]);
+
+  const onCardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      measure();
+      moveTo(nextColumn(st.current.col));
+    },
+    [measure, moveTo],
+  );
 
   const onCardPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -210,12 +224,8 @@ export function useHeroDrag() {
           y: e.clientY - p.boardRect.top - p.pos.y,
         };
       }
-      const card = cardRef.current;
-      if (card) {
-        card.style.cursor = 'grabbing';
-        card.style.boxShadow = '0 12px 30px rgba(91,80,230,0.22)';
-      }
-      setState({ hoverCol: nearestColumn(p.slots, p.pos.x) });
+      if (cardRef.current) cardRef.current.dataset.dragging = 'true';
+      setState({ hoverCol: nearestColumn(p.slots, p.pos) });
       startLoop();
     },
     [measure, setState, startLoop],
@@ -226,7 +236,7 @@ export function useHeroDrag() {
     const onMove = (e: PointerEvent) => {
       if (!p.dragging) return;
       p.pointer = { x: e.clientX, y: e.clientY };
-      const c = nearestColumn(p.slots, p.pos.x);
+      const c = nearestColumn(p.slots, p.pos);
       if (c !== st.current.hoverCol) setState({ hoverCol: c });
     };
     const onUp = () => {
@@ -242,7 +252,11 @@ export function useHeroDrag() {
       if (!prefersReducedMotion()) nudge();
     }, INIT_MEASURE_DELAY_MS);
     const nudgeInt = setInterval(() => {
-      if (!p.dragging && !prefersReducedMotion() && st.current.sync !== 'pending') {
+      if (
+        !p.dragging &&
+        !prefersReducedMotion() &&
+        st.current.sync !== 'pending'
+      ) {
         nudge();
       }
     }, NUDGE_INTERVAL_MS);
@@ -268,5 +282,6 @@ export function useHeroDrag() {
     },
     board,
     onCardPointerDown,
+    onCardKeyDown,
   };
 }
