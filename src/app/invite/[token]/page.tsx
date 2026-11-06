@@ -15,7 +15,7 @@ import { InviteStateCard } from './_components/invite-state-card';
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   const [preview, setPreview] = useState<InvitationPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -38,6 +38,8 @@ export default function InvitePage() {
     setAccepting(true);
     try {
       const res = await projectServices.acceptInvitation(token);
+      // re-read the session so it knows about the new board membership
+      await update();
       toast.success('Invitation accepted. Welcome aboard!');
       // open the board just joined, not whichever board comes first
       router.replace(boardUrl({ board: res.created?.projectId ?? null }));

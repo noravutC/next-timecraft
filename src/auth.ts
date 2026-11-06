@@ -4,7 +4,12 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { and, eq, asc } from "drizzle-orm";
 import { db } from "@/db";
-import { membershipsTable, organizationsTable, usersTable } from "@/db/schema";
+import {
+  membershipsTable,
+  organizationsTable,
+  projectMembersTable,
+  usersTable,
+} from "@/db/schema";
 import { clientIp } from "@/lib/api/client-ip";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { GUEST_EMAIL } from "@/lib/guest";
@@ -67,6 +72,7 @@ export interface TimeCraftJWT extends Record<string, unknown> {
   organizationId?: string;
   systemRole?: "owner" | "admin" | "member" | "guest" | "user";
   canCreateOrg?: boolean;
+  hasBoards?: boolean;
   email?: string | null;
   name?: string | null;
   picture?: string | null;
@@ -119,6 +125,13 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
     .orderBy(asc(membershipsTable.createdAt))
     .limit(1);
 
+  // invited to a board: they have boards to open even without a workspace
+  const [boardMembership] = await db
+    .select({ id: projectMembersTable.id })
+    .from(projectMembersTable)
+    .where(eq(projectMembersTable.userId, dbUser.id))
+    .limit(1);
+
   token.id = dbUser.id;
   token.email = dbUser.email;
   token.fullName = dbUser.fullName;
@@ -131,6 +144,7 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
     ownedMembership?.organizationId ?? memberShip?.organizationId;
   token.systemRole = ownedMembership ? "owner" : "user";
   token.canCreateOrg = !Boolean(ownedMembership);
+  token.hasBoards = Boolean(boardMembership);
 
   return token;
 };
@@ -222,6 +236,7 @@ export const authConfig: NextAuthConfig = {
         Boolean(current.id) &&
         Boolean(current.systemRole) &&
         typeof current.canCreateOrg === "boolean" &&
+        typeof current.hasBoards === "boolean" &&
         (current.canCreateOrg ? true : Boolean(current.organizationId));
 
       // Avoid hitting DB on every `/api/auth/session` request.
@@ -250,6 +265,7 @@ export const authConfig: NextAuthConfig = {
         session.user.organizationId = tokenTypes.organizationId ?? "";
         session.user.systemRole = tokenTypes.systemRole ?? "user";
         session.user.canCreateOrg = tokenTypes.canCreateOrg ?? false;
+        session.user.hasBoards = tokenTypes.hasBoards ?? false;
         session.user.email = tokenTypes.email ?? session.user.email ?? "";
         session.user.name = tokenTypes.fullName ?? session.user.name ?? "";
         session.user.image = tokenTypes.avatar ?? session.user.image ?? null;
