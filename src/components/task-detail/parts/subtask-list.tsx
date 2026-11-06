@@ -1,9 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSubtaskStore } from '@/store/use-subtask.store';
@@ -11,7 +10,8 @@ import {
   progressFromItems,
   progressPercent,
 } from '@/helper/utils/subtask-progress';
-import { cn } from '@/lib/utils';
+import { SubtaskRow } from './subtask-row';
+import { useSubtaskReorder } from './use-subtask-dnd';
 
 interface Props {
   taskId: string;
@@ -30,6 +30,12 @@ export const SubtaskList = ({ taskId, readOnly = false }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState('');
   const progress = progressFromItems(items);
+  const move = useCallback(
+    (subtaskId: string, orderFraction: string) =>
+      update(subtaskId, taskId, { orderFraction }),
+    [update, taskId],
+  );
+  useSubtaskReorder(taskId, move);
 
   const submit = () => {
     const title = draft.trim();
@@ -70,43 +76,15 @@ export const SubtaskList = ({ taskId, readOnly = false }: Props) => {
 
       <ul className="flex flex-col gap-0.5">
         {items.map((sub) => (
-          <li
+          <SubtaskRow
             key={sub.id}
-            className="group -mx-2 flex min-h-9 items-center gap-2.5 rounded-md px-2 hover:bg-surface"
-          >
-            <Checkbox
-              id={`subtask-${sub.id}`}
-              // not saved yet: toggling the temp row would race the create
-              disabled={readOnly || sub.id.startsWith('temp-')}
-              className="border-ink-faint"
-              checked={sub.completed}
-              onCheckedChange={(c) =>
-                update(sub.id, taskId, { completed: c === true })
-              }
-            />
-            <label
-              htmlFor={`subtask-${sub.id}`}
-              className={cn(
-                'flex-1 text-base',
-                readOnly ? 'cursor-default' : 'cursor-pointer',
-                sub.completed ? 'text-ink-faint line-through' : 'text-ink',
-              )}
-            >
-              {sub.title}
-            </label>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => remove(sub.id, taskId)}
-                disabled={sub.id.startsWith('temp-')}
-                aria-label={`Delete subtask ${sub.title}`}
-                className="text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-              >
-                <X className="size-3.5" />
-              </Button>
-            )}
-          </li>
+            subtask={sub}
+            taskId={taskId}
+            readOnly={readOnly}
+            onToggle={(completed) => update(sub.id, taskId, { completed })}
+            onRename={(title) => update(sub.id, taskId, { title })}
+            onRemove={() => remove(sub.id, taskId)}
+          />
         ))}
         {readOnly && items.length === 0 && (
           <li className="text-sm text-ink-subtle">No subtasks</li>

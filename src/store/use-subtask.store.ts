@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { subtaskServices } from '@/services/subtask.service';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { progressFromItems } from '@/helper/utils/subtask-progress';
+import { byOrderFraction } from '@/helper/utils/subtask-order';
 import type { Subtask, SubtaskProgress, UpdateSubtaskPayload } from '@/types';
 import type { LoaderStatus } from '@/types/global/types';
 
@@ -14,13 +15,7 @@ type TaskState = {
 
 const empty: TaskState = { items: [], status: 'none', initialized: false };
 
-const sortItems = (items: Subtask[]) =>
-  [...items].sort((a, b) => {
-    if (a.orderFraction === b.orderFraction) {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    }
-    return a.orderFraction < b.orderFraction ? -1 : 1;
-  });
+const sortItems = (items: Subtask[]) => byOrderFraction(items);
 
 type SubtaskStore = {
   byTask: Record<string, TaskState>;
@@ -176,8 +171,10 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
           ...s.byTask,
           [taskId]: {
             ...prev,
-            items: prev.items.map((it) =>
-              it.id === subtaskId ? { ...it, ...payload } : it,
+            items: sortItems(
+              prev.items.map((it) =>
+                it.id === subtaskId ? { ...it, ...payload } : it,
+              ),
             ),
           },
         },

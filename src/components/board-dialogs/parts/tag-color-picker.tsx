@@ -9,13 +9,20 @@ import {
 import { cn } from '@/lib/utils';
 import { TAG_PALETTE } from '@/lib/project-settings/constants';
 
-/** The color dot inside the "Add a tag" field; click it to pick the next tag's color. */
+/** A tag's color dot; click it to pick another color. */
 export const TagColorPicker = ({
   value,
   onChange,
+  label,
+  className,
+  dotClassName,
 }: {
   value: string;
   onChange: (color: string) => void;
+  label: string;
+  /** where the trigger sits */
+  className?: string;
+  dotClassName?: string;
 }) => (
   <Popover>
     <PopoverTrigger asChild>
@@ -23,11 +30,11 @@ export const TagColorPicker = ({
         type="button"
         variant="ghost"
         size="icon-xs"
-        aria-label="Color for the new tag"
-        className="absolute top-1/2 left-1.5 size-6 -translate-y-1/2 rounded-full hover:bg-surface-hover"
+        aria-label={label}
+        className={cn('size-6 rounded-full hover:bg-surface-hover', className)}
       >
         <span
-          className="size-2.5 rounded-full"
+          className={cn('size-2.5 rounded-full', dotClassName)}
           style={{ backgroundColor: value }}
         />
       </Button>

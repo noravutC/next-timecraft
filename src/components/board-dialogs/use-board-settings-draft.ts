@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProjectStore } from '@/store';
+import { useTaskStore } from '@/store/use-task.store';
 import { TAG_LIMIT } from '@/lib/project-settings/constants';
+import { hashTagColor } from '@/lib/project-settings/tag-palette';
+import {
+  dropTagRename,
+  hasTagRenames,
+  recordTagRename,
+  type TagRenames,
+} from '@/helper/utils/tag-rename';
 import {
   withSettingsDefaults,
   type ProjectSettings,
@@ -34,6 +42,7 @@ export function useBoardSettingsDraft({
 
   const [draft, setDraft] = useState<BoardSettingsDraft | null>(null);
   const [draftTag, setDraftTag] = useState('');
+  const [renames, setRenames] = useState<TagRenames>({});
   const [saving, setSaving] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -51,6 +60,7 @@ export function useBoardSettingsDraft({
         settings: withSettingsDefaults(project.settings),
       });
       setDraftTag('');
+      setRenames({});
       setSaving(false);
     }
   }
@@ -58,18 +68,21 @@ export function useBoardSettingsDraft({
   const patchSettings = (next: Partial<ProjectSettings>) =>
     setDraft((d) => d && { ...d, settings: { ...d.settings, ...next } });
 
+  // toasts the reason and returns false when the name can't be used
+  const acceptTagName = (name: string, except?: string) => {
+    const taken = draft?.tags.some(
+      (t) => t !== except && t.toLowerCase() === name.toLowerCase(),
+    );
+    if (taken) toast.error('This tag already exists');
+    else if (name.length > TAG_LIMIT)
+      toast.error(`Tags must be ${TAG_LIMIT} characters or fewer`);
+    return !taken && name.length <= TAG_LIMIT;
+  };
+
   const addTag = () => {
     if (!draft) return;
     const next = draftTag.trim();
-    if (!next) return;
-    if (draft.tags.some((t) => t.toLowerCase() === next.toLowerCase())) {
-      toast.error('This tag already exists');
-      return;
-    }
-    if (next.length > TAG_LIMIT) {
-      toast.error(`Tags must be ${TAG_LIMIT} characters or fewer`);
-      return;
-    }
+    if (!next || !acceptTagName(next)) return;
     setDraft((d) => {
       if (!d) return d;
       return {
@@ -87,7 +100,43 @@ export function useBoardSettingsDraft({
     setDraftTag('');
   };
 
+  /** false when the name is refused, so the field stays open */
+  const renameTag = (tag: string, name: string) => {
+    if (!project) return false;
+    const next = name.trim();
+    if (!next || next === tag) return true;
+    if (!acceptTagName(next, tag)) return false;
+    setDraft((d) => {
+      if (!d) return d;
+      // the color goes with the name, even one it only had by default
+      const { [tag]: color, ...tagColors } = d.settings.tagColors;
+      return {
+        ...d,
+        tags: d.tags.map((t) => (t === tag ? next : t)),
+        settings: {
+          ...d.settings,
+          tagColors: { ...tagColors, [next]: color ?? hashTagColor(tag) },
+        },
+      };
+    });
+    setRenames((r) => recordTagRename(r, project.tags ?? [], tag, next));
+    return true;
+  };
+
+  const recolorTag = (tag: string, color: string) =>
+    setDraft(
+      (d) =>
+        d && {
+          ...d,
+          settings: {
+            ...d.settings,
+            tagColors: { ...d.settings.tagColors, [tag]: color },
+          },
+        },
+    );
+
   const removeTag = (tag: string) => {
+    setRenames((r) => dropTagRename(r, tag));
     setDraft((d) => {
       if (!d) return d;
       const tagColors = { ...d.settings.tagColors };
@@ -108,8 +157,12 @@ export function useBoardSettingsDraft({
         name: draft.name.trim(),
         description: draft.description.trim(),
         tags: draft.tags,
+        ...(hasTagRenames(renames) ? { renameTags: renames } : {}),
         settings: draft.settings,
       });
+      if (hasTagRenames(renames)) {
+        useTaskStore.getState().renameTagsOnBoard(project.id, renames);
+      }
       toast.success('Board settings saved');
       onClose();
     } catch {
@@ -160,6 +213,8 @@ export function useBoardSettingsDraft({
     setConfirmDelete,
     patchSettings,
     addTag,
+    renameTag,
+    recolorTag,
     removeTag,
     handleSave,
     handleArchive,
