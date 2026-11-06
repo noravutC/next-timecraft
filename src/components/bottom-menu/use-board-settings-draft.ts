@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProjectStore } from '@/store';
-import { ICON_OPTIONS, TAG_LIMIT } from '@/lib/project-settings/constants';
+import { TAG_LIMIT } from '@/lib/project-settings/constants';
 import {
   withSettingsDefaults,
   type ProjectSettings,
@@ -57,9 +57,6 @@ export function useBoardSettingsDraft({
 
   const patchSettings = (next: Partial<ProjectSettings>) =>
     setDraft((d) => d && { ...d, settings: { ...d.settings, ...next } });
-
-  const iconEmoji =
-    ICON_OPTIONS.find((i) => i.id === draft?.settings.icon)?.emoji ?? '📁';
 
   const addTag = () => {
     if (!draft) return;
@@ -162,7 +159,6 @@ export function useBoardSettingsDraft({
     confirmDelete,
     setConfirmDelete,
     patchSettings,
-    iconEmoji,
     addTag,
     removeTag,
     handleSave,

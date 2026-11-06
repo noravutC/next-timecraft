@@ -127,7 +127,7 @@ export const ConfirmDialog = ({
             <div className="flex flex-col gap-2">
               <label
                 htmlFor="confirm-phrase"
-                className="text-sm text-ink-muted"
+                className="text-sm leading-5 text-ink-muted"
               >
                 Type{' '}
                 <span className="rounded-sm border border-line bg-surface-hover px-1.25 py-px font-mono text-xs text-ink">

@@ -1,8 +1,9 @@
 'use client';
 
+import { Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-/** Danger zone ของ Board settings: archive/unarchive กับ delete (เปิด confirm ที่ parent) */
+/** Danger zone tab: archive/unarchive and delete (each opens a confirm). */
 export const BoardDangerZone = ({
   archived,
   onArchiveClick,
@@ -12,44 +13,41 @@ export const BoardDangerZone = ({
   onArchiveClick: () => void;
   onDeleteClick: () => void;
 }) => (
-  <div className="mt-5 overflow-hidden rounded-xl border border-destructive/25">
-    <p className="border-b border-destructive/25 bg-destructive/5 px-4 py-2.5 text-xs font-semibold tracking-wider text-destructive uppercase">
-      Danger zone
-    </p>
-    <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">
+  <div className="flex flex-col overflow-hidden rounded-popover border border-danger-line">
+    <div className="flex items-center gap-4 p-4.5">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-base font-medium text-ink">
           {archived ? 'Unarchive board' : 'Archive board'}
-        </p>
-        <p className="text-xs text-ink-subtle">
+        </span>
+        <span className="text-sm leading-5 text-ink-subtle">
           {archived
-            ? 'Restore it to your active boards.'
+            ? 'Bring it back to your active boards.'
             : 'Hide it from your active boards. You can restore it later.'}
-        </p>
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onArchiveClick}
-        className="shrink-0 rounded-lg"
-      >
+        </span>
+      </span>
+      <Button variant="outline" onClick={onArchiveClick} className="shrink-0">
+        {archived ? (
+          <ArchiveRestore className="size-3.75" />
+        ) : (
+          <Archive className="size-3.75" />
+        )}
         {archived ? 'Unarchive' : 'Archive'}
       </Button>
     </div>
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-destructive">Delete board</p>
-        <p className="text-xs text-ink-subtle">
-          Permanently remove this board and all its tasks.
-        </p>
-      </div>
+    <div className="h-px bg-danger-line" />
+    <div className="flex items-center gap-4 bg-danger-soft/40 p-4.5">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-base font-medium text-ink">Delete board</span>
+        <span className="text-sm leading-5 text-ink-subtle">
+          Permanently remove this board and all of its tasks.
+        </span>
+      </span>
       <Button
-        variant="outline"
-        size="sm"
+        variant="destructive"
         onClick={onDeleteClick}
-        className="shrink-0 rounded-lg border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="shrink-0"
       >
-        Delete
+        Delete board
       </Button>
     </div>
   </div>

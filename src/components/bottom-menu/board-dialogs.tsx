@@ -8,7 +8,8 @@ import { BoardSettingsDialog } from './board-settings-dialog';
 
 // dialog ทั้งชุดของบอร์ด mount ที่เดียว — เปิดผ่าน useNavStore.boardDialog
 export const BoardDialogs = () => {
-  const { boardDialog, setBoardDialog } = useNavStore();
+  const boardDialog = useNavStore((s) => s.boardDialog);
+  const setBoardDialog = useNavStore((s) => s.setBoardDialog);
 
   // ⌘K / Ctrl+K เปิด-ปิดตัวสลับบอร์ดได้จากทุกที่บนหน้าบอร์ด
   useEffect(() => {
@@ -28,7 +29,6 @@ export const BoardDialogs = () => {
       <ProjectSwitcherPanel
         open={boardDialog === 'switch'}
         onClose={() => setBoardDialog(null)}
-        onCreateNew={() => setBoardDialog('create')}
       />
       <CreateBoardDialog
         open={boardDialog === 'create'}

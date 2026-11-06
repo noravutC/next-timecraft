@@ -12,18 +12,18 @@ const signInAsGuest = async (page: Page) => {
   await page.waitForURL(/\/project/, { timeout: 30_000 });
 };
 
-/** Guest workspace may or may not already have a project. */
+/** Guest workspace may or may not already have a board. */
 const ensureBoard = async (page: Page) => {
   const column = page.getByTestId('board-column').first();
-  const templatePicker = page.getByText(/choose a popular template/i);
-  await expect(column.or(templatePicker)).toBeVisible({ timeout: 30_000 });
+  const firstBoard = page.getByRole('heading', {
+    name: /create your first board/i,
+  });
+  await expect(column.or(firstBoard)).toBeVisible({ timeout: 30_000 });
 
-  if (await templatePicker.isVisible()) {
-    await page.getByRole('button', { name: /basic kanban/i }).click();
-    await page
-      .getByPlaceholder('Enter project name')
-      .fill(`E2E Project ${uniq}`);
-    await page.getByRole('button', { name: /create project/i }).click();
+  if (await firstBoard.isVisible()) {
+    // Kanban Board is preselected
+    await page.getByLabel('Board name').fill(`E2E Project ${uniq}`);
+    await page.getByRole('button', { name: /^create board/i }).click();
   }
   await expect(column).toBeVisible({ timeout: 30_000 });
 };

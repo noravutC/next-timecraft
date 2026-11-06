@@ -1,16 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { ChevronsUpDown, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
-import { useOrganizationStore } from '@/store/use-organization.store';
+import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
-import { InviteMemberDialog } from '@/components/project/invite-member-dialog';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
   Tooltip,
@@ -44,19 +41,8 @@ export const ProjectHeader = () => {
   const { projectIsUsing, projects, status } = useProjectStore();
   const { users } = useUserStore();
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
-  const { data: session } = useSession();
-  const organization = useOrganizationStore((s) => s.organization);
-  const fetchUserOrganization = useOrganizationStore(
-    (s) => s.fetchUserOrganization,
-  );
-  const [inviteOpen, setInviteOpen] = useState(false);
-
-  const orgId = session?.user?.organizationId;
-  useEffect(() => {
-    if (orgId && organization?.id !== orgId) {
-      fetchUserOrganization(orgId).catch(() => {});
-    }
-  }, [orgId, organization?.id, fetchUserOrganization]);
+  const openBoardSettings = useNavStore((s) => s.openBoardSettings);
+  const workspaceName = useWorkspaceName();
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
   const members = projectValue?.members ?? [];
@@ -70,10 +56,10 @@ export const ProjectHeader = () => {
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <Logo size={24} textSize="md" />
         <BreadcrumbSlash />
-        {organization?.name && (
+        {workspaceName && (
           <>
             <span className="truncate text-base font-medium text-ink-muted">
-              {organization.name}
+              {workspaceName}
             </span>
             <BreadcrumbSlash />
           </>
@@ -117,7 +103,7 @@ export const ProjectHeader = () => {
               <AvatarGroup
                 aria-label={`${members.length} members`}
                 className="cursor-pointer"
-                onClick={() => setInviteOpen(true)}
+                onClick={() => openBoardSettings('members')}
               >
                 {visibleMembers.map((member) => {
                   const user = users[member.userId];
@@ -157,7 +143,7 @@ export const ProjectHeader = () => {
               variant="outline"
               size="sm"
               className="border-line"
-              onClick={() => setInviteOpen(true)}
+              onClick={() => openBoardSettings('members')}
             >
               <UserPlus className="size-3.75" />
               Invite
@@ -171,11 +157,6 @@ export const ProjectHeader = () => {
           </>
         )}
       </TooltipProvider>
-
-      <InviteMemberDialog
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-      />
     </header>
   );
 };
