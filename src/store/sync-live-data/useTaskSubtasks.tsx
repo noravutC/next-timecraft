@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { privateChannel } from "@/helper/utils/realtime-channel";
 import { pusherClient } from "@/lib/pusher-client";
 import { useSubtaskStore } from "@/store/use-subtask.store";
 import type { Subtask } from "@/types";
@@ -15,7 +16,7 @@ export const useTaskSubtasks = (taskId?: string | null) => {
     if (!taskId) return;
     fetch(taskId);
 
-    const channelName = `task-${taskId}`;
+    const channelName = privateChannel(`task-${taskId}`);
     const channel = pusherClient.subscribe(channelName);
 
     channel.bind("subtask-added", (s: Subtask) => ingestAdded(taskId, s));

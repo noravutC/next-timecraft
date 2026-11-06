@@ -8,7 +8,7 @@ import {
 } from '@/db/uniq-query/project/project-utils';
 import { BadRequestError, NotFoundError } from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
-import { triggerExclusive } from '@/lib/pusher-server';
+import { pusherServer, triggerExclusive } from '@/lib/pusher-server';
 import { NextResponse } from 'next/server';
 
 type RouteParams = { id: string; userId: string };
@@ -55,7 +55,15 @@ export const DELETE = createParamHandle<RouteParams>(
       `user-${targetUserId}`,
       'notification-added',
       notification,
-    ).catch((e) => console.error('Pusher notif failed:', e));
+    )
+      .catch((e) => console.error('Pusher notif failed:', e))
+      // drop their live sockets so they can't keep listening to this board;
+      // on reload they can only re-join channels they're still allowed on
+      .finally(() =>
+        pusherServer
+          .terminateUserConnections(targetUserId)
+          .catch((e) => console.error('Pusher terminate failed:', e)),
+      );
 
     return NextResponse.json(
       { deleted, message: 'Member removed', status: 200 },

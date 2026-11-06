@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { privateChannel } from "@/helper/utils/realtime-channel";
 import { pusherClient } from "@/lib/pusher-client";
 import { useCommentStore } from "@/store/use-comment.store";
 import type { ReactionSummary, TaskCommentWithAuthor } from "@/types";
@@ -16,7 +17,7 @@ export const useTaskComments = (taskId?: string | null) => {
     if (!taskId) return;
     fetchInitial(taskId);
 
-    const channelName = `task-${taskId}`;
+    const channelName = privateChannel(`task-${taskId}`);
     const channel = pusherClient.subscribe(channelName);
 
     channel.bind(
