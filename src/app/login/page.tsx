@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader, LoaderScreen } from "@/components/ui/loader";
+import { LogoMark } from "@/components/logo-space/logo-mark";
 
 const BRAND = "TimeCraft";
 
@@ -63,22 +64,8 @@ export default function Login() {
       {/* LEFT · FORM PANEL */}
       <section className="flex w-full flex-col overflow-auto bg-white px-6 py-10 sm:px-12 lg:max-w-[640px] lg:flex-[0_0_46%] lg:px-18 lg:py-11">
         {/* brand */}
-        <div className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-brand shadow-lg shadow-brand/30">
-            <svg
-              width="19"
-              height="19"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-            >
-              <path d="M6 14v4" />
-              <path d="M12 7v11" />
-              <path d="M18 11v7" />
-            </svg>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <LogoMark size={34} />
           <span className="text-lg font-bold tracking-tight">{BRAND}</span>
         </div>
 

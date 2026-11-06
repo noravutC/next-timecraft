@@ -25,9 +25,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans:
-    var(--font-jakarta-sans), var(--font-noto-thai), "Plus Jakarta Sans",
-    "Noto Sans Thai", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+    var(--font-geist-sans), var(--font-noto-thai), "Geist", "Noto Sans Thai",
+    -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, "Cascadia Code", "Source Code Pro",
+    Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -79,26 +81,26 @@
 :root {
   --text-color-primary: #44546f;
   --text-color-column-table: #505258;
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* --primary: oklch(0.205 0 0); */
-  --primary: var(--brand);
+  /* primary actions are ink (monochrome UI); brand is reserved for the logo, focus accents and AI */
+  --primary: var(--ink);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: var(--brand);
+  --secondary: #f5f5f5;
+  --secondary-foreground: var(--ink);
+  --muted: #f5f5f5;
+  --muted-foreground: #707070;
+  --accent: #f5f5f5;
+  --accent-foreground: var(--ink);
+  --destructive: #c9302c;
+  --border: #ebebeb;
+  --input: #e0e0e0;
+  --ring: var(--ink);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -124,31 +126,31 @@
      line     : hairline borders
      priority-*: task priority — solid = dot/flag, -text = chip text,
                  -soft = tinted fill, -line = tinted border */
-  --brand: #5b50e6;
-  --brand-dark: #4a40d6;
-  --brand-soft: #eeedfc;
-  --brand-line: #d9d7f5;
-  --ink: #1d1e26;
-  --ink-muted: #6b7180;
-  --ink-subtle: #8a8f9c;
-  --ink-faint: #a8adb8;
-  --surface: #f6f7f9; /* board bg — ตรงกับ design source (TimeCraft Board.dc.html) */
-  --surface-hover: #f2f3f6;
-  --surface-active: #edeef2;
-  --surface-column: #ffffff; /* column fill — เปลี่ยนเป็นขาวตามที่ตกลง (เดิม #f0f1f4 จาก design source) */
-  --line: #ecedf1;
-  --priority-low: #10b981;
-  --priority-low-soft: rgba(16, 185, 129, 0.1);
-  --priority-low-line: rgba(16, 185, 129, 0.3);
-  --priority-low-text: #047857;
-  --priority-medium: #f59e0b;
-  --priority-medium-soft: rgba(245, 158, 11, 0.1);
-  --priority-medium-line: rgba(245, 158, 11, 0.3);
-  --priority-medium-text: #b45309;
-  --priority-high: #ef4444;
-  --priority-high-soft: rgba(239, 68, 68, 0.1);
-  --priority-high-line: rgba(239, 68, 68, 0.3);
-  --priority-high-text: #b91c1c;
+  --brand: #5145cd; /* = logo color */
+  --brand-dark: #4338ca;
+  --brand-soft: #eeedfb;
+  --brand-line: #d9d6f5;
+  --ink: #171717;
+  --ink-muted: #4d4d4d;
+  --ink-subtle: #707070;
+  --ink-faint: #8f8f8f; /* icons / placeholders only — below 4.5:1 for body text */
+  --surface: #fafafa;
+  --surface-hover: #f5f5f5;
+  --surface-active: #f0f0f0;
+  --surface-column: #fafafa; /* board lanes sit on a white canvas */
+  --line: #ebebeb;
+  --priority-low: #8f8f8f;
+  --priority-low-soft: #f5f5f5;
+  --priority-low-line: #e0e0e0;
+  --priority-low-text: #4d4d4d;
+  --priority-medium: #b26200;
+  --priority-medium-soft: rgba(178, 98, 0, 0.08);
+  --priority-medium-line: rgba(178, 98, 0, 0.25);
+  --priority-medium-text: #8a4600;
+  --priority-high: #d93036;
+  --priority-high-soft: rgba(217, 48, 54, 0.08);
+  --priority-high-line: rgba(217, 48, 54, 0.25);
+  --priority-high-text: #b42318;
 }
 
 .dark {
@@ -251,89 +253,81 @@
   animation: tc-float 7s ease-in-out infinite;
 }
 
-/* === TimeCraft signature loader === */
-/* three brand bars rise in a staggered wave, like a timeline being built */
-.tc-load {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: var(--tc-g, 5px);
-  height: var(--tc-h, 30px);
+/* animated logo mark (LogoLoading): the T draws itself, then the dash slides in */
+.tc-logo-base {
+  opacity: 0.22;
 }
-.tc-load > i {
-  display: block;
-  width: var(--tc-w, 6px);
-  height: 100%;
-  border-radius: 999px;
-  transform-origin: bottom;
-  background: var(--tc-bar, var(--brand));
-  animation: tc-bar 1.15s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
+.tc-logo-loop {
+  animation: tc-logo-loop 2.4s linear infinite;
 }
-.tc-load > i:nth-child(1) {
-  animation-delay: 0s;
-  opacity: 0.9;
+.tc-logo-bar,
+.tc-logo-stem {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
 }
-.tc-load > i:nth-child(2) {
-  animation-delay: 0.13s;
+.tc-logo-bar {
+  animation: tc-logo-bar 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-.tc-load > i:nth-child(3) {
-  animation-delay: 0.26s;
-  opacity: 0.8;
+.tc-logo-stem {
+  animation: tc-logo-stem 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-@keyframes tc-bar {
-  0%,
-  100% {
-    transform: scaleY(0.32);
-    opacity: 0.35;
+.tc-logo-dash {
+  animation: tc-logo-dash 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+@keyframes tc-logo-loop {
+  0% {
+    opacity: 0;
   }
-  45% {
-    transform: scaleY(1);
+  6%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes tc-logo-bar {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  25%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tc-logo-stem {
+  0%,
+  20% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
     opacity: 1;
   }
 }
-
-/* soft pulsing ring behind the mark (full-screen variant) */
-.tc-ring::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 55%);
-  animation: tc-pulse 1.9s ease-out infinite;
-}
-@keyframes tc-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 55%);
+@keyframes tc-logo-dash {
+  0%,
+  45% {
+    opacity: 0;
+    transform: translateX(6px);
   }
-  70% {
-    box-shadow: 0 0 0 22px color-mix(in oklab, var(--brand), transparent 100%);
-  }
+  65%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 100%);
+    opacity: 1;
+    transform: translateX(0);
   }
 }
-
-/* track-fill bar that sweeps across (full-screen variant) */
-.tc-track {
-  position: relative;
-  overflow: hidden;
-}
-.tc-track::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 40%;
-  border-radius: 999px;
-  background: var(--tc-bar, var(--brand));
-  animation: tc-sweep 1.5s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
-}
-@keyframes tc-sweep {
-  0% {
-    left: -42%;
+@media (prefers-reduced-motion: reduce) {
+  .tc-logo-base {
+    opacity: 1;
   }
-  100% {
-    left: 102%;
+  .tc-logo-loop {
+    display: none;
   }
 }
 
