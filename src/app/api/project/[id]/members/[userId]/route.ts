@@ -1,13 +1,20 @@
 // app/api/project/[id]/members/[userId]/route.ts — DELETE = remove member
 
+import { revokePendingInvitationsBy } from '@/db/uniq-query/invitation/invitation-utils';
 import { createNotification } from '@/db/uniq-query/notification/notification-utils';
 import {
   getProjectMemberRole,
   getProjectNameById,
   removeProjectMember,
 } from '@/db/uniq-query/project/project-utils';
-import { BadRequestError, NotFoundError } from '@/lib/api/errors';
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
+import { parseId } from '@/lib/api/params';
+import { outranks } from '@/lib/rbac/can';
 import { triggerExclusive } from '@/lib/pusher-server';
 import { NextResponse } from 'next/server';
 
@@ -16,11 +23,11 @@ type RouteParams = { id: string; userId: string };
 export const DELETE = createParamHandle<RouteParams>(
   {
     permission: 'member:remove',
-    resolveProjectIds: ({ params }) => [params.id],
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params, userId, session, request }) => {
-    const projectId = params.id;
-    const targetUserId = params.userId;
+    const projectId = parseId(params.id);
+    const targetUserId = parseId(params.userId);
 
     if (targetUserId === userId) {
       throw new BadRequestError('You cannot remove yourself from the board');
@@ -36,8 +43,13 @@ export const DELETE = createParamHandle<RouteParams>(
     if (targetRole === 'owner') {
       throw new BadRequestError('The board owner cannot be removed');
     }
+    const actorRole = await getProjectMemberRole(projectId, userId);
+    if (!actorRole || !outranks(actorRole, targetRole)) {
+      throw new ForbiddenError('You can only remove members below your role');
+    }
 
     const deleted = await removeProjectMember(projectId, targetUserId);
+    await revokePendingInvitationsBy(projectId, targetUserId);
 
     // แจ้งคนถูกลบ — กด notification แล้ว client จะเอาบอร์ดออกจาก list ตัวเอง
     const notification = await createNotification({

@@ -97,12 +97,23 @@ export async function createInvitation(args: {
   return invitation;
 }
 
-// รับคำเชิญ: เพิ่ม member + stamp acceptedAt ใน transaction เดียว
+// รับคำเชิญ: claim คำเชิญแบบมีเงื่อนไข (ยัง pending อยู่จริง) แล้วค่อยเพิ่ม member
+// ใน transaction เดียว — กันชนกับการ revoke/หมดอายุ/กดรับซ้อนกัน
+// คืน false เมื่อคำเชิญใช้ไม่ได้แล้ว ณ ตอนที่ claim
 export async function acceptInvitation(
   invitation: ProjectInvitationRow,
   userId: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [claimed] = await tx
+      .update(projectInvitationsTable)
+      .set({ acceptedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(eq(projectInvitationsTable.id, invitation.id), pendingCondition()),
+      )
+      .returning({ id: projectInvitationsTable.id });
+    if (!claimed) return false;
+
     await tx
       .insert(projectMembersTable)
       .values({
@@ -111,11 +122,25 @@ export async function acceptInvitation(
         role: invitation.role,
       })
       .onConflictDoNothing();
-    await tx
-      .update(projectInvitationsTable)
-      .set({ acceptedAt: new Date(), updatedAt: new Date() })
-      .where(eq(projectInvitationsTable.id, invitation.id));
+    return true;
   });
+}
+
+// คนที่ถูกเอาออกจากบอร์ดไม่ควรมีคำเชิญค้างที่ตัวเองส่งไว้ใช้ได้ต่อ
+export async function revokePendingInvitationsBy(
+  projectId: string,
+  invitedBy: string,
+): Promise<void> {
+  await db
+    .update(projectInvitationsTable)
+    .set({ revokedAt: new Date(), updatedAt: new Date() })
+    .where(
+      and(
+        eq(projectInvitationsTable.projectId, projectId),
+        eq(projectInvitationsTable.invitedBy, invitedBy),
+        pendingCondition(),
+      ),
+    );
 }
 
 export async function revokeInvitation(

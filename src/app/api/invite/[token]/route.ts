@@ -83,7 +83,9 @@ export const POST = createParamHandle<RouteParams>(
       throw new BadRequestError('This invitation has already been used');
     }
 
-    await acceptInvitation(invitation, userId);
+    if (!(await acceptInvitation(invitation, userId))) {
+      throw new BadRequestError('This invitation is no longer valid');
+    }
 
     return NextResponse.json(
       {

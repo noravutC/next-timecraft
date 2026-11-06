@@ -14,14 +14,18 @@ import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { and, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseId } from "@/lib/api/params";
+import {
+  updateAssigneesSchema,
+  type UpdateAssigneesBody,
+} from "@/validations/task.validation";
 
 type RouteParams = { anyIds: string };
 
 export const GET = createParamHandle<RouteParams>(
   {},
   async ({ params, userId }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const link = await getTaskColumnLink(taskId);
     if (!link) throw new NotFoundError("Task not found");
 
@@ -35,16 +39,10 @@ export const GET = createParamHandle<RouteParams>(
   },
 );
 
-const updateAssigneesSchema = z.object({
-  userIds: z.array(z.string()).default([]),
-});
-
-type UpdateAssigneesBody = z.infer<typeof updateAssigneesSchema>;
-
 export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
   { body: updateAssigneesSchema },
   async ({ request, params, body, userId, session }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const requested = [...new Set(body.userIds)];
 
     const link = await getTaskColumnLink(taskId);

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { aiSettingsTable, aiUsageLogsTable } from "@/db/schema";
 import { decryptSecret } from "@/lib/ai/crypto";
 import type { AiProvider } from "@/lib/ai/providers";
-import { eq } from "drizzle-orm";
+import { count, eq, gte } from "drizzle-orm";
 
 export async function getAiSettings(userId: string) {
   const [row] = await db
@@ -16,13 +16,18 @@ export async function getAiSettings(userId: string) {
 /**
  * Resolve the provider + decrypted API key for a user.
  * Falls back to the server's ANTHROPIC_API_KEY (Claude only) when the user
- * has no key stored for their selected provider.
+ * has no key stored for their selected provider. `source` tells the caller
+ * whether the server key (and its quota) is in play.
  */
-export async function resolveAiCredentials(userId: string): Promise<{
+export async function resolveAiCredentials(
+  userId: string,
+  { allowStoredKeys = true }: { allowStoredKeys?: boolean } = {},
+): Promise<{
   provider: AiProvider;
   apiKey: string;
+  source: "user" | "server";
 } | null> {
-  const settings = await getAiSettings(userId);
+  const settings = allowStoredKeys ? await getAiSettings(userId) : null;
   const provider: AiProvider = settings?.provider ?? "claude";
 
   const encrypted =
@@ -32,7 +37,7 @@ export async function resolveAiCredentials(userId: string): Promise<{
 
   if (encrypted) {
     try {
-      return { provider, apiKey: decryptSecret(encrypted) };
+      return { provider, apiKey: decryptSecret(encrypted), source: "user" };
     } catch (error) {
       console.error("[ai] failed to decrypt stored key:", error);
       // fall through to the server fallback
@@ -40,9 +45,21 @@ export async function resolveAiCredentials(userId: string): Promise<{
   }
 
   if (process.env.ANTHROPIC_API_KEY) {
-    return { provider: "claude", apiKey: process.env.ANTHROPIC_API_KEY };
+    return {
+      provider: "claude",
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      source: "server",
+    };
   }
   return null;
+}
+
+export async function countAiUsageSince(since: Date): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(aiUsageLogsTable)
+    .where(gte(aiUsageLogsTable.createdAt, since));
+  return row?.value ?? 0;
 }
 
 export async function insertAiUsageLog(

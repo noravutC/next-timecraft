@@ -8,20 +8,10 @@ import {
 import { NewColumnRow } from "@/types";
 import { and, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const createColumnSchema = z
-  .array(
-    z.object({
-      projectId: z.string().trim().min(1),
-      name: z.string().trim().min(1),
-      color: z.string().trim().optional(),
-      wipLimit: z.number().optional(),
-    }),
-  )
-  .min(1, "Payload must be a non-empty array");
-
-type CreateColumnBody = z.infer<typeof createColumnSchema>;
+import {
+  createColumnSchema,
+  type CreateColumnBody,
+} from "@/validations/column.validation";
 
 const groupByProjectId = <T extends { projectId: string }>(items: T[]) => {
   const grouped = new Map<string, T[]>();

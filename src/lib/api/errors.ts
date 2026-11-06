@@ -37,8 +37,8 @@ export class NotFoundError extends AppError {
 }
 
 export class TooManyRequestsError extends AppError {
-  constructor(retryAfterSec: number) {
-    super(429, `Too many requests — retry in ${retryAfterSec}s`);
+  constructor(retryAfterSec: number, message?: string) {
+    super(429, message ?? `Too many requests — retry in ${retryAfterSec}s`);
     this.name = "TooManyRequestsError";
   }
 }

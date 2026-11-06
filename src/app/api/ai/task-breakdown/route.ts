@@ -1,15 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { db } from "@/db";
-import { columnsTable } from "@/db/schema";
-import { createHandle } from "@/lib/api/handle";
+import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
+import { createHandle, enforceQuota } from "@/lib/api/handle";
 import { AppError, NotFoundError } from "@/lib/api/errors";
 import { AI_MODELS, streamCompletion } from "@/lib/ai/providers";
 import {
+  countAiUsageSince,
   insertAiUsageLog,
   resolveAiCredentials,
 } from "@/db/uniq-query/ai/ai-utils";
+import {
+  dayAgo,
+  SERVER_KEY_DAILY_LIMIT,
+  SERVER_KEY_GLOBAL_DAILY_LIMIT,
+} from "@/lib/ai/quota";
+import { isGuestSession } from "@/lib/guest";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 const breakdownSchema = z.object({
@@ -46,22 +51,36 @@ const sseEncode = (event: string, data: unknown) =>
 export const POST = createHandle<BreakdownBody>(
   // LLM calls are the most expensive thing this app does — 10/min per user
   { body: breakdownSchema, rateLimit: { limit: 10, windowMs: 60_000 } },
-  async ({ userId, body }) => {
-    const [column] = await db
-      .select({ id: columnsTable.id, projectId: columnsTable.projectId })
-      .from(columnsTable)
-      .where(eq(columnsTable.id, body.columnId))
-      .limit(1);
+  async ({ request, session, userId, body }) => {
+    const [column] = await getActiveColumnLinks([body.columnId]);
     if (!column) throw new NotFoundError("Column not found");
 
     await authorizeOrThrow(userId, [column.projectId], "task:create");
 
-    const credentials = await resolveAiCredentials(userId);
+    const isGuest = isGuestSession(session);
+    // keys stored on the shared guest account were typed by some other visitor
+    const credentials = await resolveAiCredentials(userId, {
+      allowStoredKeys: !isGuest,
+    });
     if (!credentials) {
       throw new AppError(
         503,
         "No AI API key configured — add one in AI settings",
       );
+    }
+    if (credentials.source === "server") {
+      enforceQuota(
+        { request, session },
+        "ai-server-key",
+        isGuest ? SERVER_KEY_DAILY_LIMIT.guest : SERVER_KEY_DAILY_LIMIT.user,
+        "Daily AI limit reached. Add your own API key in AI settings to keep going.",
+      );
+      if ((await countAiUsageSince(dayAgo())) >= SERVER_KEY_GLOBAL_DAILY_LIMIT) {
+        throw new AppError(
+          429,
+          "The shared AI quota is used up for today. Add your own API key in AI settings.",
+        );
+      }
     }
     const { provider, apiKey } = credentials;
     const model = AI_MODELS[provider];

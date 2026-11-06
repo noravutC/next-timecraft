@@ -72,7 +72,10 @@ export async function getCommentLink(commentId: string) {
     .from(taskCommentsTable)
     .innerJoin(tasksTable, eq(taskCommentsTable.taskId, tasksTable.id))
     .innerJoin(columnsTable, eq(tasksTable.columnId, columnsTable.id))
-    .where(eq(taskCommentsTable.id, commentId))
+    // soft-deleted comments can't be edited, reacted to or deleted again
+    .where(
+      and(eq(taskCommentsTable.id, commentId), isNull(taskCommentsTable.deletedAt)),
+    )
     .limit(1);
   return row ?? null;
 }
