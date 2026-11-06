@@ -322,9 +322,21 @@
     transform: translateX(0);
   }
 }
+/* reduced motion: no drawing, the full mark fades in and out so loading
+   still reads as "in progress" */
+@keyframes tc-logo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .tc-logo-base {
     opacity: 1;
+    animation: tc-logo-pulse 1.6s ease-in-out infinite;
   }
   .tc-logo-loop {
     display: none;

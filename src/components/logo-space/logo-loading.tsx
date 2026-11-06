@@ -1,4 +1,6 @@
-import { useId } from 'react';
+'use client';
+
+import { useId, useLayoutEffect, useRef } from 'react';
 
 import { LOGO_COLOR, LOGO_DASH, LOGO_T_PATH } from './logo-mark';
 
@@ -13,17 +15,28 @@ interface LogoLoadingProps {
 
 // Animated TimeCraft mark: the T and its dash draw themselves in a loop over a
 // faint copy of the mark. Keyframes live in globals.css (tc-logo-*); with
-// reduced motion it shows the static mark.
+// reduced motion the mark gently pulses instead of drawing.
 export const LogoLoading = ({
   size = 56,
   color = LOGO_COLOR,
   className,
   label,
 }: LogoLoadingProps) => {
+  const ref = useRef<SVGSVGElement>(null);
   const clipId = `tc-logo-clip-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+
+  // Pin the loop to the page timeline. Loading screens hand over to each other
+  // within a few hundred ms; without this every new loader restarts at the
+  // faint first frame and the mark never visibly draws.
+  useLayoutEffect(() => {
+    ref.current?.getAnimations({ subtree: true }).forEach((animation) => {
+      animation.startTime = 0;
+    });
+  }, []);
 
   return (
     <svg
+      ref={ref}
       width={size}
       height={size}
       viewBox="0 0 256 256"
