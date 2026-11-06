@@ -34,7 +34,9 @@ export const TaskSheetHeader = ({
           rounded="rounded-sm"
           textSize="text-3xs"
         />
-        <span className="truncate text-sm text-ink-muted">{project.name}</span>
+        <span className="min-w-0 truncate text-sm text-ink-muted">
+          {project.name}
+        </span>
         <BreadcrumbSlash className="size-4" />
       </>
     )}

@@ -3,9 +3,9 @@
 import { Kbd } from '@/components/ui/kbd';
 import { modKeyLabel } from '@/lib/platform';
 
-/** Keyboard legend under the ⌘K palette. */
+/** Keyboard legend under the ⌘K palette (hidden on phones: no keyboard). */
 export const SwitcherFooter = () => (
-  <div className="flex h-10 shrink-0 items-center gap-3.5 border-t border-line bg-surface px-4 text-xs text-ink-subtle">
+  <div className="hidden h-10 shrink-0 items-center gap-3.5 border-t border-line bg-surface px-4 text-xs text-ink-subtle sm:flex">
     <span className="inline-flex items-center gap-1.5">
       <Kbd>↑</Kbd>
       <Kbd>↓</Kbd>

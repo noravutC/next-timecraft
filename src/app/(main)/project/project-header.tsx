@@ -43,15 +43,16 @@ export const ProjectHeader = () => {
     <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line bg-background px-5">
       {/* LEFT: logo / workspace / board (กดเปิดตัวสลับบอร์ด หรือ ⌘K) */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <Logo size={24} textSize="md" />
+        <Logo size={24} textSize="md" textClassName="hidden sm:block" />
         <BreadcrumbSlash />
+        {/* phones keep logo / board only */}
         {workspaceName && (
-          <>
+          <span className="hidden min-w-0 items-center gap-2.5 sm:flex">
             <span className="truncate text-base font-medium text-ink-muted">
               {workspaceName}
             </span>
             <BreadcrumbSlash />
-          </>
+          </span>
         )}
         {loading ? (
           <div className="flex items-center gap-2">
@@ -64,7 +65,7 @@ export const ProjectHeader = () => {
             size="sm"
             onClick={() => setBoardDialog('switch')}
             aria-label="Switch board"
-            className="-ml-1.5 min-w-0 gap-2 pr-2 pl-1.5 text-ink"
+            className="-ml-1.5 min-w-0 shrink gap-2 pr-2 pl-1.5 text-ink"
           >
             {projectValue && (
               <ProjectAvatar
@@ -91,7 +92,7 @@ export const ProjectHeader = () => {
             {members.length > 0 && (
               <AvatarGroup
                 aria-label={`${members.length} members`}
-                className="cursor-pointer"
+                className="hidden cursor-pointer md:flex"
                 onClick={() => openBoardSettings('members')}
               >
                 {visibleMembers.map((member) => {
@@ -135,7 +136,7 @@ export const ProjectHeader = () => {
               onClick={() => openBoardSettings('members')}
             >
               <UserPlus className="size-3.75" />
-              Invite
+              <span className="sr-only sm:not-sr-only">Invite</span>
             </Button>
 
             <HeaderDivider />

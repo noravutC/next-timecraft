@@ -40,7 +40,8 @@ export const FilterDropdown = ({
         )}
       >
         {icon}
-        {label}
+        {/* icon only below md; the name stays readable to screen readers */}
+        <span className="sr-only md:not-sr-only">{label}</span>
         {activeCount > 0 && <Badge>{activeCount}</Badge>}
         <ChevronDown className="size-3.5" />
       </Button>

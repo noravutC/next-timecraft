@@ -46,8 +46,10 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
 
   return (
     <>
-      <div className="flex h-13 shrink-0 items-center gap-2 border-b border-line bg-background px-5">
-        <div className="relative">
+      {/* wraps on narrow screens: search gets its own row on phones;
+          at desktop width it is the same single 52px row */}
+      <div className="flex min-h-13 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-2.25">
+        <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
             type="search"
@@ -55,7 +57,7 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Search tasks"
             aria-label="Search tasks"
-            className="w-65 border-line pl-8"
+            className="w-full border-line pl-8 sm:w-40 lg:w-65"
             data-testid="board-filter-search"
           />
         </div>
@@ -157,12 +159,12 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
         </Button>
         <Button size="sm" onClick={requestNewTask} disabled={!columns.length}>
           <Plus className="size-3.75 stroke-2" />
-          New task
+          <span className="sr-only sm:not-sr-only">New task</span>
         </Button>
       </div>
 
       {activeCount > 0 && (
-        <div className="flex h-11 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5">
+        <div className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-1.5">
           <span className="text-xs text-ink-subtle">
             {totalCount === null
               ? `Showing ${shownCount}`

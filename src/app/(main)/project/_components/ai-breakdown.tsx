@@ -38,7 +38,7 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
           className="border-line has-[>svg]:px-3"
         >
           <Sparkles className="size-3.75 text-brand" />
-          AI Breakdown
+          <span className="sr-only lg:not-sr-only">AI Breakdown</span>
         </Button>
       </SheetTrigger>
 

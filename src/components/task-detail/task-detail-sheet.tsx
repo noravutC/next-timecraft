@@ -68,7 +68,7 @@ export const TaskDetailSheet = () => {
               onCopyLink={handleCopyLink}
             />
 
-            <div className="scrollbar-thin-y scrollbar-light min-h-0 flex-1 overflow-y-auto px-8 pt-7 pb-6 [overflow-anchor:none]">
+            <div className="scrollbar-thin-y scrollbar-light min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-6 [overflow-anchor:none] sm:px-8 sm:pt-7">
               <InlineTitle
                 value={task.title}
                 onCommit={(title) => persist({ title })}

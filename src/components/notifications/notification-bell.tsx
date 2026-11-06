@@ -44,6 +44,7 @@ export const NotificationBell = () => {
       <PopoverContent
         align="end"
         sideOffset={6}
+        collisionPadding={16}
         className="flex max-h-140 w-100 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl p-0 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.2),0_2px_6px_rgba(0,0,0,0.05)]"
       >
         <NotificationPanel onNavigate={() => setOpen(false)} />

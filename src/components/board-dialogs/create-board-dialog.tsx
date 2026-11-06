@@ -81,8 +81,9 @@ export const CreateBoardDialog = ({
           <TemplatePicker value={templateId} onChange={setTemplateId} />
         </DialogBody>
 
-        <DialogFooter>
-          <span className="min-w-0 flex-1 truncate font-mono text-xs text-ink-subtle">
+        {/* phones: the column flow takes its own line above the buttons */}
+        <DialogFooter className="flex-wrap">
+          <span className="w-full min-w-0 font-mono text-xs text-ink-subtle sm:w-auto sm:flex-1 sm:truncate">
             {templateFlow(findBoardTemplate(templateId))}
           </span>
           <Button variant="outline" onClick={onClose}>

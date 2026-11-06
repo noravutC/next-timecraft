@@ -54,7 +54,7 @@ export const TaskProperties = ({
   projectTags,
   tagColors,
 }: TaskPropertiesProps) => (
-  <div className="grid grid-cols-[8rem_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5">
+  <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 sm:grid-cols-[8rem_minmax(0,1fr)]">
     <PropertyRow icon={<CircleDot />} label="Status">
       <StatusPicker
         columns={columns}

@@ -25,6 +25,6 @@ export const EstimatePicker = ({ value, onChange }: EstimatePickerProps) => (
     options={ESTIMATE_OPTIONS}
     value={value ? String(value) : null}
     onChange={(next) => onChange(Number(next) === value ? 0 : Number(next))}
-    optionClassName="h-6.5 min-w-9.5 px-2 font-mono text-xs font-normal"
+    optionClassName="h-6.5 min-w-8 px-1.5 font-mono text-xs font-normal sm:min-w-9.5 sm:px-2"
   />
 );

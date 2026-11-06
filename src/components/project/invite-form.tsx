@@ -42,8 +42,9 @@ export const InviteForm = ({
       <Label htmlFor="invite-email" className="leading-5">
         Invite by email
       </Label>
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
+      {/* phones: address on its own line, role + Invite below */}
+      <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+        <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
           <Mail className="pointer-events-none absolute top-1/2 left-3 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
             ref={inputRef}
@@ -70,7 +71,7 @@ export const InviteForm = ({
               type="button"
               variant="outline"
               aria-label="Role for new member"
-              className="h-9 gap-1.5 pr-2.5 pl-3 font-normal"
+              className="h-9 flex-1 justify-between gap-1.5 pr-2.5 pl-3 font-normal sm:flex-none sm:justify-center"
             >
               {ROLE_LABELS[role]}
               <ChevronDown className="size-3.5 text-ink-subtle" />
