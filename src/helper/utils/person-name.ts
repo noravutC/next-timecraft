@@ -10,8 +10,12 @@ export const initialsOf = (
   return (first + last).slice(0, max).toUpperCase();
 };
 
+/** What a deleted account is called wherever its name used to be. */
+export const FORMER_MEMBER = 'Former member';
+
 /** "Noravut Chaiyasit" → "Noravut C.", "Ploy" → "Ploy" */
 export const shortName = (name: string | null | undefined): string => {
+  if (name === FORMER_MEMBER) return name;
   const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '';
   if (words.length === 1) return words[0];

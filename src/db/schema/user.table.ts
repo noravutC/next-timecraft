@@ -15,6 +15,9 @@ export const usersTable = pgTable(
     avatar: text("avatar"),
     provider: text("provider").notNull().default("google"),
     providerId: text("provider_id").notNull(),
+    // set when the account is deleted: the row stays, scrubbed, so comments
+    // and history keep an author shown as "Former member"
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -1,4 +1,5 @@
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { boardUrl } from '@/helper/utils/board-url';
 import { useNotificationStore } from '@/store/use-notification.store';
 import { useProjectStore } from '@/store';
 import { useOpenTask } from '@/components/task-detail/use-open-task';
@@ -16,6 +17,7 @@ import type {
  */
 export function useOpenNotification(onNavigate: () => void) {
   const router = useRouter();
+  const pathname = usePathname();
   const markRead = useNotificationStore((s) => s.markRead);
   const openTask = useOpenTask();
   const removeProject = useProjectStore((s) => s.removeProject);
@@ -40,7 +42,13 @@ export function useOpenNotification(onNavigate: () => void) {
       removeProject((n.payload as MemberRemovedNotificationPayload).projectId);
       return;
     }
-    // comment_mention / comment_reply / task_assigned open the task
-    await openTask((n.payload as CommentNotificationPayload).taskId);
+    // comment_mention / comment_reply / task_assigned open the task; away
+    // from the board (settings), go to the board with the task open
+    const { taskId, projectId } = n.payload as CommentNotificationPayload;
+    if (!pathname.startsWith('/project')) {
+      router.push(boardUrl({ board: projectId, task: taskId }));
+      return;
+    }
+    await openTask(taskId);
   };
 }

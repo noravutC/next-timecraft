@@ -32,6 +32,8 @@ interface UserAvatarProps {
   seed?: string | null;
   size?: UserAvatarSize;
   className?: string;
+  /** initials size, for avatars bigger than the size scale (profile photo) */
+  textClassName?: string;
 }
 
 /** A person: their photo, or initials on a stable pastel tone. */
@@ -41,11 +43,16 @@ export const UserAvatar = ({
   seed,
   size = 'lg',
   className,
+  textClassName,
 }: UserAvatarProps) => (
   <Avatar className={cn(SIZE_STYLES[size], className)}>
     {image && <AvatarImage src={image} alt={name ?? ''} />}
     <AvatarFallback
-      className={cn('font-semibold', TONE_STYLES[toneFor(seed || name || '')])}
+      className={cn(
+        'font-semibold',
+        TONE_STYLES[toneFor(seed || name || '')],
+        textClassName,
+      )}
     >
       {initialsOf(name)}
     </AvatarFallback>

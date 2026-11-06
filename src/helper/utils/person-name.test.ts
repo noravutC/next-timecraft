@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialsOf, shortName } from './person-name';
+import { FORMER_MEMBER, initialsOf, shortName } from './person-name';
 import { toneFor } from './avatar-tone';
 
 describe('initialsOf', () => {
@@ -22,6 +22,10 @@ describe('shortName', () => {
     expect(shortName('Arthit Kongkaew')).toBe('Arthit K.');
     expect(shortName('Ploy')).toBe('Ploy');
     expect(shortName(undefined)).toBe('');
+  });
+
+  it('keeps a deleted account’s name whole', () => {
+    expect(shortName(FORMER_MEMBER)).toBe('Former member');
   });
 });
 

@@ -131,10 +131,32 @@ describe('jwt callback', () => {
     });
   });
 
-  it('does not hit the DB when the token is already complete', async () => {
-    const token = await jwt({ token: attackerToken() });
-    expect(token).toMatchObject(attackerToken());
+  it('does not hit the DB when the token is complete and freshly checked', async () => {
+    const fresh = { ...attackerToken(), checkedAt: Date.now() };
+    const token = await jwt({ token: fresh });
+    expect(token).toMatchObject(fresh);
     expect(whereArgs).toHaveLength(0);
+  });
+
+  it('looks at the DB again once the last check is old', async () => {
+    queue.push(
+      [dbUser(ATTACKER)],
+      [{ id: 'm', organizationId: 'attacker-org' }],
+      [],
+    );
+    const token = await jwt({
+      token: { ...attackerToken(), checkedAt: Date.now() - 60 * 60 * 1000 },
+    });
+    expect(firstLookup()).toBe(`id=${ATTACKER.id}`);
+    expect((token as { checkedAt?: number }).checkedAt).toBeGreaterThan(
+      Date.now() - 1000,
+    );
+  });
+
+  it('signs out an account that was deleted', async () => {
+    queue.push([{ ...dbUser(ATTACKER), deletedAt: new Date() }]);
+    const token = await jwt({ token: attackerToken(), trigger: 'update' });
+    expect(token).toBeNull();
   });
 
   it('leaves a token without id or sign-in user untouched (no email fallback)', async () => {

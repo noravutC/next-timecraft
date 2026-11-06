@@ -16,7 +16,7 @@ import {
   findBoardTemplate,
   templateFlow,
 } from '@/helper/utils/board-templates';
-import { FirstBoardHeader } from './first-board-header';
+import { AppHeader } from '@/components/app-header/app-header';
 import { BoardCoverField } from './board-cover-field';
 import { useBoardCover } from './use-board-cover';
 import { NoBoardsYet } from './no-boards-yet';
@@ -55,7 +55,7 @@ export const CreateFirstProject = () => {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">
-      <FirstBoardHeader workspace={workspace} />
+      <AppHeader workspace={workspace} />
 
       <main className="flex flex-1 justify-center px-5 py-16">
         <div className="flex w-full max-w-190 flex-col gap-7">
