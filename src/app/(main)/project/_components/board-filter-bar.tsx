@@ -1,22 +1,32 @@
 'use client';
 
-import { Search, SlidersHorizontal, Tag, Users } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Settings2,
+  SlidersHorizontal,
+  Tag,
+  Users,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TagChip } from '@/components/task-detail/parts/tag-chip';
+import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
+import { useNavStore } from '@/store';
 import {
   FilterCheckItem,
   FilterChip,
   FilterDropdown,
 } from './board-filter-controls';
 import { useBoardFilterBar } from './use-board-filter-bar';
+import { AiBreakdown } from './ai-breakdown';
+import type { BoardColumnLike } from './use-ai-breakdown';
 
-// แถบ filter เป็น section ขาวคั่นระหว่าง header กับบอร์ด (border-b เดียวกับ header)
-// แถวบน = controls, แถวล่าง = chips ของค่าที่เลือกไว้ + Clear all
-export function BoardFilterBar() {
+// แถบเครื่องมือของบอร์ด: ซ้าย = ค้นหา + ตัวกรอง, ขวา = AI / ตั้งค่า / New task
+// แถวล่าง (เมื่อมี filter) = chips ของค่าที่เลือกไว้ + Clear all
+export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
   const {
     draft,
     setDraft,
@@ -33,18 +43,21 @@ export function BoardFilterBar() {
     tagOptions,
     activeCount,
   } = useBoardFilterBar();
+  const setBoardDialog = useNavStore((s) => s.setBoardDialog);
+  const requestNewTask = useNavStore((s) => s.requestNewTask);
 
   return (
-    <div className="border-b bg-background px-5 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="border-b bg-background">
+      <div className="flex min-h-13 flex-wrap items-center gap-2 px-5 py-2.5">
         <div className="relative">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-faint" />
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-subtle" />
           <Input
             inputSize="sm"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Search tasks…"
-            className="w-64 rounded-md border-line bg-surface pl-8 text-sm shadow-none placeholder:text-ink-faint focus-visible:bg-white"
+            placeholder="Search tasks"
+            aria-label="Search tasks"
+            className="w-64 border-line pl-8 text-sm"
             data-testid="board-filter-search"
           />
         </div>
@@ -54,16 +67,13 @@ export function BoardFilterBar() {
           label="Priority"
           activeCount={priorities.length}
         >
-          {PRIORITY_ORDER.map((priority) => (
+          {[...PRIORITY_ORDER].reverse().map((priority) => (
             <FilterCheckItem
               key={priority}
               checked={priorities.includes(priority)}
               onToggle={() => togglePriority(priority)}
             >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: PRIORITY_STYLES[priority].dot }}
-              />
+              <PriorityBars priority={priority} />
               {PRIORITY_STYLES[priority].label}
             </FilterCheckItem>
           ))}
@@ -71,27 +81,27 @@ export function BoardFilterBar() {
 
         <FilterDropdown
           icon={Tag}
-          label="Tags"
+          label="Labels"
           activeCount={tags.length}
           disabled={tagOptions.length === 0}
         >
-          {tagOptions.map((tag) => {
-            const palette = paletteFor(tagColors[tag] ?? hashTagColor(tag));
-            return (
-              <FilterCheckItem
-                key={tag}
-                checked={tags.includes(tag)}
-                onToggle={() => toggleTag(tag)}
-              >
-                <span
-                  className="rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{ backgroundColor: palette.bg, color: palette.text }}
-                >
-                  {tag}
-                </span>
-              </FilterCheckItem>
-            );
-          })}
+          {tagOptions.map((tag) => (
+            <FilterCheckItem
+              key={tag}
+              checked={tags.includes(tag)}
+              onToggle={() => toggleTag(tag)}
+            >
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: paletteFor(
+                    tagColors[tag] ?? hashTagColor(tag),
+                  ).value,
+                }}
+              />
+              {tag}
+            </FilterCheckItem>
+          ))}
         </FilterDropdown>
 
         <FilterDropdown
@@ -119,31 +129,41 @@ export function BoardFilterBar() {
             );
           })}
         </FilterDropdown>
+
+        <div className="flex-1" />
+
+        <AiBreakdown columns={columns} />
+        <Button
+          variant="outline"
+          size="icon"
+          className="size-8"
+          aria-label="Board settings"
+          onClick={() => setBoardDialog('settings')}
+        >
+          <Settings2 className="size-4" />
+        </Button>
+        <Button size="sm" onClick={requestNewTask} disabled={!columns.length}>
+          <Plus className="size-4" />
+          New task
+        </Button>
       </div>
 
       {activeCount > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium text-ink-subtle">
-            Filters
-          </span>
-          {priorities.map((priority) => {
-            const style = PRIORITY_STYLES[priority];
-            return (
-              <FilterChip
-                key={priority}
-                label={style.label}
-                palette={style}
-                dotColor={style.dot}
-                onRemove={() => togglePriority(priority)}
-              />
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-5 py-2">
+          <span className="mr-1 text-xs text-ink-subtle">Filters</span>
+          {priorities.map((priority) => (
+            <FilterChip
+              key={priority}
+              label={`Priority: ${PRIORITY_STYLES[priority].label}`}
+              dotColor={PRIORITY_STYLES[priority].dot}
+              onRemove={() => togglePriority(priority)}
+            />
+          ))}
           {tags.map((tag) => (
-            <TagChip
+            <FilterChip
               key={tag}
-              tag={tag}
-              tagColors={tagColors}
-              size="sm"
+              label={tag}
+              dotColor={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
               onRemove={() => toggleTag(tag)}
             />
           ))}
@@ -161,7 +181,7 @@ export function BoardFilterBar() {
               setDraft('');
               clear();
             }}
-            className="text-xs font-medium text-ink-subtle hover:text-ink"
+            className="text-ink-muted underline underline-offset-3 hover:text-ink"
           >
             Clear all
           </Button>

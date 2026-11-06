@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { blockBoardPanningAttr } from './data-attributes';
@@ -67,35 +68,34 @@ export const AddCardInline = ({
   return (
     <div
       className={cn(
-        'mx-1 flex flex-shrink-0 flex-col gap-2 rounded-xl border border-brand-line bg-white p-3 shadow-[0_5px_16px_rgba(91,80,230,0.1)]',
-        position === 'top' ? 'mt-1 mb-2' : 'mt-2.5',
+        'mx-2 flex flex-shrink-0 flex-col gap-2.5 rounded-lg border border-ink bg-white p-2.5 shadow-[0_0_0_3px_rgba(23,23,23,0.06)]',
+        position === 'top' ? 'mb-2' : 'mt-2',
       )}
       {...{ [blockBoardPanningAttr]: true }}
     >
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Task title..."
-        className="min-h-11.5 flex-1 resize-none bg-transparent text-sm leading-relaxed text-ink outline-none placeholder:text-gray-400"
+        placeholder="What needs to be done?"
+        aria-label="Task title"
+        className="min-h-10 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-snug text-ink focus-visible:ring-0"
       />
-      <div className="flex flex-row items-center gap-2">
-        <Button
-          size="sm"
-          disabled={!title.trim() || isSubmitting}
-          onClick={handleSubmit}
-          className="h-8 rounded-md bg-brand text-xs font-semibold hover:bg-brand-dark"
-        >
-          {isSubmitting ? 'Adding...' : 'Add card'}
+      <div className="flex flex-row items-center gap-1.5">
+        <span className="font-mono text-xs whitespace-nowrap text-ink-subtle">
+          ↵ to add
+        </span>
+        <div className="flex-1" />
+        <Button size="xs" variant="ghost" onClick={onClose}>
+          Cancel
         </Button>
         <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClose}
-          className="h-8 text-xs font-medium text-ink-subtle hover:text-ink"
+          size="xs"
+          disabled={!title.trim() || isSubmitting}
+          onClick={handleSubmit}
         >
-          Cancel
+          {isSubmitting ? 'Adding…' : 'Add card'}
         </Button>
       </div>
     </div>

@@ -8,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { LogOut } from "lucide-react";
@@ -36,9 +35,11 @@ export const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button
           variant={"ghost"}
-          className="focus-visible:ring-0 px-2 rounded-sm data-[state=open]:bg-gray-100"
+          size="icon"
+          aria-label="Account menu"
+          className="size-8 rounded-full data-[state=open]:bg-surface-active"
         >
-          <Avatar className="cursor-pointer size-6">
+          <Avatar className="cursor-pointer size-7">
             {session?.user ? (
               <>
                 <AvatarImage src={avatar} alt={fullName} loading="lazy" />
@@ -56,17 +57,24 @@ export const UserMenu = () => {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-40" align="end">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+      <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
+          <span className="truncate text-sm font-medium text-ink">
+            {fullName || "My Account"}
+          </span>
+          {session?.user?.email && (
+            <span className="truncate text-xs text-ink-subtle">
+              {session.user.email}
+            </span>
+          )}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="cursor-pointer"
+          className="cursor-pointer gap-2.5"
           onClick={() => signOut({ callbackUrl: "/" })}
         >
+          <LogOut className="text-ink-subtle" />
           Log out
-          <DropdownMenuShortcut>
-            <LogOut />
-          </DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

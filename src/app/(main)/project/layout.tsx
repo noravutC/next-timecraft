@@ -5,7 +5,7 @@ import { useProjectStore, useUserStore } from '@/store';
 import { Loader } from '@/components/ui/loader';
 import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
-import { BottomBarProject } from '@/components/bottom-menu/bottom-bar-project';
+import { BoardDialogs } from '@/components/bottom-menu/board-dialogs';
 import { TaskDetailDialog } from '@/components/task-detail/task-detail-dialog';
 
 export default function ProjectLayout({
@@ -39,14 +39,13 @@ export default function ProjectLayout({
 
   return (
     <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden">
-      <BottomBarProject />
+      <BoardDialogs />
       {needCreateProject ? (
         <CreateFirstProject />
       ) : (
         <>
           <ProjectHeader />
           <div className="flex min-h-0 flex-1 overflow-hidden">
-            {/* Board settings เปิดเป็น dialog จาก bottom bar — ไม่มี slide panel แล้ว */}
             <div className="min-w-0 flex-1 overflow-hidden">
               {status === 'fetching' ? (
                 <div className="flex h-full w-full items-center justify-center">

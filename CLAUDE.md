@@ -147,9 +147,9 @@ Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Hook `useRea
 - **`ProjectMenuProvider`** (`src/context/project/project-menu-provider.tsx`) — menu state: `'settings' | 'new-project' | 'none'`
 - **`LoadingProvider`** (`src/context/loading-provider.tsx`) — global loading flag
 
-### Bottom-Bar Dialogs (Board Settings / Switch Boards / Create Board)
+### Board Dialogs (Board Settings / Switch Boards / Create Board)
 
-Board settings, board switcher, and board creation are centered Dialogs opened from the bottom bar — all in `src/components/bottom-menu/` (`board-settings-dialog.tsx`, `project-switcher-panel.tsx`, `create-board-dialog.tsx`). They share one skeleton: `h-[560px] sm:max-w-2xl`, header with brand-soft icon tile + round `DialogClose`, `border-b`/`border-t` section dividers. Keep new bottom-bar dialogs on this same skeleton so switching between them doesn't jump.
+Board settings, board switcher, and board creation are centered Dialogs mounted by `board-dialogs.tsx` and opened through `useNavStore.setBoardDialog` (board header, toolbar settings button, ⌘K / Ctrl+K) — all in `src/components/bottom-menu/` (`board-settings-dialog.tsx`, `project-switcher-panel.tsx`, `create-board-dialog.tsx`). They share one skeleton: `h-[560px] sm:max-w-2xl`, header with brand-soft icon tile + round `DialogClose`, `border-b`/`border-t` section dividers. Keep new board dialogs on this same skeleton so switching between them doesn't jump.
 
 ### Drag-and-Drop
 

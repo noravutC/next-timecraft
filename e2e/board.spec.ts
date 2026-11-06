@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 // Flows share one signed-in guest journey and build on each other.
 test.describe.configure({ mode: 'serial' });
@@ -28,6 +28,26 @@ const ensureBoard = async (page: Page) => {
   await expect(column).toBeVisible({ timeout: 30_000 });
 };
 
+/**
+ * Delete a card through its menu and wait for the server to confirm. The card
+ * hides optimistically, so without waiting the test can end (and close the
+ * page) before the PATCH lands, leaving e2e cards on the shared guest board.
+ */
+const deleteCard = async (page: Page, card: Locator) => {
+  await card.hover();
+  await card.getByRole('button', { name: 'Task actions' }).click();
+  const deleted = page.waitForResponse(
+    (r) =>
+      r.request().method() === 'PATCH' &&
+      r.url().includes('/api/task/') &&
+      r.ok(),
+    { timeout: 15_000 },
+  );
+  await page.getByRole('menuitem', { name: /delete task/i }).click();
+  await deleted;
+  await expect(card).not.toBeVisible({ timeout: 15_000 });
+};
+
 test.describe('kanban board', () => {
   test.beforeEach(async ({ page }) => {
     await signInAsGuest(page);
@@ -44,9 +64,9 @@ test.describe('kanban board', () => {
     // create at the TOP so the card stays inside the first loaded page —
     // later tests reload the board and must find it without scrolling
     await firstColumn
-      .getByRole('button', { name: 'Add a card to top' })
+      .getByRole('button', { name: /add a card to the top/i })
       .click();
-    await firstColumn.getByPlaceholder('Task title...').fill(CARD_TITLE);
+    await firstColumn.getByLabel('Task title').fill(CARD_TITLE);
     await firstColumn.getByRole('button', { name: 'Add card' }).click();
 
     // optimistic insert + server confirm
@@ -107,10 +127,7 @@ test.describe('kanban board', () => {
     await expect(movedCard).toBeVisible({ timeout: 30_000 });
 
     // cleanup so e2e cards don't pile up on the shared guest board
-    await movedCard.hover();
-    await movedCard.getByRole('button', { name: 'Task actions' }).click();
-    await page.getByRole('menuitem', { name: /delete card/i }).click();
-    await expect(movedCard).not.toBeVisible({ timeout: 15_000 });
+    await deleteCard(page, movedCard);
   });
 
   test('header + adds a card to the top of the column', async ({ page }) => {
@@ -118,9 +135,9 @@ test.describe('kanban board', () => {
     const firstColumn = page.getByTestId('board-column').first();
 
     await firstColumn
-      .getByRole('button', { name: 'Add a card to top' })
+      .getByRole('button', { name: /add a card to the top/i })
       .click();
-    await firstColumn.getByPlaceholder('Task title...').fill(topTitle);
+    await firstColumn.getByLabel('Task title').fill(topTitle);
     await firstColumn.getByRole('button', { name: 'Add card' }).click();
 
     const card = firstColumn.locator(`[data-card-title="${topTitle}"]`);
@@ -131,10 +148,7 @@ test.describe('kanban board', () => {
     ).toHaveAttribute('data-card-title', topTitle);
 
     // cleanup so e2e cards don't pile up on the shared guest board
-    await card.hover();
-    await card.getByRole('button', { name: 'Task actions' }).click();
-    await page.getByRole('menuitem', { name: /delete card/i }).click();
-    await expect(card).not.toBeVisible({ timeout: 15_000 });
+    await deleteCard(page, card);
   });
 
   test('filtering narrows the board to matching tasks', async ({ page }) => {
@@ -144,10 +158,10 @@ test.describe('kanban board', () => {
 
     // seed a uniquely named card to filter by
     await firstColumn
-      .getByRole('button', { name: 'Add a card' })
+      .getByRole('button', { name: /add a card to the bottom/i })
       .last()
       .click();
-    await firstColumn.getByPlaceholder('Task title...').fill(filterTitle);
+    await firstColumn.getByLabel('Task title').fill(filterTitle);
     await firstColumn.getByRole('button', { name: 'Add card' }).click();
     const card = page.locator(`[data-card-title="${filterTitle}"]`);
     await expect(card).toBeVisible({ timeout: 15_000 });
@@ -160,15 +174,12 @@ test.describe('kanban board', () => {
       .toBe(1);
     await expect(card).toBeVisible();
 
-    await page.getByRole('button', { name: /^clear$/i }).click();
+    await page.getByRole('button', { name: /clear all/i }).click();
     await expect
       .poll(async () => allCards.count(), { timeout: 15_000 })
       .toBe(countBefore);
 
     // cleanup so e2e cards don't pile up on the shared guest board
-    await card.hover();
-    await card.getByRole('button', { name: 'Task actions' }).click();
-    await page.getByRole('menuitem', { name: /delete card/i }).click();
-    await expect(card).not.toBeVisible({ timeout: 15_000 });
+    await deleteCard(page, card);
   });
 });

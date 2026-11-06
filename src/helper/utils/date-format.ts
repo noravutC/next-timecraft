@@ -32,6 +32,12 @@ export const daysUntil = (date: string | Date): number => {
   return Math.round((target.getTime() - today.getTime()) / MS_PER_DAY);
 };
 
+export type DueUrgency = "overdue" | "soon" | "normal";
+
+/** ความเร่งด่วนของวันครบกำหนด: เลยแล้ว = overdue, เหลือ ≤ 2 วัน = soon */
+export const dueUrgency = (daysLeft: number): DueUrgency =>
+  daysLeft < 0 ? "overdue" : daysLeft <= 2 ? "soon" : "normal";
+
 export const formatRelativeDay = (d: Date) => {
   const diffDays = daysUntil(d);
   if (diffDays === 0) return "Today";

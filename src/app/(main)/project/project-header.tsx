@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, UserPlus } from 'lucide-react';
+import { ChevronsUpDown, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
@@ -25,10 +25,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const AVATAR_LIMIT = 3;
+const AVATAR_LIMIT = 4;
 
-// เส้นคั่นแนวตั้งของ header ตาม design (1×22px)
-const HeaderDivider = () => <div className="h-5.5 w-px shrink-0 bg-line" />;
+const HeaderDivider = () => <div className="h-5 w-px shrink-0 bg-line" />;
 
 export const ProjectHeader = () => {
   const { projectIsUsing, projects, status } = useProjectStore();
@@ -43,47 +42,51 @@ export const ProjectHeader = () => {
   const loading = status === 'fetching';
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-5">
-      {/* LEFT — logo | board identity (กดเปิด switcher แบบ design) */}
-      <div className="flex items-center gap-4.5">
-        <Logo size={20} textSize="base" />
-        <HeaderDivider />
+    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-5">
+      {/* LEFT — logo / board (กดเปิดตัวสลับบอร์ด, หรือ ⌘K) */}
+      <div className="flex min-w-0 items-center gap-2">
+        <Logo size={22} textSize="base" />
+        <span aria-hidden className="text-lg font-light text-input">
+          /
+        </span>
         {loading ? (
           <div className="flex items-center gap-2">
-            <Skeleton className="size-6 rounded-md" />
-            <Skeleton className="h-5 w-36 rounded" />
+            <Skeleton className="size-5 rounded-md" />
+            <Skeleton className="h-4 w-32 rounded" />
           </div>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setBoardDialog('switch')}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-surface-hover"
+            aria-label="Switch board"
+            className="min-w-0 gap-2 px-1.5"
           >
             {projectValue && (
               <ProjectAvatar
                 project={projectValue}
-                size="size-6"
+                size="size-5"
                 rounded="rounded-md"
               />
             )}
-            <span className="text-md font-bold text-ink">
+            <span className="truncate font-semibold tracking-tight text-ink">
               {projectValue?.name ?? '—'}
             </span>
-            <ChevronDown className="size-4 text-ink-faint" />
-          </button>
+            <ChevronsUpDown className="size-3.5 text-ink-subtle" />
+          </Button>
         )}
       </div>
 
-      {/* RIGHT — avatars | invite | bell | user */}
+      {/* RIGHT — members | invite | bell | user */}
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-3.5">
+        <div className="flex shrink-0 items-center gap-2.5">
           {loading ? (
-            <Skeleton className="h-7.5 w-44 rounded-full" />
+            <Skeleton className="h-7 w-40 rounded-full" />
           ) : (
             <>
               {members.length > 0 && (
                 <AvatarGroup
-                  className="cursor-pointer transition-opacity hover:opacity-90"
+                  className="cursor-pointer -space-x-1.5 transition-opacity hover:opacity-90"
                   onClick={() => setInviteOpen(true)}
                 >
                   {visibleMembers.map((member) => {
@@ -93,32 +96,27 @@ export const ProjectHeader = () => {
                     return (
                       <Tooltip key={member.userId}>
                         <TooltipTrigger asChild>
-                          <Avatar className="size-7.5 ring-2 ring-background">
+                          <Avatar className="size-6.5 ring-2 ring-background">
                             <AvatarImage
                               src={user?.avatar ?? undefined}
                               alt={user?.fullName}
                             />
-                            <AvatarFallback className="text-xs font-bold">
+                            <AvatarFallback className="text-xs font-semibold">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="space-y-0.5">
-                          <p className="text-sm font-semibold">
-                            {user?.fullName ?? '…'}
+                          <p className="text-sm font-medium">
+                            {user?.fullName ?? '…'} · {ROLE_LABELS[member.role]}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {user?.email}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {ROLE_LABELS[member.role]}
-                          </p>
+                          <p className="text-xs opacity-75">{user?.email}</p>
                         </TooltipContent>
                       </Tooltip>
                     );
                   })}
                   {overflowCount > 0 && (
-                    <AvatarGroupCount className="size-7.5 bg-surface-active text-xs font-bold text-ink-muted ring-2 ring-background">
+                    <AvatarGroupCount className="size-6.5 bg-surface-active text-xs font-semibold text-ink-muted ring-2 ring-background">
                       +{overflowCount}
                     </AvatarGroupCount>
                   )}
@@ -127,10 +125,10 @@ export const ProjectHeader = () => {
 
               <Button
                 variant="outline"
-                className="h-8.5 gap-1.5 rounded-lg border-line px-3 text-sm font-bold text-brand-dark shadow-none hover:border-brand-line hover:bg-brand-soft/40 hover:text-brand-dark"
+                size="sm"
                 onClick={() => setInviteOpen(true)}
               >
-                <UserPlus className="size-4" />
+                <UserPlus className="size-3.5" />
                 Invite
               </Button>
 

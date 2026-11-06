@@ -9,7 +9,8 @@ import { useTaskStore } from '@/store/use-task.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
-import { CalendarDays, Flag, MessageSquare } from 'lucide-react';
+import { CalendarDays, MessageSquare } from 'lucide-react';
+import { PriorityBars } from '@/components/task-meta/priority-bars';
 import {
   Avatar,
   AvatarFallback,
@@ -18,11 +19,12 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import { Loader } from '@/components/ui/loader';
-import { PRIORITY_STYLES } from '@/lib/task-priority';
 import {
   daysUntil,
+  dueUrgency,
   formatDateShort,
   formatRelativeDay,
+  type DueUrgency,
 } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
@@ -35,8 +37,14 @@ const MAX_VISIBLE_TAGS = 2;
 const MAX_VISIBLE_ASSIGNEES = 3;
 
 const innerStyles: Partial<Record<TCardState['type'], string>> = {
-  idle: 'hover:border-brand-line hover:shadow-[0_5px_16px_rgba(20,22,35,0.08)] hover:-translate-y-px cursor-pointer',
+  idle: 'hover:border-input hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] cursor-pointer',
   'is-dragging': 'opacity-40',
+};
+
+const dueToneStyles: Record<DueUrgency, string> = {
+  overdue: 'text-destructive',
+  soon: 'text-(--priority-medium-text)',
+  normal: 'text-ink-subtle',
 };
 
 const outerStyles: Partial<Record<TCardState['type'], string>> = {
@@ -46,7 +54,7 @@ const outerStyles: Partial<Record<TCardState['type'], string>> = {
 export function CardShadow({ dragging }: { dragging: DOMRect }) {
   return (
     <div
-      className="flex-shrink-0 rounded-md bg-gray-200"
+      className="flex-shrink-0 rounded-lg border border-dashed border-ink-faint/60 bg-brand/4"
       style={{ height: dragging.height }}
     />
   );
@@ -84,23 +92,16 @@ export function CardDisplay({
     useShallow((s) => s.byTask[card.id]?.items ?? NO_ASSIGNEES),
   );
 
-  const firstTag = card.tags?.[0];
-  const palette = firstTag
-    ? paletteFor(tagColors[firstTag] ?? hashTagColor(firstTag))
-    : null;
-
+  const tags = card.tags ?? [];
+  const hasTagRow = tags.length > 0 || assignees.length > 0;
   const dueDate = card.dueDate ? new Date(card.dueDate) : null;
   const dueInDays = dueDate ? daysUntil(dueDate) : null;
-  // โชว์ธงเฉพาะ high — การ์ดต้องเหลือแต่สัญญาณที่สำคัญจริง
-  const priorityStyle = card.priority === 'high' ? PRIORITY_STYLES.high : null;
-  const hasMeta =
-    !!dueDate || commentCount > 0 || assignees.length > 0 || isLoading;
 
   return (
     <div
       ref={outerRef}
       className={cn(
-        `flex flex-shrink-0 flex-col gap-2 px-3 py-1 ${outerStyles[state.type] ?? ''}`,
+        `flex flex-shrink-0 flex-col gap-2 px-2 py-0.5 ${outerStyles[state.type] ?? ''}`,
         isLoading && 'pointer-events-none',
       )}
       data-testid="board-card"
@@ -111,27 +112,20 @@ export function CardDisplay({
       )}
       <div
         ref={innerRef}
-        className={`group relative rounded-xl border border-line bg-white p-3.5 text-gray-700 shadow-[0_1px_2px_rgba(20,22,35,0.03)] transition-[box-shadow,border-color,transform] duration-150 ${innerStyles[state.type] ?? ''}`}
+        className={`group relative flex flex-col gap-3 rounded-lg border border-line bg-white p-3 text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[box-shadow,border-color] duration-150 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
             ? {
                 width: state.dragging.width,
                 height: state.dragging.height,
-                transform: !isSafari() ? 'rotate(4deg)' : undefined,
+                transform: !isSafari() ? 'rotate(2deg)' : undefined,
               }
             : undefined
         }
       >
-        {palette && (
-          <div
-            className="mb-2.5 h-1 w-6.5 rounded-full"
-            style={{ backgroundColor: palette.value }}
-          />
-        )}
-
         <div className="flex items-start gap-2">
           <div
-            className="line-clamp-3 flex-1 text-sm leading-tight font-semibold"
+            className="line-clamp-3 flex-1 text-sm leading-snug font-medium"
             onClick={(e) => {
               if (state.type !== 'idle') return;
               if ((e.target as HTMLElement).closest('[data-card-action]'))
@@ -139,14 +133,6 @@ export function CardDisplay({
               openTask(card.id);
             }}
           >
-            {priorityStyle && (
-              <Flag
-                className="-mt-px mr-1.5 inline size-3 align-middle"
-                style={{ color: priorityStyle.dot }}
-                fill="currentColor"
-                aria-label={`${priorityStyle.label} priority`}
-              />
-            )}
             {card.title}
           </div>
           {allColumns && (
@@ -156,83 +142,80 @@ export function CardDisplay({
           )}
         </div>
 
-        {card.tags && card.tags.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            {card.tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => {
-              const p = paletteFor(tagColors[tag] ?? hashTagColor(tag));
-              return (
+        {hasTagRow && (
+          <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+              {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{ backgroundColor: p.bg, color: p.text }}
+                  className="inline-flex h-5.5 items-center gap-1.5 rounded-full border border-line px-2 text-xs text-ink-muted"
                 >
                   <span
                     className="size-1.5 rounded-full"
-                    style={{ backgroundColor: p.value }}
+                    style={{
+                      backgroundColor: paletteFor(
+                        tagColors[tag] ?? hashTagColor(tag),
+                      ).value,
+                    }}
                   />
                   {tag}
                 </span>
-              );
-            })}
-            {card.tags.length > MAX_VISIBLE_TAGS && (
-              <span className="text-xs font-medium text-ink-faint">
-                +{card.tags.length - MAX_VISIBLE_TAGS}
-              </span>
+              ))}
+              {tags.length > MAX_VISIBLE_TAGS && (
+                <span className="text-xs text-ink-subtle">
+                  +{tags.length - MAX_VISIBLE_TAGS}
+                </span>
+              )}
+            </div>
+            {assignees.length > 0 && (
+              <AvatarGroup className="shrink-0 -space-x-1.5">
+                {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
+                  <Avatar key={a.userId} className="size-5.5 ring-2 ring-white">
+                    <AvatarImage src={a.avatar ?? undefined} alt={a.fullName} />
+                    <AvatarFallback className="text-xs font-semibold">
+                      {a.fullName?.[0]?.toUpperCase() ?? '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {assignees.length > MAX_VISIBLE_ASSIGNEES && (
+                  <AvatarGroupCount className="size-5.5 text-xs ring-2 ring-white">
+                    +{assignees.length - MAX_VISIBLE_ASSIGNEES}
+                  </AvatarGroupCount>
+                )}
+              </AvatarGroup>
             )}
           </div>
         )}
 
-        {hasMeta && (
-          <div className="mt-3 flex items-center gap-2.5">
-            {dueDate && dueInDays !== null && (
-              <span
-                className={cn(
-                  'flex items-center gap-1 text-xs font-medium',
-                  dueInDays < 0
-                    ? 'text-red-500'
-                    : dueInDays <= 2
-                      ? 'text-amber-600'
-                      : 'text-ink-subtle',
-                )}
-              >
-                <CalendarDays className="size-3.5" />
-                {Math.abs(dueInDays) <= 7
-                  ? formatRelativeDay(dueDate)
-                  : formatDateShort(dueDate)}
-              </span>
-            )}
-            {commentCount > 0 && (
-              <span className="flex items-center gap-1 text-xs font-medium text-ink-subtle">
-                <MessageSquare className="size-3.5" />
-                {commentCount}
-              </span>
-            )}
-            {isLoading && <Loader size="xs" />}
-            {assignees.length > 0 && (
-              <>
-                <span className="flex-1" />
-                <AvatarGroup className="-space-x-1.5">
-                  {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
-                    <Avatar key={a.userId} className="size-5">
-                      <AvatarImage
-                        src={a.avatar ?? undefined}
-                        alt={a.fullName}
-                      />
-                      <AvatarFallback className="text-xs font-semibold">
-                        {a.fullName?.[0]?.toUpperCase() ?? '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {assignees.length > MAX_VISIBLE_ASSIGNEES && (
-                    <AvatarGroupCount className="size-5 text-xs">
-                      +{assignees.length - MAX_VISIBLE_ASSIGNEES}
-                    </AvatarGroupCount>
-                  )}
-                </AvatarGroup>
-              </>
-            )}
-          </div>
-        )}
+        {/* แถว meta: ฟอนต์/ขนาด/ไอคอนเท่ากันทุกตัว — มีเส้นคั่นเมื่อมีแถว tag ด้านบน */}
+        <div
+          className={cn(
+            'flex items-center gap-4 text-xs font-medium text-ink-subtle tabular-nums',
+            hasTagRow && 'border-t border-line/70 pt-2.5',
+          )}
+        >
+          <PriorityBars priority={card.priority ?? 'medium'} />
+          {dueDate && dueInDays !== null && (
+            <span
+              className={cn(
+                'flex items-center gap-1.25',
+                dueToneStyles[dueUrgency(dueInDays)],
+              )}
+            >
+              <CalendarDays className="size-3.5" />
+              {Math.abs(dueInDays) <= 7
+                ? formatRelativeDay(dueDate)
+                : formatDateShort(dueDate)}
+            </span>
+          )}
+          {commentCount > 0 && (
+            <span className="flex items-center gap-1.25">
+              <MessageSquare className="size-3.5" />
+              {commentCount}
+            </span>
+          )}
+          {isLoading && <Loader size="xs" className="ml-auto" />}
+        </div>
       </div>
       {state.type === 'is-over' && state.closestEdge === 'bottom' && (
         <CardShadow dragging={state.dragging} />

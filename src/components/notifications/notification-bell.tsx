@@ -140,14 +140,16 @@ export const NotificationBell = () => {
         <Button
           variant="ghost"
           size="icon"
-          className="relative size-8.5 rounded-lg hover:bg-surface-hover"
-          aria-label="Notifications"
+          className="relative size-8 text-ink-muted hover:text-ink"
+          aria-label={
+            unreadCount > 0
+              ? `Notifications, ${unreadCount} unread`
+              : 'Notifications'
+          }
         >
-          <Bell className="size-4.5 text-ink-muted" />
+          <Bell className="size-4" />
           {unreadCount > 0 && (
-            <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-background bg-destructive px-1 text-xs font-extrabold text-white">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
+            <span className="absolute top-1.5 right-1.75 size-2 rounded-full bg-brand ring-2 ring-background" />
           )}
         </Button>
       </PopoverTrigger>

@@ -65,12 +65,8 @@ export const AiBreakdown = ({ columns }: { columns: BoardColumnLike[] }) => {
   return (
     <Sheet open={open} onOpenChange={(next) => !isGenerating && setOpen(next)}>
       <SheetTrigger asChild>
-        {/* สเกลเดียวกับปุ่มใน bottom bar (h-10 / rounded-xl / เงา brand) ให้ดูเป็นชุดเดียวกัน */}
-        <Button
-          className="absolute right-5 bottom-5 z-10 h-10 gap-4 rounded-xl !p-5.5 text-sm font-semibold shadow-[0_3px_10px_rgba(91,80,230,0.35)] hover:bg-brand-dark"
-          data-testid="ai-breakdown-trigger"
-        >
-          <Sparkles size={15} />
+        <Button variant="outline" size="sm" data-testid="ai-breakdown-trigger">
+          <Sparkles className="size-4 text-brand" />
           AI Breakdown
         </Button>
       </SheetTrigger>

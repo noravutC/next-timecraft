@@ -1,6 +1,7 @@
 'use client';
 
-import { Copy, Ellipsis, Flag, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, Trash2 } from 'lucide-react';
+import { PriorityBars } from '@/components/task-meta/priority-bars';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const menuItemClass =
-  'gap-2.5 rounded-lg px-2.5 py-2 font-medium text-ink-subtle focus:bg-surface-hover focus:text-brand [&_svg]:!text-current';
+  'gap-2.5 rounded-md px-2 py-1.5 text-ink focus:bg-surface-hover focus:text-ink [&_svg]:!text-ink-subtle';
 
 interface CardActionsMenuProps {
   card: TCard;
@@ -106,7 +107,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           size={'xs'}
           variant={'ghost'}
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-lg p-0 text-ink-faint opacity-0 group-hover:opacity-100 hover:bg-brand-soft hover:text-brand data-[state=open]:bg-brand-soft data-[state=open]:text-brand data-[state=open]:opacity-100"
+          className="size-6 rounded-md p-0 text-ink-subtle opacity-0 group-hover:opacity-100 hover:bg-surface-active hover:text-ink data-[state=open]:bg-surface-active data-[state=open]:text-ink data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
           <Ellipsis className="size-4" />
@@ -115,7 +116,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="w-52 rounded-xl border-line p-1.5 shadow-[0_10px_34px_rgba(20,22,35,0.13)]"
+        className="w-56 rounded-lg border-line p-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.14),0_2px_6px_rgba(0,0,0,0.04)]"
         onClick={(e) => e.stopPropagation()}
       >
         <DropdownMenuItem onClick={handleDuplicate} className={menuItemClass}>
@@ -123,13 +124,13 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           Duplicate
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleToggleFlag} className={menuItemClass}>
-          <Flag />
-          {isFlagged ? 'Remove flag' : 'Add flag'}
+          <PriorityBars priority={isFlagged ? 'medium' : 'high'} />
+          {isFlagged ? 'Remove high priority' : 'Mark as high priority'}
         </DropdownMenuItem>
         {otherColumns.length > 0 && (
           <>
             <DropdownMenuSeparator className="mx-1 bg-line/70" />
-            <DropdownMenuLabel className="px-2.5 pt-2 pb-1 text-xs font-semibold tracking-wider text-ink-faint uppercase">
+            <DropdownMenuLabel className="px-2 pt-2 pb-1 text-xs font-normal text-ink-subtle">
               Move to
             </DropdownMenuLabel>
             {otherColumns.map((column) => (
@@ -139,7 +140,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
                 className={menuItemClass}
               >
                 <span
-                  className="size-2.5 shrink-0 rounded-full"
+                  className="mx-0.75 size-2 shrink-0 rounded-full"
                   style={{ backgroundColor: column.color ?? '#94a3b8' }}
                 />
                 {column.title}
@@ -152,7 +153,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           onClick={handleDelete}
           className={cn(
             menuItemClass,
-            'text-red-500 focus:bg-red-50 focus:text-red-500',
+            'text-destructive focus:bg-destructive/8 focus:text-destructive [&_svg]:!text-destructive',
           )}
         >
           <Trash2 />
