@@ -40,7 +40,6 @@ a full run rewrites ~230 files. Format only the files you touched.
 - `src/app/(main)/project/` — Kanban board (main feature)
 - `src/app/api/` — REST API routes (NextAuth + custom)
 - `src/app/login/` — sign-in page: Google OAuth and Continue as guest
-- `src/middleware.ts` — minimal auth redirect for unauthenticated users
 
 ### Authentication
 
