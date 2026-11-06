@@ -119,6 +119,26 @@ export function useInviteMembers({ open }: { open: boolean }) {
 
   const copyText = copyWithToast;
 
+  const handleResend = async (invitation: PendingInvitation) => {
+    try {
+      const { created } = await projectServices.resendInvitation(
+        invitation.token,
+      );
+      if (created) {
+        setInvitations((prev) =>
+          prev.map((i) =>
+            i.id === invitation.id ? { ...i, expiresAt: created.expiresAt } : i,
+          ),
+        );
+      }
+      toast.success(`Sent again to ${invitation.email}`);
+    } catch (error) {
+      toast.error(
+        (error as { message?: string })?.message ?? 'Couldn’t send it again',
+      );
+    }
+  };
+
   const handleRemoveMember = async () => {
     if (!project || !memberToRemove || removing) return;
     setRemoving(true);
@@ -155,6 +175,7 @@ export function useInviteMembers({ open }: { open: boolean }) {
     handleInvite,
     handleRevoke,
     copyText,
+    handleResend,
     handleRemoveMember,
   };
 }

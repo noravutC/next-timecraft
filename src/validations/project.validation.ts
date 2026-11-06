@@ -54,3 +54,13 @@ export const updateProjectSchema = z.object({
 });
 
 export type UpdateProjectBody = z.infer<typeof updateProjectSchema>;
+
+export const changeMemberRoleSchema = z.object({
+  role: z.enum(['admin', 'editor', 'viewer']),
+});
+
+export type ChangeMemberRoleBody = z.infer<typeof changeMemberRoleSchema>;
+
+export const transferOwnershipSchema = z.object({ userId: z.guid() });
+
+export type TransferOwnershipBody = z.infer<typeof transferOwnershipSchema>;

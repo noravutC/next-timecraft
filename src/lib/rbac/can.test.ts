@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { can, canAll, canAny, canOnBoard, outranks } from './can';
+import {
+  assignableRoles,
+  can,
+  canAll,
+  canAny,
+  canManageMember,
+  canOnBoard,
+  outranks,
+} from './can';
 import { ROLE_PERMISSIONS, type ProjectRole } from './permissions';
 
 describe('can', () => {
@@ -102,5 +110,20 @@ describe('canOnBoard', () => {
     expect(canOnBoard('admin', 'project:update', archived)).toBe(true);
     expect(canOnBoard('owner', 'project:delete', archived)).toBe(true);
     expect(canOnBoard('admin', 'member:remove', archived)).toBe(true);
+  });
+});
+
+describe('changing roles on a board', () => {
+  it('lets people give only roles below their own', () => {
+    expect(assignableRoles('owner')).toEqual(['admin', 'editor', 'viewer']);
+    expect(assignableRoles('admin')).toEqual(['editor', 'viewer']);
+    expect(assignableRoles('editor')).toEqual([]);
+  });
+
+  it('lets people manage only those below them', () => {
+    expect(canManageMember('owner', 'admin')).toBe(true);
+    expect(canManageMember('admin', 'editor')).toBe(true);
+    expect(canManageMember('admin', 'admin')).toBe(false);
+    expect(canManageMember('editor', 'viewer')).toBe(false);
   });
 });

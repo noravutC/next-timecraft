@@ -6,7 +6,7 @@ import {
   projectsTable,
 } from "@/db/schema";
 import { authorize } from "@/lib/rbac/authorize";
-import { Permission } from "@/lib/rbac/permissions";
+import { Permission, type ProjectRole } from "@/lib/rbac/permissions";
 import type { Member, NewProjectRow, Project, ProjectRow } from "@/types";
 import { shareBoardWithWorkspace } from "@/db/uniq-query/organization/organization-utils";
 import { and, desc, eq, inArray } from "drizzle-orm";
@@ -191,4 +191,65 @@ export async function fetchProjectsWithMembers(
     ...project,
     members: membersByProject[project.id] ?? [],
   }));
+}
+
+/** Changes a member's role on a board. */
+export async function changeProjectMemberRole(
+  projectId: string,
+  userId: string,
+  role: ProjectRole,
+): Promise<Member | undefined> {
+  const [changed] = await db
+    .update(projectMembersTable)
+    .set({ role, updatedAt: new Date() })
+    .where(
+      and(
+        eq(projectMembersTable.projectId, projectId),
+        eq(projectMembersTable.userId, userId),
+      ),
+    )
+    .returning({
+      userId: projectMembersTable.userId,
+      role: projectMembersTable.role,
+      joinedAt: projectMembersTable.joinedAt,
+    });
+  return changed;
+}
+
+/**
+ * Hands a board to another member, who becomes its owner; the old owner
+ * stays on it as an admin. False when the new owner isn't on the board.
+ */
+export async function transferProjectOwnership(
+  projectId: string,
+  fromUserId: string,
+  toUserId: string,
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [heir] = await tx
+      .update(projectMembersTable)
+      .set({ role: "owner", source: "direct", updatedAt: new Date() })
+      .where(
+        and(
+          eq(projectMembersTable.projectId, projectId),
+          eq(projectMembersTable.userId, toUserId),
+        ),
+      )
+      .returning({ id: projectMembersTable.id });
+    if (!heir) return false;
+    await tx
+      .update(projectMembersTable)
+      .set({ role: "admin", updatedAt: new Date() })
+      .where(
+        and(
+          eq(projectMembersTable.projectId, projectId),
+          eq(projectMembersTable.userId, fromUserId),
+        ),
+      );
+    await tx
+      .update(projectsTable)
+      .set({ ownerId: toUserId, updatedAt: new Date() })
+      .where(eq(projectsTable.id, projectId));
+    return true;
+  });
 }

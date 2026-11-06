@@ -1,8 +1,10 @@
-// app/api/project/[id]/members/[userId]/route.ts — DELETE = remove member
+// app/api/project/[id]/members/[userId]/route.ts — DELETE = remove member,
+// PATCH = change their role
 
 import { revokePendingInvitationsBy } from '@/db/uniq-query/invitation/invitation-utils';
 import { createNotification } from '@/db/uniq-query/notification/notification-utils';
 import {
+  changeProjectMemberRole,
   getProjectMemberRole,
   getProjectNameById,
   removeProjectMember,
@@ -14,7 +16,11 @@ import {
 } from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
 import { parseId } from '@/lib/api/params';
-import { outranks } from '@/lib/rbac/can';
+import { assignableRoles, canManageMember, outranks } from '@/lib/rbac/can';
+import {
+  changeMemberRoleSchema,
+  type ChangeMemberRoleBody,
+} from '@/validations/project.validation';
 import { pusherServer, triggerExclusive } from '@/lib/pusher-server';
 import { NextResponse } from 'next/server';
 
@@ -79,6 +85,43 @@ export const DELETE = createParamHandle<RouteParams>(
 
     return NextResponse.json(
       { deleted, message: 'Member removed', status: 200 },
+      { status: 200 },
+    );
+  },
+);
+
+export const PATCH = createParamHandle<RouteParams, ChangeMemberRoleBody>(
+  {
+    body: changeMemberRoleSchema,
+    permission: 'member:change_role',
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
+  },
+  async ({ params, body, userId }) => {
+    const projectId = parseId(params.id);
+    const targetUserId = parseId(params.userId);
+    if (targetUserId === userId) {
+      throw new BadRequestError('You can’t change your own role');
+    }
+    const targetRole = await getProjectMemberRole(projectId, targetUserId);
+    if (!targetRole) {
+      throw new NotFoundError('This user is not a member of the board');
+    }
+    const actorRole = await getProjectMemberRole(projectId, userId);
+    if (
+      !actorRole ||
+      !canManageMember(actorRole, targetRole) ||
+      !assignableRoles(actorRole).includes(body.role)
+    ) {
+      throw new ForbiddenError('You can only give roles below your own');
+    }
+
+    const updated = await changeProjectMemberRole(
+      projectId,
+      targetUserId,
+      body.role,
+    );
+    return NextResponse.json(
+      { updated, message: 'Role changed', status: 200 },
       { status: 200 },
     );
   },
