@@ -16,6 +16,7 @@ import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
 import { CardSkeleton } from './card-skeleton';
 import { TColumnState, useColumnDnd } from './use-column-dnd';
+import { useBoardAccess } from '@/components/project/use-board-access';
 
 const stateStyles: Record<TColumnState['type'], string> = {
   idle: 'cursor-grab',
@@ -63,8 +64,11 @@ export const Column = ({
   );
   const columnsLoader = useColumnStore(useShallow((s) => s.columnsLoader));
   const isLoading = columnsLoader[column.id] ?? false;
+  const access = useBoardAccess();
+  const canAddCards = access.can('task:create');
   const state = useColumnDnd({
     column,
+    canDrag: access.can('column:update'),
     outerRef: outerFullHeightRef,
     scrollableRef,
     headerRef,
@@ -141,16 +145,20 @@ export const Column = ({
                 : column.totalTasks}
             </span>
             <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setAddingAt('top')}
-              aria-label={`Add a card to the top of ${column.title}`}
-              disabled={isLoading}
-              className="size-7 text-ink-subtle hover:bg-surface-active hover:text-ink"
-            >
-              <Plus className="size-3.75" />
-            </Button>
+            {canAddCards ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAddingAt('top')}
+                aria-label={`Add a card to the top of ${column.title}`}
+                disabled={isLoading}
+                className="size-7 text-ink-subtle hover:bg-surface-active hover:text-ink"
+              >
+                <Plus className="size-3.75" />
+              </Button>
+            ) : (
+              <span aria-hidden className="size-7" />
+            )}
           </div>
           {addingAt === 'top' && (
             <AddCardInline
@@ -210,6 +218,8 @@ export const Column = ({
               nextOrderFraction={column.nextCursorFraction}
               onClose={() => setAddingAt(null)}
             />
+          ) : !canAddCards ? (
+            <div aria-hidden className="h-2 shrink-0" />
           ) : (
             <div className="mx-2 mt-1.5 mb-2 shrink-0">
               <Button

@@ -38,6 +38,8 @@ interface TaskPropertiesProps {
   onAssigneesChange: (ids: string[]) => void;
   projectTags: string[];
   tagColors: Required<ProjectSettings>['tagColors'];
+  /** viewer, or an archived board: show the values without editing */
+  readOnly?: boolean;
 }
 
 /** Status · Priority · Assignees · Due date · Labels · Estimate */
@@ -53,6 +55,7 @@ export const TaskProperties = ({
   onAssigneesChange,
   projectTags,
   tagColors,
+  readOnly = false,
 }: TaskPropertiesProps) => (
   <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 sm:grid-cols-[8rem_minmax(0,1fr)]">
     <PropertyRow icon={<CircleDot />} label="Status">
@@ -60,6 +63,7 @@ export const TaskProperties = ({
         columns={columns}
         activeColumnId={task.columnId}
         onChange={onStatusChange}
+        disabled={readOnly}
       />
     </PropertyRow>
 
@@ -72,6 +76,7 @@ export const TaskProperties = ({
       <PriorityPicker
         value={task.priority as TaskPriority}
         onChange={(priority) => persist({ priority })}
+        disabled={readOnly}
       />
     </PropertyRow>
 
@@ -91,11 +96,16 @@ export const TaskProperties = ({
             {shortName(a.fullName)}
           </span>
         ))}
-        <AssigneePicker
-          candidates={candidates}
-          selectedIds={assigneeIds}
-          onChange={onAssigneesChange}
-        />
+        {!readOnly && (
+          <AssigneePicker
+            candidates={candidates}
+            selectedIds={assigneeIds}
+            onChange={onAssigneesChange}
+          />
+        )}
+        {readOnly && assignees.length === 0 && (
+          <span className="px-2 text-sm text-ink-subtle">Nobody</span>
+        )}
       </div>
     </PropertyRow>
 
@@ -103,6 +113,7 @@ export const TaskProperties = ({
       <DueDatePicker
         value={dueDate}
         onChange={(d) => persist({ dueDate: d })}
+        disabled={readOnly}
       />
     </PropertyRow>
 
@@ -111,12 +122,17 @@ export const TaskProperties = ({
         {task.tags.map((tag) => (
           <TagChip key={tag} tag={tag} tagColors={tagColors} />
         ))}
-        <TagPicker
-          projectTags={projectTags}
-          selectedTags={task.tags}
-          tagColors={tagColors}
-          onChange={(tags) => persist({ tags })}
-        />
+        {!readOnly && (
+          <TagPicker
+            projectTags={projectTags}
+            selectedTags={task.tags}
+            tagColors={tagColors}
+            onChange={(tags) => persist({ tags })}
+          />
+        )}
+        {readOnly && task.tags.length === 0 && (
+          <span className="px-2 text-sm text-ink-subtle">None</span>
+        )}
       </div>
     </PropertyRow>
 
@@ -124,6 +140,7 @@ export const TaskProperties = ({
       <EstimatePicker
         value={task.estimatedHours ?? 0}
         onChange={(estimatedHours) => persist({ estimatedHours })}
+        disabled={readOnly}
       />
     </PropertyRow>
   </div>

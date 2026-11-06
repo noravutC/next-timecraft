@@ -7,11 +7,13 @@ import { cn } from '@/lib/utils';
 interface InlineDescriptionProps {
   value: string | null;
   onCommit: (next: string) => void;
+  readOnly?: boolean;
 }
 
 export const InlineDescription = ({
   value,
   onCommit,
+  readOnly = false,
 }: InlineDescriptionProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
@@ -44,6 +46,23 @@ export const InlineDescription = ({
         aria-label="Description"
         className="min-h-24 leading-5.5"
       />
+    );
+  }
+
+  if (readOnly) {
+    return (
+      <div
+        className={cn(
+          '-mx-2 min-h-11 px-2 py-1.5 text-base leading-5.5 text-pretty',
+          value ? 'text-ink-muted' : 'text-ink-subtle',
+        )}
+      >
+        {value ? (
+          <p className="whitespace-pre-wrap">{value}</p>
+        ) : (
+          'No description'
+        )}
+      </div>
     );
   }
 

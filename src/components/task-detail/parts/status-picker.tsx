@@ -17,6 +17,7 @@ interface StatusPickerProps {
   onChange: (columnId: string) => void;
   /** pill = chip in the sheet header, plain = value in the properties grid */
   variant?: 'pill' | 'plain';
+  disabled?: boolean;
 }
 
 export const StatusPicker = ({
@@ -24,25 +25,26 @@ export const StatusPicker = ({
   activeColumnId,
   onChange,
   variant = 'plain',
+  disabled,
 }: StatusPickerProps) => {
   const active = columns.find((c) => c.id === activeColumnId);
   const color = active?.color ?? '#94a3b8';
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild disabled={disabled}>
         {variant === 'pill' ? (
           <Button
             variant="outline"
             size="xs"
-            className="h-6.5 gap-1.5 rounded-full border-line px-2 text-xs text-ink"
+            className="h-6.5 gap-1.5 rounded-full border-line px-2 text-xs text-ink disabled:cursor-default disabled:opacity-100"
           >
             <span
               className="size-1.75 rounded-full"
               style={{ backgroundColor: color }}
             />
             {active?.name ?? 'Status'}
-            <ChevronDown className="size-3 text-ink-subtle" />
+            {!disabled && <ChevronDown className="size-3 text-ink-subtle" />}
           </Button>
         ) : (
           <Button variant="ghost" className={propertyButtonClass}>

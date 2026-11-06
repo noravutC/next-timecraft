@@ -16,15 +16,33 @@ interface EstimatePickerProps {
   /** hours; 0 = no estimate */
   value: number;
   onChange: (next: number) => void;
+  /** read-only board: show the value, not the control */
+  disabled?: boolean;
 }
 
 /** 1h … 1w; picking the current value again clears it. */
-export const EstimatePicker = ({ value, onChange }: EstimatePickerProps) => (
-  <SegmentedControl
-    aria-label="Estimate"
-    options={ESTIMATE_OPTIONS}
-    value={value ? String(value) : null}
-    onChange={(next) => onChange(Number(next) === value ? 0 : Number(next))}
-    optionClassName="h-6.5 min-w-8 px-1.5 font-mono text-xs font-normal sm:min-w-9.5 sm:px-2"
-  />
-);
+export const EstimatePicker = ({
+  value,
+  onChange,
+  disabled,
+}: EstimatePickerProps) =>
+  disabled ? (
+    <span
+      className={
+        value
+          ? 'px-2 font-mono text-xs text-ink'
+          : 'px-2 text-sm text-ink-subtle'
+      }
+    >
+      {ESTIMATE_OPTIONS.find((o) => Number(o.value) === value)?.label ??
+        (value ? `${value}h` : 'No estimate')}
+    </span>
+  ) : (
+    <SegmentedControl
+      aria-label="Estimate"
+      options={ESTIMATE_OPTIONS}
+      value={value ? String(value) : null}
+      onChange={(next) => onChange(Number(next) === value ? 0 : Number(next))}
+      optionClassName="h-6.5 min-w-8 px-1.5 font-mono text-xs font-normal sm:min-w-9.5 sm:px-2"
+    />
+  );

@@ -1,5 +1,6 @@
 'use client';
 
+import { ArchivedBoardBanner } from './_components/archived-board-banner';
 import { BoardFilterBar } from './_components/board-filter-bar';
 import { Column } from './_components/column';
 import { useBoard } from './_components/use-board';
@@ -13,6 +14,7 @@ export default function ProjectPage() {
   return (
     <div className={`relative flex h-full flex-col bg-background ${boardCls}`}>
       <BoardFilterBar columns={board.columns} />
+      <ArchivedBoardBanner />
       <div
         ref={scrollableRef}
         className={scrollCls}

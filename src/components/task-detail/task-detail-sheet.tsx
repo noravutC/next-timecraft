@@ -38,6 +38,11 @@ export const TaskDetailSheet = () => {
     persist,
     handleStatusChange,
     handleCopyLink,
+    readOnly,
+    canComment,
+    canReact,
+    canManageOwnComments,
+    commentBlockedNote,
   } = useTaskDetail();
 
   return (
@@ -66,6 +71,7 @@ export const TaskDetailSheet = () => {
               activeColumnId={task.columnId}
               onStatusChange={handleStatusChange}
               onCopyLink={handleCopyLink}
+              readOnly={readOnly}
             />
 
             <div className="scrollbar-thin-y scrollbar-light min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-6 [overflow-anchor:none] sm:px-8 sm:pt-7">
@@ -73,6 +79,7 @@ export const TaskDetailSheet = () => {
                 value={task.title}
                 onCommit={(title) => persist({ title })}
                 className="mb-5"
+                readOnly={readOnly}
               />
 
               <TaskProperties
@@ -89,6 +96,7 @@ export const TaskDetailSheet = () => {
                 }
                 projectTags={project?.tags ?? []}
                 tagColors={settings.tagColors}
+                readOnly={readOnly}
               />
 
               <Divider />
@@ -100,23 +108,35 @@ export const TaskDetailSheet = () => {
                 <InlineDescription
                   value={task.description}
                   onCommit={(description) => persist({ description })}
+                  readOnly={readOnly}
                 />
               </section>
 
               <Divider />
 
-              <SubtaskList taskId={task.id} />
+              <SubtaskList taskId={task.id} readOnly={readOnly} />
 
-              <CommentActivityPanel taskId={task.id} currentUserId={userId} />
+              <CommentActivityPanel
+                taskId={task.id}
+                currentUserId={userId}
+                canReact={canReact}
+                canManageOwn={canManageOwnComments}
+              />
             </div>
 
             <div className="shrink-0 border-t border-line bg-background px-5 pt-3 pb-4">
-              <CommentComposer
-                taskId={task.id}
-                authorId={userId}
-                authorName={userName}
-                authorAvatar={userAvatar}
-              />
+              {canComment ? (
+                <CommentComposer
+                  taskId={task.id}
+                  authorId={userId}
+                  authorName={userName}
+                  authorAvatar={userAvatar}
+                />
+              ) : (
+                <p className="rounded-lg bg-surface px-3.5 py-3 text-sm text-ink-muted">
+                  {commentBlockedNote}
+                </p>
+              )}
             </div>
           </>
         ) : (

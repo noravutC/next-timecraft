@@ -1,7 +1,24 @@
-import { Permission, ProjectRole, ROLE_PERMISSIONS } from './permissions';
+import {
+  BLOCKED_ON_ARCHIVED_BOARD,
+  Permission,
+  ProjectRole,
+  ROLE_PERMISSIONS,
+} from './permissions';
 
 export function can(role: ProjectRole, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role].has(permission);
+}
+
+/** `can`, plus the board's state: an archived board is read-only. */
+export function canOnBoard(
+  role: ProjectRole,
+  permission: Permission,
+  board: { archived: boolean },
+): boolean {
+  return (
+    can(role, permission) &&
+    !(board.archived && BLOCKED_ON_ARCHIVED_BOARD.has(permission))
+  );
 }
 
 /** true เมื่อ role มีครบทุก permission ในลิสต์ */

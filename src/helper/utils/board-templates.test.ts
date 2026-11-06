@@ -9,6 +9,7 @@ import {
   filterSwitcherActions,
   memberCountLabel,
   orderBoardsForSwitcher,
+  splitArchivedBoards,
 } from './board-switcher';
 
 describe('board templates', () => {
@@ -78,5 +79,19 @@ describe('board switcher', () => {
     expect(filterSwitcherActions(actions, 'sett')).toEqual([actions[1]]);
     expect(filterSwitcherActions(actions, 'zzz')).toEqual(actions);
     expect(filterSwitcherActions(actions, '')).toEqual(actions);
+  });
+});
+
+describe('splitArchivedBoards', () => {
+  it('keeps archived boards out of the main list, order intact', () => {
+    const boards = [
+      { id: 'a', archived: false },
+      { id: 'b', archived: true },
+      { id: 'c', archived: null },
+      { id: 'd', archived: true },
+    ];
+    const { active, archived } = splitArchivedBoards(boards);
+    expect(active.map((b) => b.id)).toEqual(['a', 'c']);
+    expect(archived.map((b) => b.id)).toEqual(['b', 'd']);
   });
 });

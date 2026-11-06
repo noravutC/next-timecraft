@@ -8,6 +8,7 @@ interface InlineTitleProps {
   value: string;
   onCommit: (next: string) => void;
   className?: string;
+  readOnly?: boolean;
 }
 
 // 24/32 semibold; the hover fill bleeds 8px left so text stays on the grid
@@ -18,6 +19,7 @@ export const InlineTitle = ({
   value,
   onCommit,
   className,
+  readOnly = false,
 }: InlineTitleProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -64,6 +66,14 @@ export const InlineTitle = ({
           className,
         )}
       />
+    );
+  }
+
+  if (readOnly) {
+    return (
+      <div className={cn(titleClass, 'text-ink', className)}>
+        {value || 'Untitled task'}
+      </div>
     );
   }
 

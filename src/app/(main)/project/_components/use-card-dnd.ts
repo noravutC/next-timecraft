@@ -38,12 +38,15 @@ export function useCardDnd({
   card,
   columnId,
   isLoading,
+  canDrag,
   outerRef,
   innerRef,
 }: {
   card: TCard;
   columnId: string;
   isLoading: boolean;
+  /** false on a board the user can't change (viewer, or archived) */
+  canDrag: boolean;
   outerRef: RefObject<HTMLDivElement | null>;
   innerRef: RefObject<HTMLDivElement | null>;
 }): TCardState {
@@ -75,6 +78,7 @@ export function useCardDnd({
     return combine(
       draggable({
         element: inner,
+        canDrag: () => canDrag,
         getInitialData: ({ element }) =>
           getCardData({
             card,
@@ -123,7 +127,7 @@ export function useCardDnd({
         onDrop: () => setState(idle),
       }),
     );
-  }, [card, columnId, isLoading, outerRef, innerRef]);
+  }, [card, columnId, isLoading, canDrag, outerRef, innerRef]);
 
   return state;
 }

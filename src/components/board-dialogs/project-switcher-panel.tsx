@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Settings2, UserPlus } from 'lucide-react';
+import { ChevronRight, Plus, Settings2, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore } from '@/store';
 import {
   CommandDialog,
   CommandGroup,
   CommandInput,
+  CommandItem,
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command';
@@ -15,7 +16,9 @@ import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
 import {
   filterSwitcherActions,
   orderBoardsForSwitcher,
+  splitArchivedBoards,
 } from '@/helper/utils/board-switcher';
+import { cn } from '@/lib/utils';
 import { SwitcherBoardItem } from './parts/switcher-board-item';
 import { SwitcherActionItem } from './parts/switcher-action-item';
 import { SwitcherFooter } from './parts/switcher-footer';
@@ -38,12 +41,16 @@ export const ProjectSwitcherPanel = ({
   const workspaceName = useWorkspaceName();
 
   const [query, setQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
   // เปิดใหม่ทุกครั้งเริ่มค้นจากช่องว่าง (adjust-state-on-prop-change ไม่ใช้ effect)
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setQuery('');
+    if (open) {
+      setQuery('');
+      setShowArchived(false);
+    }
   }
 
   const current = projectIsUsing ? projects[projectIsUsing] : null;
@@ -52,6 +59,13 @@ export const ProjectSwitcherPanel = ({
     projectIsUsing,
     query,
   );
+  const { active, archived } = splitArchivedBoards(boards);
+  // a search reaches into the archive; otherwise it stays folded
+  const archivedOpen = showArchived || Boolean(query.trim());
+  const selectBoard = (id: string) => {
+    setProjectIsUsing(id);
+    onClose();
+  };
   const actions = filterSwitcherActions(
     [
       {
@@ -106,17 +120,43 @@ export const ProjectSwitcherPanel = ({
           <CommandGroup
             heading={workspaceName ? `Boards in ${workspaceName}` : 'Boards'}
           >
-            {boards.map((project) => (
+            {active.map((project) => (
               <SwitcherBoardItem
                 key={project.id}
                 project={project}
                 isCurrent={project.id === projectIsUsing}
-                onSelect={() => {
-                  setProjectIsUsing(project.id);
-                  onClose();
-                }}
+                onSelect={() => selectBoard(project.id)}
               />
             ))}
+            {archived.length > 0 && (
+              <CommandItem
+                value="archived-boards"
+                onSelect={() => setShowArchived((v) => !v)}
+                aria-expanded={archivedOpen}
+                className="h-9 text-ink-muted"
+              >
+                <ChevronRight
+                  className={cn(
+                    'size-3.5 transition-transform',
+                    archivedOpen && 'rotate-90',
+                  )}
+                />
+                Archived boards
+                <span className="font-mono text-xs text-ink-subtle">
+                  {archived.length}
+                </span>
+              </CommandItem>
+            )}
+            {archivedOpen &&
+              archived.map((project) => (
+                <SwitcherBoardItem
+                  key={project.id}
+                  project={project}
+                  isCurrent={project.id === projectIsUsing}
+                  onSelect={() => selectBoard(project.id)}
+                  className="pl-8"
+                />
+              ))}
           </CommandGroup>
         )}
         <CommandSeparator alwaysRender />

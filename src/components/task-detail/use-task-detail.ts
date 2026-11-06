@@ -13,6 +13,7 @@ import { useTaskSubtasks } from '@/store/sync-live-data/useTaskSubtasks';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { withSettingsDefaults } from '@/types/project-settings';
 import { boardUrl } from '@/helper/utils/board-url';
+import { useBoardAccess } from '@/components/project/use-board-access';
 import type { UpdateTaskPayload } from '@/types';
 
 /**
@@ -49,6 +50,16 @@ export function useTaskDetail() {
 
   const { data: session } = useSession();
   const userId = session?.user?.id ?? null;
+
+  // a viewer, or anyone on an archived board, gets a read-only sheet
+  const access = useBoardAccess();
+  const readOnly = !access.can('task:update');
+  const canComment = access.can('task:comment');
+  const canReact = access.can('comment:react');
+  const canManageOwnComments = access.can('comment:update');
+  const commentBlockedNote = access.archived
+    ? 'This board is archived. Restore it to comment.'
+    : 'Viewers can read and react to comments, but can’t write them.';
   const userName = session?.user?.name ?? 'You';
   const userAvatar = session?.user?.image ?? null;
 
@@ -176,5 +187,10 @@ export function useTaskDetail() {
     handleStatusChange,
     handleCopyLink,
     handleArchive,
+    readOnly,
+    canComment,
+    canReact,
+    canManageOwnComments,
+    commentBlockedNote,
   };
 }

@@ -19,11 +19,16 @@ const PICK_ORDER = [...PRIORITY_ORDER].reverse();
 interface PriorityPickerProps {
   value: TaskPriority;
   onChange: (next: TaskPriority) => void;
+  disabled?: boolean;
 }
 
-export const PriorityPicker = ({ value, onChange }: PriorityPickerProps) => (
+export const PriorityPicker = ({
+  value,
+  onChange,
+  disabled,
+}: PriorityPickerProps) => (
   <DropdownMenu>
-    <DropdownMenuTrigger asChild>
+    <DropdownMenuTrigger asChild disabled={disabled}>
       <Button variant="ghost" className={propertyButtonClass}>
         <PriorityBars priority={value} decorative />
         {PRIORITY_STYLES[value].label}

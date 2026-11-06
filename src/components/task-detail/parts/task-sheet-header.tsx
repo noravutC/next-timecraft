@@ -15,6 +15,7 @@ interface TaskSheetHeaderProps {
   activeColumnId: string;
   onStatusChange: (columnId: string) => void;
   onCopyLink: () => void;
+  readOnly?: boolean;
 }
 
 /** Board / status breadcrumb, copy link and close. */
@@ -24,6 +25,7 @@ export const TaskSheetHeader = ({
   activeColumnId,
   onStatusChange,
   onCopyLink,
+  readOnly = false,
 }: TaskSheetHeaderProps) => (
   <header className="flex h-13 shrink-0 items-center gap-2 border-b border-line pr-2.5 pl-5">
     {project && (
@@ -45,6 +47,7 @@ export const TaskSheetHeader = ({
       columns={columns}
       activeColumnId={activeColumnId}
       onChange={onStatusChange}
+      disabled={readOnly}
     />
     <div className="flex-1" />
     <Button
