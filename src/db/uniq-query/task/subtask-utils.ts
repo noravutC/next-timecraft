@@ -9,6 +9,8 @@ export async function getSubtaskTaskLink(subtaskId: string) {
       subtaskId: subtasksTable.id,
       taskId: subtasksTable.taskId,
       projectId: columnsTable.projectId,
+      title: subtasksTable.title,
+      completed: subtasksTable.completed,
     })
     .from(subtasksTable)
     .innerJoin(tasksTable, eq(subtasksTable.taskId, tasksTable.id))

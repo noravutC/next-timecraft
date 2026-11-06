@@ -1,6 +1,10 @@
 import { db } from "@/db";
 import { tasksTable } from "@/db/schema";
 import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
+import {
+  getColumnRefs,
+  recordTaskActivities,
+} from "@/db/uniq-query/task/activity-utils";
 import { createHandle } from "@/lib/api/handle";
 import { NotFoundError } from "@/lib/api/errors";
 import { triggerExclusive } from "@/lib/pusher-server";
@@ -41,6 +45,18 @@ export const POST = createHandle<CreateTaskBody>(
       .insert(tasksTable)
       .values(rowsToInsert)
       .returning();
+
+    const columnRefs = await getColumnRefs(columnIds);
+    await recordTaskActivities(
+      userId,
+      createdTasks.map((task) => ({
+        taskId: task.id,
+        entry: {
+          type: "created",
+          data: { column: columnRefs.get(task.columnId) ?? null },
+        },
+      })),
+    );
 
     const projectByColumn = new Map(
       columnLinks.map((c) => [c.columnId, c.projectId]),

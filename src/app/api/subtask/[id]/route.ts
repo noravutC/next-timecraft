@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { subtasksTable } from '@/db/schema';
 import { getSubtaskTaskLink } from '@/db/uniq-query/task/subtask-utils';
+import { recordTaskActivities } from '@/db/uniq-query/task/activity-utils';
 import { NotFoundError } from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
 import { triggerExclusive } from '@/lib/pusher-server';
@@ -50,6 +51,21 @@ export const PATCH = createParamHandle<RouteParams, UpdateSubtaskBody>(
       broadcastSubtaskProgress(request, link.projectId, link.taskId).catch(
         (e) => console.error('Pusher subtask-progress failed:', e),
       );
+    }
+    if (
+      updated &&
+      body.completed !== undefined &&
+      body.completed !== link.completed
+    ) {
+      await recordTaskActivities(userId, [
+        {
+          taskId: link.taskId,
+          entry: {
+            type: body.completed ? 'subtask_completed' : 'subtask_reopened',
+            data: { title: updated.title },
+          },
+        },
+      ]);
     }
 
     return NextResponse.json(

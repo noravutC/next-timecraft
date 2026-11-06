@@ -1,4 +1,6 @@
 import { db } from "@/db";
+import { recordTaskActivities } from "@/db/uniq-query/task/activity-utils";
+import { getPublicUsersByIds } from "@/db/uniq-query/user/user-utils";
 import { projectMembersTable } from "@/db/schema";
 import type { TaskAssignedNotificationPayload } from "@/db/schema";
 import { createNotifications } from "@/db/uniq-query/notification/notification-utils";
@@ -64,10 +66,29 @@ export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
       validUserIds = members.map((m) => m.userId);
     }
 
-    const { assignees: updated, added } = await setAssignees(
-      taskId,
-      validUserIds,
-    );
+    const {
+      assignees: updated,
+      added,
+      removed,
+    } = await setAssignees(taskId, validUserIds);
+    if (added.length > 0 || removed.length > 0) {
+      const names = new Map(
+        (await getPublicUsersByIds([...added, ...removed])).map((u) => [
+          u.id,
+          u.fullName,
+        ]),
+      );
+      const person = (id: string) => ({ id, name: names.get(id) ?? "" });
+      await recordTaskActivities(userId, [
+        {
+          taskId,
+          entry: {
+            type: "assignees_changed",
+            data: { added: added.map(person), removed: removed.map(person) },
+          },
+        },
+      ]);
+    }
     triggerExclusive(
       request,
       `project-${link.projectId}`,
