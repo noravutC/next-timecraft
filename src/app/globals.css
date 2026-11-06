@@ -4,11 +4,106 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* type scale (px): 4xs 9 · 3xs 10 · 2xs 11 · xs 12 · sm 13 · base 14 · md 15 ·
+     lg 17 · xl 20 · 2xl 24 · 3xl 32. Body copy is base; controls are sm.
+     Role sizes (font-size / line-height):
+       copy 16/26 and lead 18/28: marketing paragraphs and hero leads
+       title-sm 22/28 and title 28/34: invite cards, sign-in and onboarding
+       price 44/48: plan price
+     Display sizes are fluid like the prototype (min, vw, max at 1440):
+       heading 32-44 and heading-sm 30-42: section headings
+       cta 36-56 and cta-sm 36-52: closing call to action
+       display 44-76 and display-sm 42-72: page hero */
+  --text-4xs: 0.5625rem; /* initials in 20-22px avatars */
+  --text-4xs--line-height: 1;
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 1;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
   --text-xs: 0.75rem;
-  --text-sm: 0.85rem;
-  --text-md: 0.95rem;
-  --text-lg: 1.05rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.375rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5rem;
   --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.375rem;
+  --text-copy: 1rem;
+  --text-copy--line-height: 1.625rem;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.75rem;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.75rem;
+  --text-title: 1.75rem;
+  --text-title--line-height: 2.125rem;
+  --text-price: 2.75rem;
+  --text-price--line-height: 3rem;
+  --text-heading-sm: clamp(1.875rem, 4vw, 2.625rem);
+  --text-heading-sm--line-height: 1.1;
+  --text-heading: clamp(2rem, 4.4vw, 2.75rem);
+  --text-heading--line-height: 1.1;
+  --text-cta-sm: clamp(2.25rem, 5vw, 3.25rem);
+  --text-cta-sm--line-height: 1.05;
+  --text-cta: clamp(2.25rem, 5.4vw, 3.5rem);
+  --text-cta--line-height: 1.05;
+  --text-display-sm: clamp(2.625rem, 6.4vw, 4.5rem);
+  --text-display-sm--line-height: 1.02;
+  --text-display: clamp(2.75rem, 7vw, 4.75rem);
+  --text-display--line-height: 1.02;
+
+  /* elevation: only things that float get a shadow */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+  --shadow-card-drag: 0 16px 32px -12px rgba(0, 0, 0, 0.28);
+  --shadow-segment: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-popover:
+    0 12px 32px -8px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-toast: 0 12px 32px -8px rgba(0, 0, 0, 0.16);
+  --shadow-sheet:
+    0 24px 64px -16px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-dialog:
+    0 24px 64px -16px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --radius-popover: 0.625rem;
+
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-warning-text: var(--warning-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-danger-text: var(--danger-text);
+  --color-danger-muted: var(--danger-muted);
+  --color-tone-violet: var(--tone-violet);
+  --color-tone-violet-fg: var(--tone-violet-fg);
+  --color-tone-blue: var(--tone-blue);
+  --color-tone-blue-fg: var(--tone-blue-fg);
+  --color-tone-green: var(--tone-green);
+  --color-tone-green-fg: var(--tone-green-fg);
+  --color-tone-orange: var(--tone-orange);
+  --color-tone-orange-fg: var(--tone-orange-fg);
+  --color-tone-red: var(--tone-red);
+  --color-tone-red-fg: var(--tone-red-fg);
+  --color-tone-pink: var(--tone-pink);
+  --color-tone-pink-fg: var(--tone-pink-fg);
+  --color-tone-cyan: var(--tone-cyan);
+  --color-tone-cyan-fg: var(--tone-cyan-fg);
+  --color-tone-slate: var(--tone-slate);
+  --color-tone-slate-fg: var(--tone-slate-fg);
   /* --text-xs: 0.9rem;
   --text-2xs: 0.95rem;
   --text-sm: 1rem;
@@ -25,9 +120,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans:
-    var(--font-jakarta-sans), var(--font-noto-thai), "Plus Jakarta Sans",
-    "Noto Sans Thai", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+    var(--font-geist-sans), var(--font-noto-thai), "Geist", "Noto Sans Thai",
+    -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, "Cascadia Code", "Source Code Pro",
+    Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -79,26 +176,26 @@
 :root {
   --text-color-primary: #44546f;
   --text-color-column-table: #505258;
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: var(--ink);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* --primary: oklch(0.205 0 0); */
-  --primary: var(--brand);
+  --popover-foreground: var(--ink);
+  /* primary actions are ink (monochrome UI); brand is reserved for the logo, focus accents and AI */
+  --primary: var(--ink);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: var(--brand);
+  --secondary: #f5f5f5;
+  --secondary-foreground: var(--ink);
+  --muted: #f5f5f5;
+  --muted-foreground: #707070;
+  --accent: #f5f5f5;
+  --accent-foreground: var(--ink);
+  --destructive: #c9302c;
+  --border: #ebebeb;
+  --input: #e0e0e0;
+  --ring: var(--ink);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -124,31 +221,62 @@
      line     : hairline borders
      priority-*: task priority — solid = dot/flag, -text = chip text,
                  -soft = tinted fill, -line = tinted border */
-  --brand: #5b50e6;
-  --brand-dark: #4a40d6;
-  --brand-soft: #eeedfc;
-  --brand-line: #d9d7f5;
-  --ink: #1d1e26;
-  --ink-muted: #6b7180;
-  --ink-subtle: #8a8f9c;
-  --ink-faint: #a8adb8;
-  --surface: #f6f7f9; /* board bg — ตรงกับ design source (TimeCraft Board.dc.html) */
-  --surface-hover: #f2f3f6;
-  --surface-active: #edeef2;
-  --surface-column: #ffffff; /* column fill — เปลี่ยนเป็นขาวตามที่ตกลง (เดิม #f0f1f4 จาก design source) */
-  --line: #ecedf1;
-  --priority-low: #10b981;
-  --priority-low-soft: rgba(16, 185, 129, 0.1);
-  --priority-low-line: rgba(16, 185, 129, 0.3);
-  --priority-low-text: #047857;
-  --priority-medium: #f59e0b;
-  --priority-medium-soft: rgba(245, 158, 11, 0.1);
-  --priority-medium-line: rgba(245, 158, 11, 0.3);
-  --priority-medium-text: #b45309;
-  --priority-high: #ef4444;
-  --priority-high-soft: rgba(239, 68, 68, 0.1);
-  --priority-high-line: rgba(239, 68, 68, 0.3);
-  --priority-high-text: #b91c1c;
+  --brand: #5145cd; /* = logo color */
+  --brand-dark: #4338ca;
+  --brand-soft: #eeedfb;
+  --brand-line: #d9d6f5;
+  --ink: #171717;
+  --ink-muted: #4d4d4d;
+  --ink-subtle: #707070;
+  --ink-faint: #8f8f8f; /* icons / placeholders only — below 4.5:1 for body text */
+  --surface: #fafafa;
+  --surface-hover: #f5f5f5;
+  --surface-active: #f0f0f0;
+  --surface-column: #fafafa; /* board lanes sit on a white canvas */
+  --line: #ebebeb;
+  --line-soft: #f0f0f0; /* dividers inside a surface */
+  --line-strong: #d4d4d4; /* hover borders, dashed slots, unchecked boxes */
+  --success: #10b981;
+  --success-soft: #e3f4ec;
+  --success-text: #11643f;
+  --warning: #a35a00; /* due soon */
+  --warning-tint: #fef3e2;
+  --warning-soft: #fff8ee;
+  --warning-line: #f5d9b5;
+  --warning-text: #6b3a00;
+  --danger-soft: #fdecea;
+  --danger-line: #f3c7c3;
+  --danger-text: #b42318;
+  --danger-muted: #b4655f;
+  /* monogram tones for avatars and board tiles: pastel fill + dark letter */
+  --tone-violet: #eceafd;
+  --tone-violet-fg: #3f35b8;
+  --tone-blue: #e4eefc;
+  --tone-blue-fg: #1d4e9e;
+  --tone-green: #e3f4ec;
+  --tone-green-fg: #11643f;
+  --tone-orange: #fdeedc;
+  --tone-orange-fg: #8a4600;
+  --tone-red: #fde8e8;
+  --tone-red-fg: #9b1c1c;
+  --tone-pink: #fce7f3;
+  --tone-pink-fg: #9d174d;
+  --tone-cyan: #def4f7;
+  --tone-cyan-fg: #0e6170;
+  --tone-slate: #eef0f3;
+  --tone-slate-fg: #3e4a5c;
+  --priority-low: #8f8f8f;
+  --priority-low-soft: #f5f5f5;
+  --priority-low-line: #e0e0e0;
+  --priority-low-text: #4d4d4d;
+  --priority-medium: #b26200;
+  --priority-medium-soft: rgba(178, 98, 0, 0.08);
+  --priority-medium-line: rgba(178, 98, 0, 0.25);
+  --priority-medium-text: #8a4600;
+  --priority-high: #d93036;
+  --priority-high-soft: rgba(217, 48, 54, 0.08);
+  --priority-high-line: rgba(217, 48, 54, 0.25);
+  --priority-high-text: #b42318;
 }
 
 .dark {
@@ -251,89 +379,93 @@
   animation: tc-float 7s ease-in-out infinite;
 }
 
-/* === TimeCraft signature loader === */
-/* three brand bars rise in a staggered wave, like a timeline being built */
-.tc-load {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: var(--tc-g, 5px);
-  height: var(--tc-h, 30px);
+/* animated logo mark (LogoLoading): the T draws itself, then the dash slides in */
+.tc-logo-base {
+  opacity: 0.22;
 }
-.tc-load > i {
-  display: block;
-  width: var(--tc-w, 6px);
-  height: 100%;
-  border-radius: 999px;
-  transform-origin: bottom;
-  background: var(--tc-bar, var(--brand));
-  animation: tc-bar 1.15s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
+.tc-logo-loop {
+  animation: tc-logo-loop 2.4s linear infinite;
 }
-.tc-load > i:nth-child(1) {
-  animation-delay: 0s;
-  opacity: 0.9;
+.tc-logo-bar,
+.tc-logo-stem {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
 }
-.tc-load > i:nth-child(2) {
-  animation-delay: 0.13s;
+.tc-logo-bar {
+  animation: tc-logo-bar 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-.tc-load > i:nth-child(3) {
-  animation-delay: 0.26s;
-  opacity: 0.8;
+.tc-logo-stem {
+  animation: tc-logo-stem 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-@keyframes tc-bar {
-  0%,
-  100% {
-    transform: scaleY(0.32);
-    opacity: 0.35;
+.tc-logo-dash {
+  animation: tc-logo-dash 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+@keyframes tc-logo-loop {
+  0% {
+    opacity: 0;
   }
-  45% {
-    transform: scaleY(1);
+  6%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes tc-logo-bar {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  25%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tc-logo-stem {
+  0%,
+  20% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
     opacity: 1;
   }
 }
-
-/* soft pulsing ring behind the mark (full-screen variant) */
-.tc-ring::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 55%);
-  animation: tc-pulse 1.9s ease-out infinite;
-}
-@keyframes tc-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 55%);
+@keyframes tc-logo-dash {
+  0%,
+  45% {
+    opacity: 0;
+    transform: translateX(6px);
   }
-  70% {
-    box-shadow: 0 0 0 22px color-mix(in oklab, var(--brand), transparent 100%);
-  }
+  65%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand), transparent 100%);
+    opacity: 1;
+    transform: translateX(0);
   }
 }
-
-/* track-fill bar that sweeps across (full-screen variant) */
-.tc-track {
-  position: relative;
-  overflow: hidden;
-}
-.tc-track::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 40%;
-  border-radius: 999px;
-  background: var(--tc-bar, var(--brand));
-  animation: tc-sweep 1.5s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
-}
-@keyframes tc-sweep {
-  0% {
-    left: -42%;
-  }
+/* reduced motion: no drawing, the full mark fades in and out so loading
+   still reads as "in progress" */
+@keyframes tc-logo-pulse {
+  0%,
   100% {
-    left: 102%;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tc-logo-base {
+    opacity: 1;
+    animation: tc-logo-pulse 1.6s ease-in-out infinite;
+  }
+  .tc-logo-loop {
+    display: none;
   }
 }
 
@@ -356,7 +488,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* icon weight from the UI kit; heavier marks opt in with stroke-2 / stroke-3 */
+  .lucide {
+    stroke-width: 1.75;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-base text-foreground antialiased;
   }
 }

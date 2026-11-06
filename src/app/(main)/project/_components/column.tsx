@@ -5,17 +5,16 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { TColumn } from './data';
 import { blockBoardPanningAttr } from './data-attributes';
 import { Card, CardShadow } from './card';
-import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
+import { useTaskStore } from '@/store/use-task.store';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
+import { Button } from '@/components/ui/button';
+import { useNavStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useColumnStore } from '@/store/use-column.store';
-import {
-  selectFilterKey,
-  useBoardFilterStore,
-} from '@/store/use-board-filter.store';
+import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
+import { CardSkeleton } from './card-skeleton';
 import { TColumnState, useColumnDnd } from './use-column-dnd';
 
 const stateStyles: Record<TColumnState['type'], string> = {
@@ -55,8 +54,9 @@ export const Column = ({
   const innerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
-  const filterKey = useBoardFilterStore(selectFilterKey);
+  const isFiltering = useBoardFilterStore(
+    (s) => s.toFilterPayload() !== undefined,
+  );
   const loadMoreTasks = useTaskStore((s) => s.loadMoreTasks);
   const isLoadingMore = useTaskStore(
     (s) => s.loadMoreLoader[column.id] ?? false,
@@ -73,10 +73,14 @@ export const Column = ({
   // composer เปิดตรงไหน การ์ดใหม่ลงตรงนั้น: '+' บน header → top, ปุ่มล่าง → bottom
   const [addingAt, setAddingAt] = useState<'top' | 'bottom' | null>(null);
 
-  // fetch task หน้าแรกของ column นี้เมื่อ mount และทุกครั้งที่ filter เปลี่ยน
-  useEffect(() => {
-    fetchTasksByColumns([column.id], TASK_PAGE_SIZE).catch(() => {});
-  }, [column.id, fetchTasksByColumns, filterKey]);
+  // ปุ่ม "New task" บนแถบเครื่องมือ → เปิด composer บนสุดของ column แรก
+  // (ปรับ state ระหว่าง render ตาม signal ที่เปลี่ยน แทน useEffect)
+  const newTaskSignal = useNavStore((s) => s.newTaskSignal);
+  const [seenSignal, setSeenSignal] = useState(newTaskSignal);
+  if (newTaskSignal !== seenSignal) {
+    setSeenSignal(newTaskSignal);
+    if (allColumns[0]?.id === column.id) setAddingAt('top');
+  }
 
   // เลื่อนใกล้ท้าย list แล้วยังมี task เหลือ → โหลดเพิ่มทีละ TASK_PAGE_SIZE
   useEffect(() => {
@@ -98,14 +102,14 @@ export const Column = ({
 
   return (
     <div
-      className={cn('flex w-[290px] flex-shrink-0 flex-col select-none')}
+      className="flex h-full w-67 shrink-0 flex-col select-none"
       ref={outerFullHeightRef}
       data-testid="board-column"
       data-column-name={column.title}
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-15.5rem)] min-h-60 flex-col overflow-hidden rounded-2xl border border-line/80 bg-surface-column text-gray-800 shadow-[0_1px_2px_rgba(20,22,35,0.03),0_6px_16px_rgba(20,22,35,0.05)] ${stateStyles[state.type]}`,
+          `flex max-h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line-soft bg-surface text-ink ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
@@ -114,37 +118,39 @@ export const Column = ({
           className={`flex max-h-full min-h-0 flex-1 flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}
         >
           <div
-            className="h-1.5 w-full flex-shrink-0"
-            style={{ backgroundColor: column.color ?? '#94A3B8' }}
-          />
-          <div
-            className="flex flex-row items-center gap-2 px-3 pt-2.5 pb-2"
+            className="flex h-11 flex-row items-center gap-2 pr-1.5 pl-3.5"
             ref={headerRef}
           >
-            <div className="text-md font-bold text-ink">{column.title}</div>
-            <Badge
-              variant="outline"
+            <span
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: column.color ?? '#94A3B8' }}
+            />
+            <h2 className="truncate text-sm font-semibold text-ink">
+              {column.title}
+            </h2>
+            <span
               className={cn(
-                'rounded-full border-transparent px-1.75 py-0.25 text-xs font-semibold',
+                'font-mono text-xs',
                 column.wipLimit > 0 && column.totalTasks > column.wipLimit
-                  ? 'bg-red-100/80 text-red-600'
-                  : 'bg-white/80 text-ink-subtle',
+                  ? 'font-medium text-destructive'
+                  : 'text-ink-subtle',
               )}
             >
               {column.wipLimit > 0
                 ? `${column.totalTasks}/${column.wipLimit}`
                 : column.totalTasks}
-            </Badge>
+            </span>
             <div className="flex-1" />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setAddingAt('top')}
-              aria-label="Add a card to top"
+              aria-label={`Add a card to the top of ${column.title}`}
               disabled={isLoading}
-              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-white/80 hover:text-brand disabled:cursor-default disabled:opacity-50"
+              className="size-7 text-ink-subtle hover:bg-surface-active hover:text-ink"
             >
-              <Plus size={16} />
-            </button>
+              <Plus className="size-3.75" />
+            </Button>
           </div>
           {addingAt === 'top' && (
             <AddCardInline
@@ -159,15 +165,14 @@ export const Column = ({
           )}
           <div
             className={
-              'scrollbar-thin-y scrollbar-light flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [overflow-anchor:none]'
+              'scrollbar-thin-y scrollbar-light flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [overflow-anchor:none]'
             }
             ref={scrollableRef}
           >
             {isLoading ? (
-              <div className="flex flex-col gap-2 p-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-25 w-full rounded-md" />
-                ))}
+              <div className="flex flex-col gap-2 px-2">
+                <CardSkeleton />
+                <CardSkeleton />
               </div>
             ) : (
               <CardList column={column} allColumns={allColumns} />
@@ -181,27 +186,18 @@ export const Column = ({
             )}
             {isLoadingMore && (
               <div className="flex flex-shrink-0 justify-center py-2">
-                <span
-                  className="tc-load"
-                  style={
-                    { '--tc-h': '18px', '--tc-w': '4px' } as React.CSSProperties
-                  }
-                >
-                  <i />
-                  <i />
-                  <i />
-                </span>
+                <Loader size="sm" />
               </div>
             )}
             {!isLoading &&
               column.cards.length === 0 &&
               state.type !== 'is-card-over' && (
-                <div className="px-3 py-8 text-center text-xs font-medium text-ink-faint">
-                  No tasks yet
+                <div className="mx-2 grid h-18 shrink-0 place-items-center rounded-lg border border-dashed border-input text-xs text-ink-subtle">
+                  {isFiltering ? 'No matching tasks' : 'No tasks yet'}
                 </div>
               )}
             {state.type === 'is-card-over' && !state.isOverChildCard && (
-              <div className="flex-shrink-0 px-3 py-1">
+              <div className="flex-shrink-0 px-2 py-1">
                 <CardShadow dragging={state.dragging} />
               </div>
             )}
@@ -215,16 +211,18 @@ export const Column = ({
               onClose={() => setAddingAt(null)}
             />
           ) : (
-            <div className="px-1.5 pt-1 pb-1.5">
-              <button
-                type="button"
+            <div className="mx-2 mt-1.5 mb-2 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setAddingAt('bottom')}
                 disabled={isLoading}
-                className="flex w-full cursor-pointer flex-row items-center gap-1.75 rounded-lg p-2.5 text-left text-sm font-semibold text-ink-subtle hover:bg-white/80 hover:text-brand disabled:cursor-default disabled:opacity-50"
+                aria-label={`Add a card to the bottom of ${column.title}`}
+                className="w-full justify-start px-2 font-normal text-ink-subtle hover:bg-surface-active hover:text-ink"
               >
-                <Plus size={15} />
-                Add a card
-              </button>
+                <Plus className="size-3.5" />
+                Add card
+              </Button>
             </div>
           )}
         </div>

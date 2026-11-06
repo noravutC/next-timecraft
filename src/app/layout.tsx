@@ -1,18 +1,24 @@
-import { Noto_Sans_Thai, Plus_Jakarta_Sans } from 'next/font/google';
+import { Geist, Geist_Mono, Noto_Sans_Thai } from 'next/font/google';
 // import './globals.css';
 import './globals.css';
 import AuthProvider from '@/components/SessionProvider';
 import { Toaster } from '@/components/ui/sonner';
 
-const jakartaSans = Plus_Jakarta_Sans({
-  variable: '--font-jakarta-sans',
+const geistSans = Geist({
+  variable: '--font-geist-sans',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 
-// ฟอนต์คู่สำหรับตัวอักษรไทย — Jakarta ไม่มี glyph ไทย เบราว์เซอร์จะ
-// fallback มาตัวนี้เฉพาะตัวไทย ส่วน Latin ยังเป็น Jakarta ตามเดิม
+// ตัวเลข / เวลา / คีย์ลัด (font-mono)
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+// ฟอนต์คู่สำหรับตัวอักษรไทย — Geist ไม่มี glyph ไทย เบราว์เซอร์จะ
+// fallback มาตัวนี้เฉพาะตัวไทย ส่วน Latin ยังเป็น Geist ตามเดิม
 const notoSansThai = Noto_Sans_Thai({
   variable: '--font-noto-thai',
   subsets: ['thai'],
@@ -32,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full w-full overflow-hidden ${jakartaSans.variable} ${notoSansThai.variable}`}
+      className={`h-full w-full overflow-hidden ${geistSans.variable} ${geistMono.variable} ${notoSansThai.variable}`}
     >
       <body className="h-full w-full overflow-hidden font-sans">
         <AuthProvider>

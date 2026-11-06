@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
-import { Space_Mono } from 'next/font/google';
 import './case-study.css';
 import { AboutSection } from './_components/case-study/about-section';
-import { BackgroundCanvas } from './_components/case-study/background-canvas';
 import { CaseStudyFooter } from './_components/case-study/case-study-footer';
 import { CaseStudyHero } from './_components/case-study/case-study-hero';
 import { CaseStudyNav } from './_components/case-study/case-study-nav';
@@ -12,13 +10,6 @@ import { EngineeringHighlights } from './_components/case-study/engineering-high
 import { HeroBoard } from './_components/case-study/hero-board';
 import { SyncDemoSection } from './_components/case-study/sync-demo-section';
 
-const spaceMono = Space_Mono({
-  variable: '--font-space-mono',
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
   title: 'Noravut Chanthalay · Full-Stack Engineer',
   description:
@@ -27,21 +18,18 @@ export const metadata: Metadata = {
 
 export default function PortfolioPage() {
   return (
-    <div className={spaceMono.variable}>
-      <BackgroundCanvas />
-      <div className="relative z-10 min-h-screen overflow-x-hidden">
-        <CaseStudyNav />
-        <main>
-          <CaseStudyHero />
-          <HeroBoard />
-          <SyncDemoSection />
-          <DecisionsSection />
-          <EngineeringHighlights />
-          <AboutSection />
-          <ContactSection />
-        </main>
-        <CaseStudyFooter />
-      </div>
-    </div>
+    <>
+      <CaseStudyNav />
+      <main>
+        <CaseStudyHero />
+        <HeroBoard />
+        <SyncDemoSection />
+        <DecisionsSection />
+        <EngineeringHighlights />
+        <AboutSection />
+        <ContactSection />
+      </main>
+      <CaseStudyFooter />
+    </>
   );
 }

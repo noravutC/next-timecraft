@@ -15,3 +15,9 @@ export interface UpdateSubtaskPayload {
   completed?: boolean;
   orderFraction?: string;
 }
+
+/** done/total subtasks of one task: the card's "2/4". */
+export interface SubtaskProgress {
+  done: number;
+  total: number;
+}

@@ -39,8 +39,7 @@ a full run rewrites ~230 files. Format only the files you touched.
 - `src/app/(main)/` — authenticated route group; auth guard lives in `(main)/layout.tsx` (not middleware)
 - `src/app/(main)/project/` — Kanban board (main feature)
 - `src/app/api/` — REST API routes (NextAuth + custom)
-- `src/app/login/` — Google OAuth login page
-- `src/middleware.ts` — minimal auth redirect for unauthenticated users
+- `src/app/login/` — sign-in page: Google OAuth and Continue as guest
 
 ### Authentication
 
@@ -151,17 +150,17 @@ Relevant routes for the board:
 
 ### Real-time
 
-Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Hook `useRealtimeBoard(projectId)` subscribes to channel `project-{projectId}` and calls `useTaskStore.updateTaskFromRealtime()` on `task-updated` events.
+Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Every channel is private: subscribe with `privateChannel('project-' + id)` (→ `private-project-{id}`) and the server authorizes it in `/api/pusher/auth`. Hook `useRealtimeBoard(projectId)` subscribes to the project channel and calls `useTaskStore.updateTaskFromRealtime()` on `task-updated` events.
 
 ### Context Providers
 
-- **`BottomBarProvider`** (`src/context/bottom-bar-provider.tsx`) — manages bottom tab: `'bar-board' | 'bar-templates' | 'bar-calendar'`
-- **`ProjectMenuProvider`** (`src/context/project/project-menu-provider.tsx`) — menu state: `'settings' | 'new-project' | 'none'`
-- **`LoadingProvider`** (`src/context/loading-provider.tsx`) — global loading flag
+- **`SettingsContext`** (`src/context/kanban/setting-provider.tsx`) — drag-and-drop tuning (auto-scroll, scroll speeds). Read through its default value; no provider is mounted.
 
-### Bottom-Bar Dialogs (Board Settings / Switch Boards / Create Board)
+### Board Dialogs (Switch Boards / Create Board / Board Settings / Delete)
 
-Board settings, board switcher, and board creation are centered Dialogs opened from the bottom bar — all in `src/components/bottom-menu/` (`board-settings-dialog.tsx`, `project-switcher-panel.tsx`, `create-board-dialog.tsx`). They share one skeleton: `h-[560px] sm:max-w-2xl`, header with brand-soft icon tile + round `DialogClose`, `border-b`/`border-t` section dividers. Keep new bottom-bar dialogs on this same skeleton so switching between them doesn't jump.
+All live in `src/components/board-dialogs/` and are mounted once by `board-dialogs.tsx`. Open them through `useNavStore`: `setBoardDialog('switch' | 'create' | 'settings')`, or `openBoardSettings(tab)` for a tab (`'general' | 'tags' | 'members' | 'danger'`). ⌘K / Ctrl+K toggles the switcher.
+
+Build new ones from the Dialog primitives like the existing ones: `DialogContent` has no padding, compose `DialogHeader` / `DialogBody` / `DialogFooter`. Sizes follow the redesign prototype: switcher is a 600px command palette (cmdk), create board 640px, board settings 720×620 with underline tabs. Deleting a board goes through `ConfirmDialog` with `confirmPhrase` (type the board name).
 
 ### Drag-and-Drop
 

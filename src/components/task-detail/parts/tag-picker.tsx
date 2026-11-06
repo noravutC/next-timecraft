@@ -1,23 +1,21 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { Check, Plus } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  hashTagColor,
-  paletteFor,
-} from "@/lib/project-settings/tag-palette";
-import type { ProjectSettings } from "@/types/project-settings";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
+import type { ProjectSettings } from '@/types/project-settings';
 
 interface TagPickerProps {
   projectTags: string[];
   selectedTags: string[];
-  tagColors: Required<ProjectSettings>["tagColors"];
+  tagColors: Required<ProjectSettings>['tagColors'];
   onChange: (next: string[]) => void;
   trigger?: React.ReactNode;
 }
@@ -29,7 +27,7 @@ export const TagPicker = ({
   onChange,
   trigger,
 }: TagPickerProps) => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const selectedSet = useMemo(() => new Set(selectedTags), [selectedTags]);
 
   const filtered = useMemo(() => {
@@ -49,61 +47,57 @@ export const TagPicker = ({
     <Popover>
       <PopoverTrigger asChild>
         {trigger ?? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-6 gap-1 px-2 font-normal text-ink-subtle"
           >
-            <Plus className="size-3" />
+            <Plus className="size-3.25" />
             Add label
-          </button>
+          </Button>
         )}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0">
-        <div className="border-b border-border p-2">
-          <input
+        <div className="border-b border-line-soft p-1.5">
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search labels…"
-            className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Search labels"
+            aria-label="Search labels"
+            className="h-7.5 border-0 px-2 focus-visible:ring-0"
           />
         </div>
-        <ul className="max-h-56 overflow-y-auto p-1">
+        <div className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 ? (
-            <li className="px-2 py-2 text-xs text-muted-foreground">
-              No labels in project
-            </li>
+            <p className="px-2 py-2 text-sm text-ink-subtle">
+              {projectTags.length === 0
+                ? 'No labels on this board yet'
+                : 'No labels match'}
+            </p>
           ) : (
-            filtered.map((tag) => {
-              const palette = paletteFor(tagColors[tag] ?? hashTagColor(tag));
-              const checked = selectedSet.has(tag);
-              return (
-                <li key={tag}>
-                  <button
-                    type="button"
-                    onClick={() => toggle(tag)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted",
-                      checked && "bg-muted/60",
-                    )}
-                  >
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: palette.value }}
-                    />
-                    <span className="flex-1 truncate" style={{ color: palette.text }}>
-                      {tag}
-                    </span>
-                    {checked && (
-                      <span className="text-[10px] font-semibold text-muted-foreground">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })
+            filtered.map((tag) => (
+              <Button
+                key={tag}
+                variant="ghost"
+                role="menuitemcheckbox"
+                aria-checked={selectedSet.has(tag)}
+                onClick={() => toggle(tag)}
+                className="h-8 w-full justify-start gap-2.5 px-2 font-normal text-ink"
+              >
+                <span
+                  className="mx-0.75 size-2 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor: paletteFor(
+                      tagColors[tag] ?? hashTagColor(tag),
+                    ).value,
+                  }}
+                />
+                <span className="flex-1 truncate text-left">{tag}</span>
+                {selectedSet.has(tag) && <Check className="size-3.75" />}
+              </Button>
+            ))
           )}
-        </ul>
+        </div>
       </PopoverContent>
     </Popover>
   );

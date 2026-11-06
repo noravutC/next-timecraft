@@ -24,3 +24,13 @@ export const toRecord = <
     {} as Record<string, U>,
   );
 };
+
+/** Split an array into consecutive pieces of at most `size` items. */
+export const chunk = <T>(array: T[], size: number): T[][] => {
+  if (size < 1) throw new RangeError("chunk size must be at least 1");
+  const pieces: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    pieces.push(array.slice(i, i + size));
+  }
+  return pieces;
+};

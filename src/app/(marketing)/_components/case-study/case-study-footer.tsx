@@ -1,24 +1,26 @@
+import { GITHUB_URL, LINKEDIN_URL } from './case-study-content';
+
 const FOOTER_LINKS = [
-  { label: 'github', href: 'https://github.com/noravutC' },
-  {
-    label: 'linkedin',
-    href: 'https://www.linkedin.com/in/noravut-chanthalay-2396672b6/',
-  },
+  { label: 'github', href: GITHUB_URL },
+  { label: 'linkedin', href: LINKEDIN_URL },
 ];
 
 export function CaseStudyFooter() {
   return (
-    <footer className="cs-mono flex flex-wrap justify-center gap-6 border-t border-line px-8 py-5.5 text-xs text-ink-subtle">
-      <span>© 2026 Noravut Chanthalay · TimeCraft</span>
-      {FOOTER_LINKS.map((link) => (
-        <a
-          key={link.href}
-          href={link.href}
-          className="text-ink-muted hover:text-brand-dark hover:underline"
-        >
-          {link.label}
-        </a>
-      ))}
+    <footer className="border-t border-line">
+      <div className="mx-auto flex max-w-292 flex-wrap items-center gap-4 p-6 font-mono text-xs leading-6 text-ink-subtle">
+        <span>© 2026 Noravut Chanthalay · TimeCraft</span>
+        <span className="flex-1" />
+        {FOOTER_LINKS.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="transition-colors hover:text-ink"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
     </footer>
   );
 }

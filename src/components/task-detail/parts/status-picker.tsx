@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Check } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,20 +8,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ColumnCache } from '@/types';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { propertyButtonClass } from './property-row';
 
 interface StatusPickerProps {
   columns: ColumnCache[];
   activeColumnId: string;
   onChange: (columnId: string) => void;
-  size?: 'sm' | 'md';
+  /** pill = chip in the sheet header, plain = value in the properties grid */
+  variant?: 'pill' | 'plain';
 }
 
 export const StatusPicker = ({
   columns,
   activeColumnId,
   onChange,
+  variant = 'plain',
 }: StatusPickerProps) => {
   const active = columns.find((c) => c.id === activeColumnId);
   const color = active?.color ?? '#94a3b8';
@@ -29,35 +31,38 @@ export const StatusPicker = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant={'ghost'}
-          size={'xs'}
-          className={cn('gap-2 rounded-full text-xs focus-visible:ring-0')}
-          style={{
-            backgroundColor: `${color}1f`,
-          }}
-        >
-          <span
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          {active?.name ?? 'Status'}
-          <ChevronDown className="size-3 opacity-70" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48">
-        {columns.map((c) => (
-          <DropdownMenuItem
-            key={c.id}
-            onClick={() => onChange(c.id)}
-            className={cn("gap-2 cursor-pointer", active?.id === c.id && 'bg-muted')}
+        {variant === 'pill' ? (
+          <Button
+            variant="outline"
+            size="xs"
+            className="h-6.5 gap-1.5 rounded-full border-line px-2 text-xs text-ink"
           >
             <span
-              className="size-2.5 rounded-full"
+              className="size-1.75 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            {active?.name ?? 'Status'}
+            <ChevronDown className="size-3 text-ink-subtle" />
+          </Button>
+        ) : (
+          <Button variant="ghost" className={propertyButtonClass}>
+            <span
+              className="size-2 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            {active?.name ?? 'Status'}
+          </Button>
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-52">
+        {columns.map((c) => (
+          <DropdownMenuItem key={c.id} onClick={() => onChange(c.id)}>
+            <span
+              className="mx-0.75 size-2 shrink-0 rounded-full"
               style={{ backgroundColor: c.color }}
             />
-            <span className="">{c.name}</span>
-            {active?.id === c.id && <Check className="size-4 ml-auto text-primary" />}
+            <span className="flex-1 truncate">{c.name}</span>
+            {active?.id === c.id && <Check className="text-ink" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

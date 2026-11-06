@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
@@ -22,9 +22,13 @@ export function useTaskDetail() {
   const openTaskId = useTaskDetailStore((s) => s.openTaskId);
   const close = useTaskDetailStore((s) => s.close);
 
-  const task = useTaskStore((s) =>
-    openTaskId ? s.tasks[openTaskId] : undefined,
-  );
+  // งานที่แสดงอยู่ — ค้างไว้หลังปิดเพื่อให้ Sheet เลื่อนออกพร้อมเนื้อหา
+  // (ไม่วูบเป็นหน้าโหลด); subscription ทั้งหมดยังผูกกับ openTaskId
+  const [shownTaskId, setShownTaskId] = useState(openTaskId);
+  if (openTaskId && openTaskId !== shownTaskId) setShownTaskId(openTaskId);
+  const taskId = openTaskId ?? shownTaskId;
+
+  const task = useTaskStore((s) => (taskId ? s.tasks[taskId] : undefined));
   const updateTasks = useTaskStore((s) => s.updateTasks);
   const allTasks = useTaskStore(useShallow((s) => s.tasks));
 
@@ -37,7 +41,7 @@ export function useTaskDetail() {
   const users = useUserStore(useShallow((s) => s.users));
 
   const assigneeState = useAssigneeStore(
-    useShallow((s) => (openTaskId ? s.byTask[openTaskId] : undefined)),
+    useShallow((s) => (taskId ? s.byTask[taskId] : undefined)),
   );
   const fetchAssignees = useAssigneeStore((s) => s.fetch);
   const setAssignees = useAssigneeStore((s) => s.setAll);
@@ -66,9 +70,10 @@ export function useTaskDetail() {
       .sort((a, b) => (a.orderFraction < b.orderFraction ? -1 : 1));
   }, [columnsMap, project]);
 
+  const members = project?.members;
   const memberCandidates = useMemo(() => {
-    if (!project?.members) return [];
-    return project.members
+    if (!members) return [];
+    return members
       .map((m) => {
         const u = users[m.userId];
         return u
@@ -81,7 +86,7 @@ export function useTaskDetail() {
           : null;
       })
       .filter(<T>(c: T | null): c is T => c !== null);
-  }, [project?.members, users]);
+  }, [members, users]);
 
   const assignees = assigneeState?.items ?? [];
   const assigneeIds = assignees.map((a) => a.userId);

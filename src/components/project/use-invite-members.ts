@@ -27,6 +27,8 @@ export function useInviteMembers({ open }: { open: boolean }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<InvitableRole>('editor');
   const [inviting, setInviting] = useState(false);
+  // โชว์ error ใต้ช่องอีเมลหลังกด Invite ด้วยอีเมลไม่ครบ (หายเมื่อพิมพ์ต่อ)
+  const [showEmailError, setShowEmailError] = useState(false);
   const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -39,6 +41,7 @@ export function useInviteMembers({ open }: { open: boolean }) {
       setEmail('');
       setRole('editor');
       setInviting(false);
+      setShowEmailError(false);
     }
   }
 
@@ -66,8 +69,17 @@ export function useInviteMembers({ open }: { open: boolean }) {
     };
   }, [open, canInvite, projectId]);
 
+  const changeEmail = (next: string) => {
+    setEmail(next);
+    setShowEmailError(false);
+  };
+
   const handleInvite = async () => {
-    if (!project || !emailValid || inviting) return;
+    if (!project || inviting) return;
+    if (!emailValid) {
+      setShowEmailError(email.trim().length > 0);
+      return;
+    }
     setInviting(true);
     try {
       const res = await projectServices.inviteMember(project.id, {
@@ -134,7 +146,8 @@ export function useInviteMembers({ open }: { open: boolean }) {
     currentUserId,
     users,
     email,
-    setEmail,
+    setEmail: changeEmail,
+    emailError: showEmailError ? 'Enter a full email address.' : null,
     role,
     setRole,
     inviting,

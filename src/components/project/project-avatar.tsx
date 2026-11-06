@@ -1,9 +1,10 @@
 'use client';
 
-import { Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ICON_OPTIONS } from '@/lib/project-settings/constants';
+import { TONE_STYLES } from '@/components/people/user-avatar';
+import { boardTone } from '@/lib/project-settings/constants';
+import { initialsOf } from '@/helper/utils/person-name';
 import {
   withSettingsDefaults,
   type ProjectSettings,
@@ -17,36 +18,30 @@ interface ProjectAvatarProps {
   };
   size?: string;
   rounded?: string;
+  /** Letter size; pick to match the tile (text-3xs for 18px … text-xs for 28px). */
+  textSize?: string;
   className?: string;
 }
 
+/** Board tile: the board's first letter on its accent tone. */
 export const ProjectAvatar = ({
   project,
   size = 'size-8',
   rounded = 'rounded-lg',
+  textSize = 'text-xs',
   className,
 }: ProjectAvatarProps) => {
-  const settings = withSettingsDefaults(project.settings);
-  const iconOption = ICON_OPTIONS.find((i) => i.id === settings.icon);
-  const tint = settings.color;
+  const tone = boardTone(withSettingsDefaults(project.settings).color);
 
   return (
-    <Avatar
-      className={cn('shrink-0', size, rounded, className)}
-      style={{ backgroundColor: `${tint}1a` }}
-    >
+    <Avatar className={cn('shrink-0', size, rounded, className)}>
       {project.coverImage && (
         <AvatarImage src={project.coverImage} alt={project.name} />
       )}
       <AvatarFallback
-        className={cn('text-base', rounded)}
-        style={{ backgroundColor: `${tint}1a`, color: tint }}
+        className={cn('font-semibold', rounded, textSize, TONE_STYLES[tone])}
       >
-        {iconOption ? (
-          <span aria-hidden="true">{iconOption.emoji}</span>
-        ) : (
-          <Folder className="size-4" />
-        )}
+        {initialsOf(project.name, 1)}
       </AvatarFallback>
     </Avatar>
   );

@@ -1,3 +1,5 @@
+import type { Tone } from '@/helper/utils/avatar-tone';
+
 export const TAG_LIMIT = 24;
 
 export const ICON_OPTIONS: { id: string; emoji: string; label: string }[] = [
@@ -19,16 +21,22 @@ export const ICON_OPTIONS: { id: string; emoji: string; label: string }[] = [
   { id: 'compass', emoji: '🧭', label: 'Compass' },
 ];
 
-export const ACCENT_COLORS = [
-  { value: '#3b82f6', label: 'Blue' },
-  { value: '#10b981', label: 'Emerald' },
-  { value: '#f59e0b', label: 'Amber' },
-  { value: '#ef4444', label: 'Red' },
-  { value: '#ec4899', label: 'Pink' },
-  { value: '#06b6d4', label: 'Cyan' },
-  { value: '#8b5cf6', label: 'Violet' },
-  { value: '#64748b', label: 'Slate' },
+// tone = the monogram tile for boards with this accent (see --tone-* in globals.css)
+export const ACCENT_COLORS: { value: string; label: string; tone: Tone }[] = [
+  { value: '#3b82f6', label: 'Blue', tone: 'blue' },
+  { value: '#10b981', label: 'Emerald', tone: 'green' },
+  { value: '#f59e0b', label: 'Amber', tone: 'orange' },
+  { value: '#ef4444', label: 'Red', tone: 'red' },
+  { value: '#ec4899', label: 'Pink', tone: 'pink' },
+  { value: '#06b6d4', label: 'Cyan', tone: 'cyan' },
+  { value: '#8b5cf6', label: 'Violet', tone: 'violet' },
+  { value: '#64748b', label: 'Slate', tone: 'slate' },
 ];
+
+/** Monogram tone for a board accent color; unknown colors read as violet. */
+export const boardTone = (accent: string | null | undefined): Tone =>
+  ACCENT_COLORS.find((c) => c.value === accent?.toLowerCase())?.tone ??
+  'violet';
 
 export interface TagPalette {
   value: string;
