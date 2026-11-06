@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { privateChannel } from "@/helper/utils/realtime-channel";
 import { pusherClient } from "@/lib/pusher-client";
 import { useTaskStore } from "@/store/use-task.store";
 import { useAssigneeStore } from "@/store/use-assignee.store";
@@ -14,7 +15,7 @@ export const useRealtimeBoard = (projectId?: string | null) => {
   useEffect(() => {
     if (!projectId) return;
 
-    const channelName = `project-${projectId}`;
+    const channelName = privateChannel(`project-${projectId}`);
     const channel = pusherClient.subscribe(channelName);
 
     channel.bind("tasks-created", (tasks: Task[]) => {
