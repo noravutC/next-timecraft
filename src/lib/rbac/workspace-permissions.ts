@@ -14,6 +14,11 @@ export const canCreateBoards = (
   role: WorkspaceRole | null | undefined,
 ): boolean => Boolean(role && WORKSPACE_MANAGERS.has(role));
 
+/** Who may change a workspace's name, logo and time zone. */
+export const canManageWorkspace = (
+  role: WorkspaceRole | null | undefined,
+): boolean => Boolean(role && WORKSPACE_MANAGERS.has(role));
+
 /** Who may invite people to a workspace. */
 export const canInviteToWorkspace = (
   role: WorkspaceRole | null | undefined,

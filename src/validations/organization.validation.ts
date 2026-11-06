@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isTimeZone } from '@/helper/utils/time-zone';
 import { WORKSPACE_INVITABLE_ROLES } from '@/lib/rbac/workspace-permissions';
 
 // What the logo picker produces: a small square PNG, JPEG or WebP data URL.
@@ -12,13 +13,30 @@ const workspaceLogo = z
   .max(MAX_WORKSPACE_LOGO_LENGTH, 'Logo is too large')
   .regex(WORKSPACE_LOGO_PATTERN, 'Logo must be a PNG, JPEG or WebP image');
 
+const workspaceName = z
+  .string()
+  .trim()
+  .min(1, 'Organization name is required')
+  .max(100);
+
+const timeZone = z.string().max(64).refine(isTimeZone, 'Unknown time zone');
+
 export const createOrganizationSchema = z.object({
-  name: z.string().trim().min(1, 'Organization name is required').max(100),
+  name: workspaceName,
   description: z.string().trim().max(1000).nullable().optional(),
   logo: workspaceLogo.nullable().optional(),
+  timeZone: timeZone.optional(),
 });
 
 export type CreateOrganizationBody = z.infer<typeof createOrganizationSchema>;
+
+export const updateOrganizationSchema = z.object({
+  name: workspaceName.optional(),
+  logo: workspaceLogo.nullable().optional(),
+  timeZone: timeZone.optional(),
+});
+
+export type UpdateOrganizationBody = z.infer<typeof updateOrganizationSchema>;
 
 // the onboarding step and the members page send a few addresses at once
 export const MAX_WORKSPACE_INVITES_PER_REQUEST = 20;

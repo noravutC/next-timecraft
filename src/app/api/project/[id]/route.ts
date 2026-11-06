@@ -12,7 +12,8 @@ import {
   updateProjectSchema,
   type UpdateProjectBody,
 } from "@/validations/project.validation";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { NextResponse } from "next/server";
 
 type RouteParams = { id: string };
@@ -23,7 +24,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
     permission: "project:update",
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
-  async ({ params, body }) => {
+  async ({ params, body, userId }) => {
     const projectId = parseId(params.id);
 
     const name = body.name?.trim();
@@ -53,7 +54,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
       );
     }
 
-    const updatePayload: Partial<typeof projectsTable.$inferInsert> = {
+    const updatePayload: PgUpdateSetSource<typeof projectsTable> = {
       updatedAt: new Date(),
     };
     if (name !== undefined) updatePayload.name = name;
@@ -61,8 +62,16 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
       updatePayload.description = body.description.trim() || null;
     if (coverImage !== undefined) updatePayload.coverImage = coverImage;
     if (Array.isArray(body.tags)) updatePayload.tags = body.tags;
-    if (typeof body.archived === "boolean")
+    if (typeof body.archived === "boolean") {
       updatePayload.archived = body.archived;
+      // first archiving keeps its date and person; restoring clears them
+      updatePayload.archivedAt = body.archived
+        ? sql`coalesce(${projectsTable.archivedAt}, now())`
+        : null;
+      updatePayload.archivedBy = body.archived
+        ? sql`coalesce(${projectsTable.archivedBy}, ${userId}::uuid)`
+        : null;
+    }
     if (settingsResult?.success)
       updatePayload.settings = settingsResult.data;
 

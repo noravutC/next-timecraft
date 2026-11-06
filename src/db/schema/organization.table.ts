@@ -7,6 +7,8 @@ export const organizationsTable = pgTable("organizations", {
   description: text("description"),
   // small square data URL, resized in the browser before upload
   logo: text("logo"),
+  // IANA zone ("Asia/Bangkok") for due-date reminders and the calendar
+  timeZone: text("time_zone").notNull().default("UTC"),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),

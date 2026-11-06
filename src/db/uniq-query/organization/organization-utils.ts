@@ -1,16 +1,20 @@
 import { db } from '@/db';
 import {
+  columnsTable,
   membershipsTable,
   organizationsTable,
   projectMembersTable,
   projectsTable,
+  tasksTable,
+  usersTable,
 } from '@/db/schema';
 import {
   boardRoleForWorkspaceRole,
   type WorkspaceRole,
 } from '@/lib/rbac/workspace-permissions';
-import type { Member } from '@/types';
+import type { ArchivedBoard, Member } from '@/types';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 type OrganizationRow = typeof organizationsTable.$inferSelect;
 
@@ -39,7 +43,12 @@ export async function getUserOrganizations(userId: string) {
  */
 export async function createOwnedOrganization(
   userId: string,
-  input: { name: string; description: string | null; logo: string | null },
+  input: {
+    name: string;
+    description: string | null;
+    logo: string | null;
+    timeZone?: string;
+  },
 ): Promise<OrganizationRow | null> {
   return db.transaction(async (tx) => {
     await tx.execute(
@@ -142,4 +151,54 @@ export async function getWorkspaceSummary(
     .where(eq(organizationsTable.id, organizationId))
     .limit(1);
   return row;
+}
+
+/** Changes a workspace's name, logo or time zone. */
+export async function updateOrganization(
+  organizationId: string,
+  patch: { name?: string; logo?: string | null; timeZone?: string },
+): Promise<OrganizationRow | undefined> {
+  const [updated] = await db
+    .update(organizationsTable)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(organizationsTable.id, organizationId))
+    .returning();
+  return updated;
+}
+
+/** Archived boards of a workspace that this person is on, for its settings. */
+export async function listArchivedBoards(
+  organizationId: string,
+  userId: string,
+): Promise<ArchivedBoard[]> {
+  const archivedBy = alias(usersTable, 'archived_by_user');
+  const rows = await db
+    .select({
+      id: projectsTable.id,
+      name: projectsTable.name,
+      coverImage: projectsTable.coverImage,
+      settings: projectsTable.settings,
+      archivedAt: projectsTable.archivedAt,
+      archivedByName: archivedBy.fullName,
+      role: projectMembersTable.role,
+      memberCount: sql<number>`(select count(*)::int from ${projectMembersTable} pm where pm.project_id = ${projectsTable.id})`,
+      taskCount: sql<number>`(select count(*)::int from ${tasksTable} t join ${columnsTable} c on c.id = t.column_id where c.project_id = ${projectsTable.id} and c.is_deleted = false)`,
+    })
+    .from(projectsTable)
+    .innerJoin(
+      projectMembersTable,
+      and(
+        eq(projectMembersTable.projectId, projectsTable.id),
+        eq(projectMembersTable.userId, userId),
+      ),
+    )
+    .leftJoin(archivedBy, eq(archivedBy.id, projectsTable.archivedBy))
+    .where(
+      and(
+        eq(projectsTable.organizationId, organizationId),
+        eq(projectsTable.archived, true),
+      ),
+    )
+    .orderBy(desc(projectsTable.updatedAt));
+  return rows;
 }

@@ -27,6 +27,7 @@ export const POST = createHandle<CreateOrganizationBody>(
       name: body.name,
       description: body.description || null,
       logo: body.logo ?? null,
+      timeZone: body.timeZone,
     });
     if (!created) {
       throw new BadRequestError('User already has owned organization');
