@@ -6,6 +6,7 @@ import type {
   APISingleGet,
   DeletionChoice,
 } from '@/types';
+import type { DailyUsage } from '@/helper/utils/usage-meters';
 
 class AccountService {
   private client = apiClient;
@@ -30,6 +31,16 @@ class AccountService {
       .then((response) => response.data as APISingleGet<AccountDeletionPlan>)
       .catch((error) => {
         throw error?.response?.data || new Error('Failed to load your boards');
+      });
+  }
+
+  /** What you've used of each daily limit in the last 24 hours. */
+  async getUsage(): Promise<DailyUsage> {
+    return this.client
+      .get('/account/usage')
+      .then((response) => response.data.data as DailyUsage)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to load usage');
       });
   }
 

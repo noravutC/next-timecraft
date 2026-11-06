@@ -46,6 +46,12 @@ export function checkRateLimit(key: string, config: RateLimitConfig): Result {
   return { ok: true };
 }
 
+/** How much of `key`'s window is used, without using any of it. */
+export function peekRateLimit(key: string, config: RateLimitConfig): number {
+  const windowStart = Date.now() - config.windowMs;
+  return (hits.get(key) ?? []).filter((t) => t > windowStart).length;
+}
+
 /** test hook: number of tracked keys */
 export function rateLimitKeyCount() {
   return hits.size;

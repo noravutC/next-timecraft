@@ -16,12 +16,21 @@ const ACCOUNT: NavGroup = {
   ],
 };
 
+const USAGE = { href: '/settings/usage', label: 'Usage & limits' };
+
 const WORKSPACE: NavGroup = {
   label: 'Workspace',
   links: [
     { href: '/settings/workspace', label: 'General' },
     { href: '/settings/members', label: 'Members' },
+    USAGE,
   ],
+};
+
+// without a workspace, the limits still apply: Usage moves under Account
+const ACCOUNT_ONLY: NavGroup = {
+  ...ACCOUNT,
+  links: [...ACCOUNT.links, USAGE],
 };
 
 /** Settings sections, grouped by account and workspace. */
@@ -31,7 +40,7 @@ export const SettingsNav = () => {
   // people who are only on boards have no workspace to set up
   const groups = session?.user?.organizationId
     ? [ACCOUNT, WORKSPACE]
-    : [ACCOUNT];
+    : [ACCOUNT_ONLY];
 
   return (
     <nav
