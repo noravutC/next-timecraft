@@ -8,7 +8,8 @@ import {
   fetchAssigneesForTasks,
   type AssigneeWithUser,
 } from '@/db/uniq-query/task/assignee-utils';
-import type { TaskPageInfo, TaskRow } from '@/types';
+import { fetchSubtaskProgress } from '@/db/uniq-query/task/subtask-progress';
+import type { PriorityCounts, TaskPageInfo, TaskRow } from '@/types';
 import {
   and,
   arrayOverlaps,
@@ -122,6 +123,26 @@ export const POST = createHandle<GetTasksByColumnsBody>(
       totalRows.map((row) => [row.columnId, row.total]),
     );
 
+    // Per-priority counts ignore the filter: they label the Priority menu.
+    const priorityRows = await db
+      .select({
+        columnId: tasksTable.columnId,
+        priority: tasksTable.priority,
+        total: count(),
+      })
+      .from(tasksTable)
+      .where(
+        and(
+          inArray(tasksTable.columnId, colIds),
+          eq(tasksTable.archived, false),
+        ),
+      )
+      .groupBy(tasksTable.columnId, tasksTable.priority);
+    const priorityCounts: Record<string, PriorityCounts> = {};
+    for (const { columnId, priority, total } of priorityRows) {
+      (priorityCounts[columnId] ??= {})[priority] = total;
+    }
+
     const byColumn: Record<string, typeof rows> = {};
     for (const row of rows) {
       (byColumn[row.columnId] ??= []).push(row);
@@ -145,7 +166,11 @@ export const POST = createHandle<GetTasksByColumnsBody>(
       tasks.push(...page.map(({ rn: _rn, ...task }) => task));
     }
 
-    const assigneeRows = await fetchAssigneesForTasks(tasks.map((t) => t.id));
+    const taskIds = tasks.map((t) => t.id);
+    const [assigneeRows, subtasks] = await Promise.all([
+      fetchAssigneesForTasks(taskIds),
+      fetchSubtaskProgress(taskIds),
+    ]);
     const assignees: Record<string, AssigneeWithUser[]> = {};
     for (const { taskId, ...user } of assigneeRows) {
       (assignees[taskId] ??= []).push(user);
@@ -155,6 +180,8 @@ export const POST = createHandle<GetTasksByColumnsBody>(
       {
         data: tasks,
         assignees,
+        subtasks,
+        priorityCounts,
         pageInfo,
         message: 'Get tasks success',
         status: 200,

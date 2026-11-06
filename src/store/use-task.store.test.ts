@@ -200,6 +200,8 @@ describe('loadMoreTasks (column pagination)', () => {
     vi.mocked(taskServices.getTasksByColumns).mockResolvedValue({
       data: [makeTask('t6', { orderFraction: 'a6' })],
       assignees: {},
+      subtasks: {},
+      priorityCounts: {},
       pageInfo: { 'col-1': { hasMore: false, nextCursor: null, total: 45 } },
       message: 'ok',
       status: 200,

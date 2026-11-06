@@ -8,7 +8,7 @@ export default function ProjectPage() {
   const { scrollableRef, board, panCursor, settings } = useBoard();
 
   const boardCls = settings.isBoardMoreObvious ? 'px-32 py-20' : '';
-  const scrollCls = `flex h-full flex-row items-start gap-3 overflow-x-auto px-5 pt-4 pb-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? 'rounded border-2 border-dashed' : ''}`;
+  const scrollCls = `flex min-h-0 flex-1 flex-row items-start gap-3 overflow-x-auto px-5 pt-4 pb-5 scrollbar-thin-x scrollbar-light ${settings.isBoardMoreObvious ? 'rounded border-2 border-dashed' : ''}`;
 
   return (
     <div className={`relative flex h-full flex-col bg-background ${boardCls}`}>

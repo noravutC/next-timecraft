@@ -68,7 +68,7 @@ export const AddCardInline = ({
   return (
     <div
       className={cn(
-        'mx-2 flex flex-shrink-0 flex-col gap-2.5 rounded-lg border border-ink bg-white p-2.5 shadow-[0_0_0_3px_rgba(23,23,23,0.06)]',
+        'mx-2 flex shrink-0 flex-col gap-2.5 rounded-lg border border-ink bg-background p-2.5 ring-3 ring-ink/6',
         position === 'top' ? 'mb-2' : 'mt-2',
       )}
       {...{ [blockBoardPanningAttr]: true }}
@@ -80,18 +80,25 @@ export const AddCardInline = ({
         onKeyDown={handleKeyDown}
         placeholder="What needs to be done?"
         aria-label="Task title"
-        className="min-h-10 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-snug text-ink focus-visible:ring-0"
+        rows={2}
+        className="min-h-10 resize-none rounded-none border-0 bg-transparent p-0 text-base text-ink focus-visible:ring-0"
       />
       <div className="flex flex-row items-center gap-1.5">
-        <span className="font-mono text-xs whitespace-nowrap text-ink-subtle">
-          ↵ to add
+        <span className="truncate font-mono text-2xs text-ink-subtle">
+          ↵ add · esc
         </span>
         <div className="flex-1" />
-        <Button size="xs" variant="ghost" onClick={onClose}>
+        <Button
+          size="xs"
+          variant="ghost"
+          onClick={onClose}
+          className="shrink-0"
+        >
           Cancel
         </Button>
         <Button
           size="xs"
+          className="shrink-0"
           disabled={!title.trim() || isSubmitting}
           onClick={handleSubmit}
         >

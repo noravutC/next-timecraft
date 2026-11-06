@@ -120,3 +120,8 @@ export const computeColumnMove = (
     newOrderFraction: generateFractionBetween(prevOrder, nextOrder),
   };
 };
+
+/** Tasks matching the current board view, from the server's per-column totals. */
+export const countBoardTasks = (
+  columns: Pick<TColumn, 'totalTasks'>[],
+): number => columns.reduce((sum, column) => sum + column.totalTasks, 0);

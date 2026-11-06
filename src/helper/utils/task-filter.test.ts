@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isTaskFilterActive, taskMatchesFilter } from './task-filter';
+import {
+  isTaskFilterActive,
+  sumPriorityCounts,
+  taskMatchesFilter,
+} from './task-filter';
 import type { TaskCache } from '@/types';
 
 const task = (overrides: Partial<TaskCache> = {}) =>
@@ -68,5 +72,21 @@ describe('taskMatchesFilter', () => {
     expect(
       taskMatchesFilter(task(), { q: 'design', priorities: ['high'] }),
     ).toBe(false);
+  });
+});
+
+describe('sumPriorityCounts', () => {
+  it('adds the counts of the given columns only', () => {
+    const byColumn = {
+      a: { high: 1, medium: 2 },
+      b: { medium: 3, low: 1 },
+      c: { high: 9 },
+    };
+    expect(sumPriorityCounts(byColumn, ['a', 'b'])).toEqual({
+      high: 1,
+      medium: 5,
+      low: 1,
+    });
+    expect(sumPriorityCounts(byColumn, [])).toEqual({});
   });
 });

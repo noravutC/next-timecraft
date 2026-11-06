@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   CreateTaskPayload,
+  PriorityCounts,
   Task,
   TaskCache,
   TaskPageInfo,
@@ -12,6 +13,7 @@ import { toRecord, toValueRecord } from '@/helper/utils/object';
 import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
 import { useAssigneeStore } from './use-assignee.store';
+import { useSubtaskStore } from './use-subtask.store';
 import { useBoardFilterStore } from './use-board-filter.store';
 
 type TaskStore = {
@@ -22,6 +24,8 @@ type TaskStore = {
   };
   // per-column pagination: what's loaded so far + where the next page starts
   taskPages: { [columnId: string]: TaskPageInfo };
+  /** tasks per priority per column, unfiltered (Priority menu counts) */
+  priorityCounts: { [columnId: string]: PriorityCounts };
   loadMoreLoader: { [columnId: string]: boolean };
   createTasks: (payload: CreateTaskPayload[]) => Promise<TaskCache[] | null>;
   updateTasks: (
@@ -64,6 +68,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: {},
   tasksLoader: {},
   taskPages: {},
+  priorityCounts: {},
   loadMoreLoader: {},
   createTasks: async (payload) => {
     if (payload.length === 0) {
@@ -191,10 +196,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set((state) => ({
         tasks: { ...state.tasks, ...toRecord(tasksData, 'id') },
         taskPages: { ...state.taskPages, ...(response.pageInfo ?? {}) },
+        priorityCounts: {
+          ...state.priorityCounts,
+          ...(response.priorityCounts ?? {}),
+        },
         status: 'none',
       }));
-      // bulk fetch ส่ง assignees มาด้วย — hydrate เข้า assignee store ให้การ์ดใช้
+      // bulk fetch ส่ง assignees + ความคืบหน้า subtask มาด้วย — hydrate ให้การ์ดใช้
       useAssigneeStore.getState().ingestMany(response.assignees ?? {});
+      useSubtaskStore.getState().ingestProgress(response.subtasks ?? {});
       return tasksData;
     } catch (error) {
       set({ status: 'error' });
@@ -233,6 +243,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         taskPages: { ...state.taskPages, ...(response.pageInfo ?? {}) },
       }));
       useAssigneeStore.getState().ingestMany(response.assignees ?? {});
+      useSubtaskStore.getState().ingestProgress(response.subtasks ?? {});
       return tasksData;
     } finally {
       set((state) => ({

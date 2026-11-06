@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  Plus,
-  Search,
-  Settings2,
-  SlidersHorizontal,
-  Tag,
-  Users,
-} from 'lucide-react';
+import { Plus, Search, Settings2, Tag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/people/user-avatar';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
@@ -19,14 +12,15 @@ import {
   FilterCheckItem,
   FilterChip,
   FilterDropdown,
+  FilterEmpty,
 } from './board-filter-controls';
 import { useBoardFilterBar } from './use-board-filter-bar';
 import { AiBreakdown } from './ai-breakdown';
-import type { BoardColumnLike } from './use-ai-breakdown';
+import type { TColumn } from './data';
 
 // แถบเครื่องมือของบอร์ด: ซ้าย = ค้นหา + ตัวกรอง, ขวา = AI / ตั้งค่า / New task
-// แถวล่าง (เมื่อมี filter) = chips ของค่าที่เลือกไว้ + Clear all
-export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
+// แถวล่าง (เมื่อมี filter) = Showing X of Y + chips ของค่าที่เลือกไว้ + Clear all
+export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   const {
     draft,
     setDraft,
@@ -42,29 +36,40 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
     memberIds,
     tagOptions,
     activeCount,
-  } = useBoardFilterBar();
+    shownCount,
+    totalCount,
+    priorityCounts,
+  } = useBoardFilterBar(columns);
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const requestNewTask = useNavStore((s) => s.requestNewTask);
+  const search = draft.trim();
 
   return (
-    <div className="border-b bg-background">
-      <div className="flex min-h-13 flex-wrap items-center gap-2 px-5 py-2.5">
+    <>
+      <div className="flex h-13 shrink-0 items-center gap-2 border-b border-line bg-background px-5">
         <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-subtle" />
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
-            inputSize="sm"
+            type="search"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Search tasks"
             aria-label="Search tasks"
-            className="w-64 border-line pl-8 text-sm"
+            className="w-65 border-line pl-8"
             data-testid="board-filter-search"
           />
         </div>
 
         <FilterDropdown
-          icon={SlidersHorizontal}
+          icon={
+            <PriorityBars
+              priority="high"
+              color="var(--ink-subtle)"
+              decorative
+            />
+          }
           label="Priority"
+          title="Filter by priority"
           activeCount={priorities.length}
         >
           {[...PRIORITY_ORDER].reverse().map((priority) => (
@@ -73,18 +78,24 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
               checked={priorities.includes(priority)}
               onToggle={() => togglePriority(priority)}
             >
-              <PriorityBars priority={priority} />
-              {PRIORITY_STYLES[priority].label}
+              <PriorityBars priority={priority} decorative />
+              <span className="flex-1">{PRIORITY_STYLES[priority].label}</span>
+              <span className="font-mono text-xs text-ink-subtle">
+                {priorityCounts[priority] ?? 0}
+              </span>
             </FilterCheckItem>
           ))}
         </FilterDropdown>
 
         <FilterDropdown
-          icon={Tag}
+          icon={<Tag className="size-3.5" />}
           label="Labels"
+          title="Filter by label"
           activeCount={tags.length}
-          disabled={tagOptions.length === 0}
         >
+          {tagOptions.length === 0 && (
+            <FilterEmpty>No labels on this board yet</FilterEmpty>
+          )}
           {tagOptions.map((tag) => (
             <FilterCheckItem
               key={tag}
@@ -92,7 +103,7 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
               onToggle={() => toggleTag(tag)}
             >
               <span
-                className="size-2 shrink-0 rounded-full"
+                className="size-1.5 shrink-0 rounded-full"
                 style={{
                   backgroundColor: paletteFor(
                     tagColors[tag] ?? hashTagColor(tag),
@@ -105,10 +116,10 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
         </FilterDropdown>
 
         <FilterDropdown
-          icon={Users}
+          icon={<User className="size-3.5" />}
           label="Assignee"
+          title="Filter by assignee"
           activeCount={assigneeIds.length}
-          disabled={memberIds.length === 0}
         >
           {memberIds.map((userId) => {
             const user = users[userId];
@@ -118,13 +129,15 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
                 checked={assigneeIds.includes(userId)}
                 onToggle={() => toggleAssignee(userId)}
               >
-                <Avatar className="size-5">
-                  <AvatarImage src={user?.avatar ?? undefined} />
-                  <AvatarFallback className="text-xs">
-                    {(user?.fullName ?? '?').slice(0, 1)}
-                  </AvatarFallback>
-                </Avatar>
-                {user?.fullName ?? 'Unknown member'}
+                <UserAvatar
+                  name={user?.fullName}
+                  image={user?.avatar}
+                  seed={userId}
+                  size="xs"
+                />
+                <span className="truncate">
+                  {user?.fullName ?? 'Unknown member'}
+                </span>
               </FilterCheckItem>
             );
           })}
@@ -136,33 +149,42 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
         <Button
           variant="outline"
           size="icon"
-          className="size-8"
+          className="border-line text-ink-muted"
           aria-label="Board settings"
           onClick={() => setBoardDialog('settings')}
         >
-          <Settings2 className="size-4" />
+          <Settings2 className="size-3.75" />
         </Button>
         <Button size="sm" onClick={requestNewTask} disabled={!columns.length}>
-          <Plus className="size-4" />
+          <Plus className="size-3.75 stroke-2" />
           New task
         </Button>
       </div>
 
       {activeCount > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-5 py-2">
-          <span className="mr-1 text-xs text-ink-subtle">Filters</span>
+        <div className="flex h-11 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5">
+          <span className="text-xs text-ink-subtle">
+            {totalCount === null
+              ? `Showing ${shownCount}`
+              : `Showing ${shownCount} of ${totalCount}`}
+          </span>
+          {search && (
+            <FilterChip
+              label={`Search: ${search}`}
+              onRemove={() => setDraft('')}
+            />
+          )}
           {priorities.map((priority) => (
             <FilterChip
               key={priority}
               label={`Priority: ${PRIORITY_STYLES[priority].label}`}
-              dotColor={PRIORITY_STYLES[priority].dot}
               onRemove={() => togglePriority(priority)}
             />
           ))}
           {tags.map((tag) => (
             <FilterChip
               key={tag}
-              label={tag}
+              label={`Label: ${tag}`}
               dotColor={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
               onRemove={() => toggleTag(tag)}
             />
@@ -170,7 +192,7 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
           {assigneeIds.map((userId) => (
             <FilterChip
               key={userId}
-              label={users[userId]?.fullName ?? 'Unknown member'}
+              label={`Assignee: ${users[userId]?.fullName ?? 'Unknown member'}`}
               onRemove={() => toggleAssignee(userId)}
             />
           ))}
@@ -181,12 +203,12 @@ export function BoardFilterBar({ columns }: { columns: BoardColumnLike[] }) {
               setDraft('');
               clear();
             }}
-            className="text-ink-muted underline underline-offset-3 hover:text-ink"
+            className="h-6.5 px-2 text-ink-muted underline underline-offset-3 hover:bg-transparent hover:text-ink"
           >
             Clear all
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 }

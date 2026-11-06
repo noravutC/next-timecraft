@@ -15,10 +15,6 @@ import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing
 import { TCard, TColumn } from './data';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-
-const menuItemClass =
-  'gap-2.5 rounded-md px-2 py-1.5 text-ink focus:bg-surface-hover focus:text-ink [&_svg]:!text-ink-subtle';
 
 interface CardActionsMenuProps {
   card: TCard;
@@ -104,40 +100,41 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          size={'xs'}
-          variant={'ghost'}
+          size="icon-xs"
+          variant="ghost"
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-md p-0 text-ink-subtle opacity-0 group-hover:opacity-100 hover:bg-surface-active hover:text-ink data-[state=open]:bg-surface-active data-[state=open]:text-ink data-[state=open]:opacity-100"
+          className="size-5.5 bg-surface-hover text-ink-muted opacity-0 group-hover:opacity-100 hover:bg-surface-active data-[state=open]:bg-surface-active data-[state=open]:text-ink data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
-          <Ellipsis className="size-4" />
+          <Ellipsis className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="w-56 rounded-lg border-line p-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.14),0_2px_6px_rgba(0,0,0,0.04)]"
+        className="w-55"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuItem onClick={handleDuplicate} className={menuItemClass}>
+        <DropdownMenuItem onClick={handleDuplicate}>
           <Copy />
           Duplicate
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleToggleFlag} className={menuItemClass}>
-          <PriorityBars priority={isFlagged ? 'medium' : 'high'} />
+        <DropdownMenuItem onClick={handleToggleFlag}>
+          <PriorityBars
+            priority={isFlagged ? 'medium' : 'high'}
+            decorative
+            className="size-3.75"
+          />
           {isFlagged ? 'Remove high priority' : 'Mark as high priority'}
         </DropdownMenuItem>
         {otherColumns.length > 0 && (
           <>
-            <DropdownMenuSeparator className="mx-1 bg-line/70" />
-            <DropdownMenuLabel className="px-2 pt-2 pb-1 text-xs font-normal text-ink-subtle">
-              Move to
-            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Move to</DropdownMenuLabel>
             {otherColumns.map((column) => (
               <DropdownMenuItem
                 key={column.id}
                 onClick={() => handleMoveTo(column)}
-                className={menuItemClass}
               >
                 <span
                   className="mx-0.75 size-2 shrink-0 rounded-full"
@@ -148,14 +145,8 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
             ))}
           </>
         )}
-        <DropdownMenuSeparator className="mx-1 bg-line/70" />
-        <DropdownMenuItem
-          onClick={handleDelete}
-          className={cn(
-            menuItemClass,
-            'text-destructive focus:bg-destructive/8 focus:text-destructive [&_svg]:!text-destructive',
-          )}
-        >
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <Trash2 />
           Delete task
         </DropdownMenuItem>

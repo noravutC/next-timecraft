@@ -9,21 +9,16 @@ import { useTaskStore } from '@/store/use-task.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
-import { CalendarDays, MessageSquare } from 'lucide-react';
+import { Calendar, MessageSquare, SquareCheck } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarGroup,
-  AvatarGroupCount,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/people/user-avatar';
+import { AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
+import { useSubtaskStore } from '@/store/use-subtask.store';
 import { Loader } from '@/components/ui/loader';
 import {
   daysUntil,
   dueUrgency,
-  formatDateShort,
-  formatRelativeDay,
+  formatDueLabel,
   type DueUrgency,
 } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
@@ -37,13 +32,14 @@ const MAX_VISIBLE_TAGS = 2;
 const MAX_VISIBLE_ASSIGNEES = 3;
 
 const innerStyles: Partial<Record<TCardState['type'], string>> = {
-  idle: 'hover:border-input hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] cursor-pointer',
+  idle: 'cursor-pointer hover:border-line-strong hover:shadow-card-hover',
   'is-dragging': 'opacity-40',
+  preview: 'border-line-strong shadow-card-drag',
 };
 
 const dueToneStyles: Record<DueUrgency, string> = {
-  overdue: 'text-destructive',
-  soon: 'text-(--priority-medium-text)',
+  overdue: 'text-(--priority-high)',
+  soon: 'text-warning',
   normal: 'text-ink-subtle',
 };
 
@@ -54,7 +50,7 @@ const outerStyles: Partial<Record<TCardState['type'], string>> = {
 export function CardShadow({ dragging }: { dragging: DOMRect }) {
   return (
     <div
-      className="flex-shrink-0 rounded-lg border border-dashed border-ink-faint/60 bg-brand/4"
+      className="flex-shrink-0 rounded-lg border border-dashed border-neutral-400 bg-brand/4"
       style={{ height: dragging.height }}
     />
   );
@@ -91,6 +87,7 @@ export function CardDisplay({
   const assignees = useAssigneeStore(
     useShallow((s) => s.byTask[card.id]?.items ?? NO_ASSIGNEES),
   );
+  const subtasks = useSubtaskStore(useShallow((s) => s.progressOf(card.id)));
 
   const tags = card.tags ?? [];
   const hasTagRow = tags.length > 0 || assignees.length > 0;
@@ -112,7 +109,7 @@ export function CardDisplay({
       )}
       <div
         ref={innerRef}
-        className={`group relative flex flex-col gap-3 rounded-lg border border-line bg-white p-3 text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[box-shadow,border-color] duration-150 ${innerStyles[state.type] ?? ''}`}
+        className={`group relative flex flex-col gap-3 rounded-lg border border-line bg-background p-3 text-ink shadow-card transition-[box-shadow,border-color] duration-150 ${innerStyles[state.type] ?? ''}`}
         style={
           state.type === 'preview'
             ? {
@@ -125,7 +122,7 @@ export function CardDisplay({
       >
         <div className="flex items-start gap-2">
           <div
-            className="line-clamp-3 flex-1 text-sm leading-snug font-medium"
+            className="line-clamp-3 flex-1 text-base font-medium"
             onClick={(e) => {
               if (state.type !== 'idle') return;
               if ((e.target as HTMLElement).closest('[data-card-action]'))
@@ -135,8 +132,9 @@ export function CardDisplay({
           >
             {card.title}
           </div>
+          {/* ลอยทับมุมขวาบน — ไม่กินความกว้างของชื่อการ์ดตอนปกติ */}
           {allColumns && (
-            <div data-card-action className="-mt-1 -mr-1.5 shrink-0">
+            <div data-card-action className="absolute top-2.5 right-2">
               <CardActionsMenu card={card} allColumns={allColumns} />
             </div>
           )}
@@ -168,17 +166,19 @@ export function CardDisplay({
               )}
             </div>
             {assignees.length > 0 && (
-              <AvatarGroup className="shrink-0 -space-x-1.5">
+              <AvatarGroup className="shrink-0">
                 {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
-                  <Avatar key={a.userId} className="size-5.5 ring-2 ring-white">
-                    <AvatarImage src={a.avatar ?? undefined} alt={a.fullName} />
-                    <AvatarFallback className="text-xs font-semibold">
-                      {a.fullName?.[0]?.toUpperCase() ?? '?'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    key={a.userId}
+                    name={a.fullName}
+                    image={a.avatar}
+                    seed={a.userId}
+                    size="sm"
+                    className="ring-2 ring-background"
+                  />
                 ))}
                 {assignees.length > MAX_VISIBLE_ASSIGNEES && (
-                  <AvatarGroupCount className="size-5.5 text-xs ring-2 ring-white">
+                  <AvatarGroupCount className="size-5.5 text-4xs">
                     +{assignees.length - MAX_VISIBLE_ASSIGNEES}
                   </AvatarGroupCount>
                 )}
@@ -191,7 +191,7 @@ export function CardDisplay({
         <div
           className={cn(
             'flex items-center gap-4 text-xs font-medium text-ink-subtle tabular-nums',
-            hasTagRow && 'border-t border-line/70 pt-2.5',
+            hasTagRow && 'border-t border-line-soft pt-2.5',
           )}
         >
           <PriorityBars priority={card.priority ?? 'medium'} />
@@ -202,10 +202,17 @@ export function CardDisplay({
                 dueToneStyles[dueUrgency(dueInDays)],
               )}
             >
-              <CalendarDays className="size-3.5" />
-              {Math.abs(dueInDays) <= 7
-                ? formatRelativeDay(dueDate)
-                : formatDateShort(dueDate)}
+              <Calendar className="size-3.5" />
+              {formatDueLabel(dueDate)}
+            </span>
+          )}
+          {subtasks && (
+            <span
+              className="flex items-center gap-1.25"
+              aria-label={`${subtasks.done} of ${subtasks.total} subtasks done`}
+            >
+              <SquareCheck className="size-3.5" />
+              {subtasks.done}/{subtasks.total}
             </span>
           )}
           {commentCount > 0 && (

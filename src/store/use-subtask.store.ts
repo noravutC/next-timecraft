@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { subtaskServices } from "@/services/subtask.service";
 import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
-import type { Subtask, UpdateSubtaskPayload } from "@/types";
+import { progressFromItems } from "@/helper/utils/subtask-progress";
+import type {
+  Subtask,
+  SubtaskProgress,
+  UpdateSubtaskPayload,
+} from "@/types";
 import type { LoaderStatus } from "@/types/global/types";
 
 type TaskState = {
@@ -23,6 +28,8 @@ const sortItems = (items: Subtask[]) =>
 
 type SubtaskStore = {
   byTask: Record<string, TaskState>;
+  /** done/total from the board fetch, for cards whose list isn't loaded */
+  progressByTask: Record<string, SubtaskProgress>;
   fetch: (taskId: string) => Promise<void>;
   create: (taskId: string, title: string) => Promise<void>;
   update: (
@@ -34,12 +41,16 @@ type SubtaskStore = {
   ingestAdded: (taskId: string, subtask: Subtask) => void;
   ingestUpdated: (taskId: string, subtask: Subtask) => void;
   ingestDeleted: (taskId: string, subtaskId: string) => void;
+  ingestProgress: (progress: Record<string, SubtaskProgress>) => void;
+  /** live list when loaded (task open), otherwise the board summary */
+  progressOf: (taskId: string) => SubtaskProgress | null;
 };
 
 const pendingUpdatesBySubtask: Record<string, number> = {};
 
 export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
   byTask: {},
+  progressByTask: {},
 
   fetch: async (taskId) => {
     const cur = get().byTask[taskId];
@@ -247,5 +258,14 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
         },
       };
     });
+  },
+
+  ingestProgress: (progress) =>
+    set((s) => ({ progressByTask: { ...s.progressByTask, ...progress } })),
+
+  progressOf: (taskId) => {
+    const state = get().byTask[taskId];
+    if (state?.initialized) return progressFromItems(state.items);
+    return get().progressByTask[taskId] ?? null;
   },
 }));

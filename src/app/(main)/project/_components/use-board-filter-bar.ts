@@ -5,12 +5,16 @@ import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useTaskStore } from '@/store/use-task.store';
 import { useUserStore } from '@/store/use-user.store';
+import { sumPriorityCounts } from '@/helper/utils/task-filter';
+import { countBoardTasks } from './board-operations';
+import type { TColumn } from './data';
 
 /**
  * State + derivations ของ BoardFilterBar:
- * debounce ช่อง search, รวมตัวเลือก tag/สมาชิก, นับ filter ที่เปิดอยู่
+ * debounce ช่อง search, รวมตัวเลือก tag/สมาชิก, นับ filter ที่เปิดอยู่,
+ * จำนวน task ที่แสดง (Showing X of Y)
  */
-export function useBoardFilterBar() {
+export function useBoardFilterBar(columns: TColumn[]) {
   const q = useBoardFilterStore((s) => s.q);
   const priorities = useBoardFilterStore((s) => s.priorities);
   const tags = useBoardFilterStore((s) => s.tags);
@@ -42,6 +46,14 @@ export function useBoardFilterBar() {
   const users = useUserStore(useShallow((s) => s.users));
   const fetchUsers = useUserStore((s) => s.fetchUsers);
   const tasksMap = useTaskStore(useShallow((s) => s.tasks));
+  const priorityCounts = useTaskStore(
+    useShallow((s) =>
+      sumPriorityCounts(
+        s.priorityCounts,
+        columns.map((c) => c.id),
+      ),
+    ),
+  );
 
   const memberIds = useMemo(
     () => (project?.members ?? []).map((m) => m.userId),
@@ -63,6 +75,16 @@ export function useBoardFilterBar() {
   const activeCount =
     priorities.length + tags.length + assigneeIds.length + (q.trim() ? 1 : 0);
 
+  // ยอดที่แสดง = totals จาก server (ผ่าน filter แล้ว); จำยอดตอนไม่มี filter
+  // ไว้เป็นตัวหาร "of Y" — ปรับ state ระหว่าง render แทน useEffect
+  const shownCount = countBoardTasks(columns);
+  const [totalCount, setTotalCount] = useState<number | null>(
+    activeCount === 0 ? shownCount : null,
+  );
+  if (activeCount === 0 && totalCount !== shownCount) {
+    setTotalCount(shownCount);
+  }
+
   return {
     draft,
     setDraft,
@@ -78,5 +100,8 @@ export function useBoardFilterBar() {
     memberIds,
     tagOptions,
     activeCount,
+    shownCount,
+    totalCount,
+    priorityCounts,
   };
 }

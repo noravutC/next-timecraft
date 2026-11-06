@@ -7,7 +7,6 @@ import { blockBoardPanningAttr } from './data-attributes';
 import { Card, CardShadow } from './card';
 import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { useNavStore } from '@/store';
@@ -18,6 +17,7 @@ import {
   useBoardFilterStore,
 } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
+import { CardSkeleton } from './card-skeleton';
 import { TColumnState, useColumnDnd } from './use-column-dnd';
 
 const stateStyles: Record<TColumnState['type'], string> = {
@@ -59,6 +59,9 @@ export const Column = ({
 
   const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
   const filterKey = useBoardFilterStore(selectFilterKey);
+  const isFiltering = useBoardFilterStore(
+    (s) => s.toFilterPayload() !== undefined,
+  );
   const loadMoreTasks = useTaskStore((s) => s.loadMoreTasks);
   const isLoadingMore = useTaskStore(
     (s) => s.loadMoreLoader[column.id] ?? false,
@@ -109,14 +112,14 @@ export const Column = ({
 
   return (
     <div
-      className={cn('flex w-70 flex-shrink-0 flex-col select-none')}
+      className="flex h-full w-67 shrink-0 flex-col select-none"
       ref={outerFullHeightRef}
       data-testid="board-column"
       data-column-name={column.title}
     >
       <div
         className={cn(
-          `flex max-h-[calc(100vh-13rem)] min-h-60 flex-col overflow-hidden rounded-xl border border-line/70 bg-surface-column text-ink ${stateStyles[state.type]}`,
+          `flex max-h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line-soft bg-surface text-ink ${stateStyles[state.type]}`,
         )}
         ref={innerRef}
         {...{ [blockBoardPanningAttr]: true }}
@@ -156,7 +159,7 @@ export const Column = ({
               disabled={isLoading}
               className="size-7 text-ink-subtle hover:bg-surface-active hover:text-ink"
             >
-              <Plus className="size-4" />
+              <Plus className="size-3.75" />
             </Button>
           </div>
           {addingAt === 'top' && (
@@ -178,9 +181,8 @@ export const Column = ({
           >
             {isLoading ? (
               <div className="flex flex-col gap-2 px-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-lg" />
-                ))}
+                <CardSkeleton />
+                <CardSkeleton />
               </div>
             ) : (
               <CardList column={column} allColumns={allColumns} />
@@ -200,8 +202,8 @@ export const Column = ({
             {!isLoading &&
               column.cards.length === 0 &&
               state.type !== 'is-card-over' && (
-                <div className="mx-2 rounded-lg border border-dashed border-input px-3 py-7 text-center text-xs text-ink-subtle">
-                  No tasks yet
+                <div className="mx-2 grid h-18 shrink-0 place-items-center rounded-lg border border-dashed border-input text-xs text-ink-subtle">
+                  {isFiltering ? 'No matching tasks' : 'No tasks yet'}
                 </div>
               )}
             {state.type === 'is-card-over' && !state.isOverChildCard && (
@@ -219,7 +221,7 @@ export const Column = ({
               onClose={() => setAddingAt(null)}
             />
           ) : (
-            <div className="px-2 pt-1.5 pb-2">
+            <div className="mx-2 mt-1.5 mb-2 shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -228,7 +230,7 @@ export const Column = ({
                 aria-label={`Add a card to the bottom of ${column.title}`}
                 className="w-full justify-start px-2 font-normal text-ink-subtle hover:bg-surface-active hover:text-ink"
               >
-                <Plus className="size-4" />
+                <Plus className="size-3.5" />
                 Add card
               </Button>
             </div>

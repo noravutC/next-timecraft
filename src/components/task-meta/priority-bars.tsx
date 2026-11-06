@@ -13,9 +13,15 @@ const BARS = [
 // ไม่ต้องพึ่งสีอย่างเดียว
 export const PriorityBars = ({
   priority,
+  color,
+  decorative = false,
   className,
 }: {
   priority: TaskPriority;
+  /** Override the bar color, e.g. a neutral icon on the Priority filter. */
+  color?: string;
+  /** Pure icon next to a visible label: hide it from screen readers. */
+  decorative?: boolean;
   className?: string;
 }) => {
   const level = PRIORITY_ORDER.indexOf(priority) + 1;
@@ -24,8 +30,9 @@ export const PriorityBars = ({
   return (
     <svg
       viewBox="0 0 14 14"
-      role="img"
-      aria-label={`${style.label} priority`}
+      {...(decorative
+        ? { 'aria-hidden': true }
+        : { role: 'img', 'aria-label': `${style.label} priority` })}
       className={cn('size-3.5 shrink-0', className)}
     >
       {BARS.map((bar, i) => (
@@ -36,7 +43,7 @@ export const PriorityBars = ({
           width={3}
           height={bar.height}
           rx={1}
-          fill={i < level ? style.dot : 'var(--input)'}
+          fill={i < level ? (color ?? style.dot) : 'var(--input)'}
         />
       ))}
     </svg>

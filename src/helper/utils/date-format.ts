@@ -46,3 +46,19 @@ export const formatRelativeDay = (d: Date) => {
   if (diffDays > 0) return `In ${diffDays} days`;
   return `${Math.abs(diffDays)} days ago`;
 };
+
+/**
+ * Due date on a card: Today / Tomorrow / Yesterday, otherwise "Nov 12"
+ * (with the year only when it isn't this year).
+ */
+export const formatDueLabel = (date: Date, now: Date = new Date()): string => {
+  const diff = daysUntil(date);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}),
+  });
+};

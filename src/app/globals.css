@@ -458,6 +458,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* icon weight from the UI kit; heavier marks opt in with stroke-2 / stroke-3 */
+  .lucide {
+    stroke-width: 1.75;
+  }
   body {
     @apply bg-background text-base text-foreground antialiased;
   }

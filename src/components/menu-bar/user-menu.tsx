@@ -1,18 +1,15 @@
 "use client";
 import React from "react";
 import { signOut, useSession } from "next-auth/react";
+import { LogOut } from "lucide-react";
 // components
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { LogOut } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Button } from "../ui/button";
+import { UserAvatar } from "../people/user-avatar";
 
 export const UserMenu = () => {
   const { data: session } = useSession();
@@ -21,59 +18,37 @@ export const UserMenu = () => {
     session?.user?.name ||
     session?.user?.email ||
     "";
-  const avatar = session?.user?.avatar || session?.user?.image || "";
-  const initials = fullName
-    ? fullName
-        .split(" ")
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase()
-    : "UNK";
+  const avatar = session?.user?.avatar || session?.user?.image || null;
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant={"ghost"}
-          size="icon"
-          aria-label="Account menu"
-          className="size-8 rounded-full data-[state=open]:bg-surface-active"
-        >
-          <Avatar className="cursor-pointer size-7">
-            {session?.user ? (
-              <>
-                <AvatarImage src={avatar} alt={fullName} loading="lazy" />
-                <AvatarFallback className="text-xs font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </>
-            ) : (
-              <>
-                <AvatarFallback className="text-xs font-semibold">
-                  UNK
-                </AvatarFallback>
-              </>
-            )}
-          </Avatar>
-        </Button>
+      <DropdownMenuTrigger
+        aria-label="Account menu"
+        className="cursor-pointer rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ink/10"
+      >
+        <UserAvatar
+          name={fullName}
+          image={avatar}
+          seed={session?.user?.id}
+          size="lg"
+        />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
+      <DropdownMenuContent className="w-58" align="end" sideOffset={8}>
+        <div className="mb-1 flex flex-col border-b border-line-soft px-2.5 pt-2 pb-2.5">
           <span className="truncate text-sm font-medium text-ink">
-            {fullName || "My Account"}
+            {fullName || "My account"}
           </span>
           {session?.user?.email && (
             <span className="truncate text-xs text-ink-subtle">
               {session.user.email}
             </span>
           )}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        </div>
         <DropdownMenuItem
-          className="cursor-pointer gap-2.5"
+          className="h-8.5 px-2.5"
           onClick={() => signOut({ callbackUrl: "/" })}
         >
-          <LogOut className="text-ink-subtle" />
+          <LogOut />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
