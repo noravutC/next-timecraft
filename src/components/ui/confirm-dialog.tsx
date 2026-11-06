@@ -1,22 +1,23 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { AlertTriangle, Bell, CheckCircle2, Trash2 } from "lucide-react";
+import * as React from 'react';
+import { AlertTriangle, Bell, CheckCircle2, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export type ConfirmDialogVariant =
-  | "destructive"
-  | "warning"
-  | "info"
-  | "success";
+  | 'destructive'
+  | 'warning'
+  | 'info'
+  | 'success';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -41,55 +42,50 @@ const VARIANTS: Record<
   ConfirmDialogVariant,
   {
     Icon: React.ComponentType<{ className?: string }>;
-    iconWrap: string;
-    iconColor: string;
-    primaryVariant: React.ComponentProps<typeof Button>["variant"];
+    tile: string;
+    primaryVariant: React.ComponentProps<typeof Button>['variant'];
   }
 > = {
   destructive: {
     Icon: Trash2,
-    iconWrap: "bg-red-50 border-red-100",
-    iconColor: "text-red-500",
-    primaryVariant: "destructive",
+    tile: 'bg-danger-soft text-danger-text',
+    primaryVariant: 'destructive',
   },
   warning: {
     Icon: AlertTriangle,
-    iconWrap: "bg-amber-50 border-amber-100",
-    iconColor: "text-amber-500",
-    primaryVariant: "default",
+    tile: 'bg-warning-soft text-warning',
+    primaryVariant: 'default',
   },
   info: {
     Icon: Bell,
-    iconWrap: "bg-blue-50 border-blue-100",
-    iconColor: "text-blue-500",
-    primaryVariant: "default",
+    tile: 'bg-brand-soft text-brand',
+    primaryVariant: 'default',
   },
   success: {
     Icon: CheckCircle2,
-    iconWrap: "bg-emerald-50 border-emerald-100",
-    iconColor: "text-emerald-500",
-    primaryVariant: "default",
+    tile: 'bg-success-soft text-success-text',
+    primaryVariant: 'default',
   },
 };
 
 export const ConfirmDialog = ({
   open,
   onOpenChange,
-  variant = "destructive",
+  variant = 'destructive',
   title,
   description,
   primaryLabel,
-  cancelLabel = "Cancel",
+  cancelLabel = 'Cancel',
   onConfirm,
   confirmPhrase,
   tertiary,
   dismissible = false,
   loading = false,
 }: ConfirmDialogProps) => {
-  const [phrase, setPhrase] = React.useState("");
+  const [phrase, setPhrase] = React.useState('');
 
   React.useEffect(() => {
-    if (!open) setPhrase("");
+    if (!open) setPhrase('');
   }, [open]);
 
   const config = VARIANTS[variant];
@@ -106,69 +102,66 @@ export const ConfirmDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={dismissible}
-        className="max-w-md gap-0 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <div
+      <DialogContent showCloseButton={dismissible} className="sm:max-w-115">
+        <div className="flex flex-col gap-4 p-6">
+          <span
             className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-md border",
-              config.iconWrap,
+              'grid size-9 place-items-center rounded-lg',
+              config.tile,
             )}
           >
-            <Icon className={cn("size-4", config.iconColor)} />
-          </div>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <DialogTitle className="text-sm font-semibold leading-snug">
+            <Icon className="size-4.5" />
+          </span>
+          <div className="flex flex-col gap-1.5">
+            <DialogTitle className="text-lg font-semibold tracking-tight text-ink">
               {title}
             </DialogTitle>
             {description && (
-              <DialogDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              <DialogDescription className="text-base leading-5.5 text-ink-muted">
                 {description}
               </DialogDescription>
             )}
-
-            {confirmPhrase && (
-              <div className="mt-3 space-y-1.5">
-                <p className="text-sm text-muted-foreground">
-                  Type{" "}
-                  <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-foreground">
-                    {confirmPhrase}
-                  </span>{" "}
-                  to confirm.
-                </p>
-                <Input
-                  autoFocus
-                  value={phrase}
-                  onChange={(e) => setPhrase(e.target.value)}
-                  placeholder={confirmPhrase}
-                  className="h-9"
-                />
-              </div>
-            )}
           </div>
+
+          {confirmPhrase && (
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="confirm-phrase"
+                className="text-sm text-ink-muted"
+              >
+                Type{' '}
+                <span className="rounded-sm border border-line bg-surface-hover px-1.25 py-px font-mono text-xs text-ink">
+                  {confirmPhrase}
+                </span>{' '}
+                to confirm
+              </label>
+              <Input
+                id="confirm-phrase"
+                autoFocus
+                autoComplete="off"
+                inputSize="lg"
+                value={phrase}
+                onChange={(e) => setPhrase(e.target.value)}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-2">
-          <div>
-            {tertiary && (
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                onClick={tertiary.onClick}
-                className="px-0 text-muted-foreground"
-              >
-                {tertiary.label}
-              </Button>
-            )}
-          </div>
+        <DialogFooter className={cn(tertiary && 'justify-between')}>
+          {tertiary && (
+            <Button
+              type="button"
+              variant="link"
+              onClick={tertiary.onClick}
+              className="px-0 text-ink-subtle"
+            >
+              {tertiary.label}
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
@@ -177,14 +170,13 @@ export const ConfirmDialog = ({
             <Button
               type="button"
               variant={config.primaryVariant}
-              size="sm"
               onClick={handleConfirm}
               disabled={primaryDisabled}
             >
               {primaryLabel}
             </Button>
           </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

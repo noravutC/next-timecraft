@@ -4,11 +4,76 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* type scale (px): 4xs 9 · 3xs 10 · 2xs 11 · xs 12 · sm 13 · base 14 · md 15 ·
+     lg 17 · xl 20 · 2xl 24 · 3xl 32. Body copy is base; controls are sm. */
+  --text-4xs: 0.5625rem; /* initials in 20-22px avatars */
+  --text-4xs--line-height: 1;
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 1;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
   --text-xs: 0.75rem;
-  --text-sm: 0.85rem;
-  --text-md: 0.95rem;
-  --text-lg: 1.05rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.375rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5rem;
   --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.375rem;
+
+  /* elevation: only things that float get a shadow */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+  --shadow-card-drag: 0 16px 32px -12px rgba(0, 0, 0, 0.28);
+  --shadow-segment: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-popover:
+    0 12px 32px -8px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-toast: 0 12px 32px -8px rgba(0, 0, 0, 0.16);
+  --shadow-sheet:
+    0 24px 64px -16px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-dialog:
+    0 24px 64px -16px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --radius-popover: 0.625rem;
+
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-warning-text: var(--warning-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-danger-text: var(--danger-text);
+  --color-danger-muted: var(--danger-muted);
+  --color-tone-violet: var(--tone-violet);
+  --color-tone-violet-fg: var(--tone-violet-fg);
+  --color-tone-blue: var(--tone-blue);
+  --color-tone-blue-fg: var(--tone-blue-fg);
+  --color-tone-green: var(--tone-green);
+  --color-tone-green-fg: var(--tone-green-fg);
+  --color-tone-orange: var(--tone-orange);
+  --color-tone-orange-fg: var(--tone-orange-fg);
+  --color-tone-red: var(--tone-red);
+  --color-tone-red-fg: var(--tone-red-fg);
+  --color-tone-pink: var(--tone-pink);
+  --color-tone-pink-fg: var(--tone-pink-fg);
+  --color-tone-cyan: var(--tone-cyan);
+  --color-tone-cyan-fg: var(--tone-cyan-fg);
+  --color-tone-slate: var(--tone-slate);
+  --color-tone-slate-fg: var(--tone-slate-fg);
   /* --text-xs: 0.9rem;
   --text-2xs: 0.95rem;
   --text-sm: 1rem;
@@ -83,11 +148,11 @@
   --text-color-column-table: #505258;
   --radius: 0.5rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: var(--ink);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: var(--ink);
   /* primary actions are ink (monochrome UI); brand is reserved for the logo, focus accents and AI */
   --primary: var(--ink);
   --primary-foreground: oklch(0.985 0 0);
@@ -139,6 +204,37 @@
   --surface-active: #f0f0f0;
   --surface-column: #fafafa; /* board lanes sit on a white canvas */
   --line: #ebebeb;
+  --line-soft: #f0f0f0; /* dividers inside a surface */
+  --line-strong: #d4d4d4; /* hover borders, dashed slots, unchecked boxes */
+  --success: #10b981;
+  --success-soft: #e3f4ec;
+  --success-text: #11643f;
+  --warning: #a35a00; /* due soon */
+  --warning-tint: #fef3e2;
+  --warning-soft: #fff8ee;
+  --warning-line: #f5d9b5;
+  --warning-text: #6b3a00;
+  --danger-soft: #fdecea;
+  --danger-line: #f3c7c3;
+  --danger-text: #b42318;
+  --danger-muted: #b4655f;
+  /* monogram tones for avatars and board tiles: pastel fill + dark letter */
+  --tone-violet: #eceafd;
+  --tone-violet-fg: #3f35b8;
+  --tone-blue: #e4eefc;
+  --tone-blue-fg: #1d4e9e;
+  --tone-green: #e3f4ec;
+  --tone-green-fg: #11643f;
+  --tone-orange: #fdeedc;
+  --tone-orange-fg: #8a4600;
+  --tone-red: #fde8e8;
+  --tone-red-fg: #9b1c1c;
+  --tone-pink: #fce7f3;
+  --tone-pink-fg: #9d174d;
+  --tone-cyan: #def4f7;
+  --tone-cyan-fg: #0e6170;
+  --tone-slate: #eef0f3;
+  --tone-slate-fg: #3e4a5c;
   --priority-low: #8f8f8f;
   --priority-low-soft: #f5f5f5;
   --priority-low-line: #e0e0e0;
@@ -363,6 +459,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-base text-foreground antialiased;
   }
 }
