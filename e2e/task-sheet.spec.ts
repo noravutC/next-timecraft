@@ -1,35 +1,13 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { deleteCard, ensureBoard, signInAsGuest } from './guest';
 
 const uniq = Date.now().toString(36);
 const TITLE = `e2e sheet card ${uniq}`;
 
-const signInAsGuest = async (page: Page) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: /continue as guest/i }).click();
-  await page.waitForURL(/\/project/, { timeout: 30_000 });
-  await expect(page.getByTestId('board-column').first()).toBeVisible({
-    timeout: 30_000,
-  });
-};
-
-const deleteCard = async (page: Page, card: Locator) => {
-  await card.hover();
-  await card.getByRole('button', { name: 'Task actions' }).click();
-  const deleted = page.waitForResponse(
-    (r) =>
-      r.request().method() === 'PATCH' &&
-      r.url().includes('/api/task/') &&
-      r.ok(),
-    { timeout: 15_000 },
-  );
-  await page.getByRole('menuitem', { name: /delete task/i }).click();
-  await deleted;
-  await expect(card).not.toBeVisible({ timeout: 15_000 });
-};
-
 test('task sheet edits a card and the card reflects it', async ({ page }) => {
   test.setTimeout(120_000);
   await signInAsGuest(page);
+  await ensureBoard(page);
 
   const firstColumn = page.getByTestId('board-column').first();
   await firstColumn

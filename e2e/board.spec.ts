@@ -1,52 +1,11 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { deleteCard, ensureBoard, signInAsGuest } from './guest';
 
 // Flows share one signed-in guest journey and build on each other.
 test.describe.configure({ mode: 'serial' });
 
 const uniq = Date.now().toString(36);
 const CARD_TITLE = `e2e card ${uniq}`;
-
-const signInAsGuest = async (page: Page) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: /continue as guest/i }).click();
-  await page.waitForURL(/\/project/, { timeout: 30_000 });
-};
-
-/** Guest workspace may or may not already have a board. */
-const ensureBoard = async (page: Page) => {
-  const column = page.getByTestId('board-column').first();
-  const firstBoard = page.getByRole('heading', {
-    name: /create your first board/i,
-  });
-  await expect(column.or(firstBoard)).toBeVisible({ timeout: 30_000 });
-
-  if (await firstBoard.isVisible()) {
-    // Kanban Board is preselected
-    await page.getByLabel('Board name').fill(`E2E Project ${uniq}`);
-    await page.getByRole('button', { name: /^create board/i }).click();
-  }
-  await expect(column).toBeVisible({ timeout: 30_000 });
-};
-
-/**
- * Delete a card through its menu and wait for the server to confirm. The card
- * hides optimistically, so without waiting the test can end (and close the
- * page) before the PATCH lands, leaving e2e cards on the shared guest board.
- */
-const deleteCard = async (page: Page, card: Locator) => {
-  await card.hover();
-  await card.getByRole('button', { name: 'Task actions' }).click();
-  const deleted = page.waitForResponse(
-    (r) =>
-      r.request().method() === 'PATCH' &&
-      r.url().includes('/api/task/') &&
-      r.ok(),
-    { timeout: 15_000 },
-  );
-  await page.getByRole('menuitem', { name: /delete task/i }).click();
-  await deleted;
-  await expect(card).not.toBeVisible({ timeout: 15_000 });
-};
 
 test.describe('kanban board', () => {
   test.beforeEach(async ({ page }) => {
