@@ -9,7 +9,7 @@ services:
         NEXT_PUBLIC_PUSHER_KEY: ${NEXT_PUBLIC_PUSHER_KEY}
         NEXT_PUBLIC_PUSHER_CLUSTER: ${NEXT_PUBLIC_PUSHER_CLUSTER}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file: .env.docker
     environment:
       # inside the compose network the app talks to the db service directly
@@ -24,8 +24,9 @@ services:
       POSTGRES_USER: timecraft
       POSTGRES_PASSWORD: timecraft
       POSTGRES_DB: timecraft
+    # local only: the throwaway password must never face the network
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
