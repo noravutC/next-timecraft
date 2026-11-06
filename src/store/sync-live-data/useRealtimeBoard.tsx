@@ -7,13 +7,14 @@ import { pusherClient } from '@/lib/pusher-client';
 import { toast } from 'sonner';
 import { useTaskStore } from '@/store/use-task.store';
 import { useColumnStore } from '@/store/use-column.store';
+import { useDependencyStore } from '@/store/use-dependency.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
 import { useUnreadStore } from '@/store/use-unread.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import type { TaskAssigneeUser } from '@/services/assignee.service';
-import { ColumnRow, Task } from '@/types';
+import { BlockerRef, ColumnRow, Task } from '@/types';
 import type { TagRenames } from '@/helper/utils/tag-rename';
 
 export const useRealtimeBoard = (projectId?: string | null) => {
@@ -46,6 +47,13 @@ export const useRealtimeBoard = (projectId?: string | null) => {
     channel.bind('tags-renamed', ({ renames }: { renames: TagRenames }) => {
       useTaskStore.getState().renameTagsOnBoard(projectId, renames);
     });
+
+    channel.bind(
+      'blockers-updated',
+      ({ taskId, blockers }: { taskId: string; blockers: BlockerRef[] }) => {
+        useDependencyStore.getState().setBlockers(taskId, blockers);
+      },
+    );
 
     channel.bind('columns-upserted', (columns: ColumnRow[]) => {
       useColumnStore.getState().ingestColumns(columns);

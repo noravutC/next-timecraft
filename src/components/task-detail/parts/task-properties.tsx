@@ -20,6 +20,7 @@ import { TagChip } from './tag-chip';
 import { TagPicker } from './tag-picker';
 import { AssigneePicker, type AssigneeCandidate } from './assignee-picker';
 import { EstimatePicker } from './estimate-picker';
+import { TaskDependencyRows } from './task-dependencies';
 
 interface TaskAssignee {
   userId: string;
@@ -45,7 +46,7 @@ interface TaskPropertiesProps {
   reminderTimeZone: string | null;
 }
 
-/** Status · Priority · Assignees · Due date · Labels · Estimate */
+/** Status · Priority · Assignees · Due date · Labels · Estimate · Blockers */
 export const TaskProperties = ({
   task,
   columns,
@@ -160,5 +161,14 @@ export const TaskProperties = ({
         disabled={readOnly}
       />
     </PropertyRow>
+
+    {columns[0] && (
+      <TaskDependencyRows
+        taskId={task.id}
+        projectId={columns[0].projectId}
+        columns={columns}
+        readOnly={readOnly}
+      />
+    )}
   </div>
 );

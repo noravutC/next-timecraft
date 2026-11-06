@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
-import { GripVertical } from 'lucide-react';
+import { Ban, GripVertical } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
+import { useTaskBlocked } from '@/components/project/use-task-blocked';
 import { cn } from '@/lib/utils';
 import type { TaskCache } from '@/types';
 import { useCalendarDraggable } from './use-calendar-dnd';
@@ -23,6 +24,7 @@ export const UndatedCard = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useCalendarDraggable(ref, task, draggable);
+  const blocked = useTaskBlocked(task.id);
   return (
     <div
       ref={ref}
@@ -59,6 +61,12 @@ export const UndatedCard = ({
             />
             {columnName}
           </span>
+          {blocked && (
+            <span className="inline-flex items-center gap-1 text-danger-text">
+              <Ban className="size-3" />
+              Blocked
+            </span>
+          )}
         </span>
       </span>
     </div>

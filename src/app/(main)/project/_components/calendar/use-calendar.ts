@@ -11,6 +11,7 @@ import {
   useBoardFilterStore,
 } from '@/store/use-board-filter.store';
 import { useTaskStore } from '@/store/use-task.store';
+import { useDependencyStore } from '@/store/use-dependency.store';
 import { dayKey, monthGrid, shiftMonth } from '@/helper/utils/calendar-grid';
 import { formatMonthDay } from '@/helper/utils/date-format';
 import { offerUndo } from '@/components/undo/offer-undo';
@@ -61,6 +62,10 @@ export function useCalendar(projectId: string | null, columns: ColumnCache[]) {
         if (!active) return;
         setData(next);
         setFailed(false);
+        useDependencyStore.getState().ingestPage(
+          [...next.dated, ...next.undated].map((t) => t.id),
+          next.blockers ?? {},
+        );
       })
       .catch(() => active && setFailed(true));
     return () => {

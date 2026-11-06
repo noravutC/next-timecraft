@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
 import { useAssigneeStore } from './use-assignee.store';
 import { useSubtaskStore } from './use-subtask.store';
+import { useDependencyStore } from './use-dependency.store';
 import { useUnreadStore } from './use-unread.store';
 import { useBoardFilterStore } from './use-board-filter.store';
 
@@ -259,6 +260,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       // bulk fetch ส่ง assignees + ความคืบหน้า subtask มาด้วย — hydrate ให้การ์ดใช้
       useAssigneeStore.getState().ingestMany(response.assignees ?? {});
       useSubtaskStore.getState().ingestProgress(response.subtasks ?? {});
+      useDependencyStore.getState().ingestPage(
+        tasksData.map((t) => t.id),
+        response.blockers ?? {},
+      );
       useUnreadStore.getState().ingest(
         response.unread ?? {},
         tasksData.map((t) => t.id),
@@ -302,6 +307,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }));
       useAssigneeStore.getState().ingestMany(response.assignees ?? {});
       useSubtaskStore.getState().ingestProgress(response.subtasks ?? {});
+      useDependencyStore.getState().ingestPage(
+        tasksData.map((t) => t.id),
+        response.blockers ?? {},
+      );
       useUnreadStore.getState().ingest(
         response.unread ?? {},
         tasksData.map((t) => t.id),
