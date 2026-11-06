@@ -24,10 +24,6 @@ export const InlineTitle = ({
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!editing) setDraft(value);
-  }, [value, editing]);
-
-  useEffect(() => {
     if (editing && ref.current) {
       const el = ref.current;
       el.focus();
@@ -74,7 +70,11 @@ export const InlineTitle = ({
   // the sheet's (screen-reader) title is the heading; this is its editable face
   return (
     <div
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        // start from the latest saved title (it may have changed remotely)
+        setDraft(value);
+        setEditing(true);
+      }}
       className={cn(
         titleClass,
         'cursor-text text-ink hover:bg-surface-hover',

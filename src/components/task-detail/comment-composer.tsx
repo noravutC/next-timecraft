@@ -49,9 +49,10 @@ export const CommentComposer = ({
   const users = useUserStore(useShallow((s) => s.users));
   const create = useCommentStore((s) => s.create);
 
+  const members = project?.members;
   const memberCandidates: MentionCandidate[] = useMemo(() => {
-    if (!project?.members) return [];
-    return project.members
+    if (!members) return [];
+    return members
       .map((m) => {
         const u = users[m.userId];
         return u
@@ -59,7 +60,7 @@ export const CommentComposer = ({
           : null;
       })
       .filter((m): m is MentionCandidate => m !== null);
-  }, [project?.members, users]);
+  }, [members, users]);
 
   const mention = useMentionPicker(memberCandidates);
   const upload = useAttachmentUploads(taskId);

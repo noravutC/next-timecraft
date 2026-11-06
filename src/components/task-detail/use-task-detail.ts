@@ -70,9 +70,10 @@ export function useTaskDetail() {
       .sort((a, b) => (a.orderFraction < b.orderFraction ? -1 : 1));
   }, [columnsMap, project]);
 
+  const members = project?.members;
   const memberCandidates = useMemo(() => {
-    if (!project?.members) return [];
-    return project.members
+    if (!members) return [];
+    return members
       .map((m) => {
         const u = users[m.userId];
         return u
@@ -85,7 +86,7 @@ export function useTaskDetail() {
           : null;
       })
       .filter(<T>(c: T | null): c is T => c !== null);
-  }, [project?.members, users]);
+  }, [members, users]);
 
   const assignees = assigneeState?.items ?? [];
   const assigneeIds = assignees.map((a) => a.userId);

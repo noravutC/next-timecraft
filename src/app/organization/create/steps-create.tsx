@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CreateOrganizationProgress } from "./components/create-organization-progress";
 import { StepCreateInvite } from "./components/step-create-invite";
 import { StepCreateLogo } from "./components/step-create-logo";
@@ -28,22 +28,21 @@ export const CreateOrganization = () => {
   const [step, setStep] = useState(0);
   const [orgName, setOrgName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [emails, setEmails] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [preparing, setPreparing] = useState(false);
 
-  useEffect(() => {
-    if (!logoFile) {
-      setLogoPreview(null);
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(logoFile);
-    setLogoPreview(previewUrl);
-
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [logoFile]);
+  // object URL for the picked logo; revoked when the file changes or on unmount
+  const logoPreview = useMemo(
+    () => (logoFile ? URL.createObjectURL(logoFile) : null),
+    [logoFile],
+  );
+  useEffect(
+    () => () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    },
+    [logoPreview],
+  );
 
   const addEmail = () => {
     const nextEmails = appendEmail(emails, emailInput);

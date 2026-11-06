@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -189,13 +190,15 @@ export const CommentItem = ({
                     href={a.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="h-42 w-70 overflow-hidden rounded-lg border border-line bg-surface"
+                    className="relative h-42 w-70 overflow-hidden rounded-lg border border-line bg-surface"
                   >
                     {a.type === 'image' ? (
-                      <img
+                      <Image
                         src={a.url}
-                        alt=""
-                        className="size-full object-cover"
+                        alt="Image attachment"
+                        fill
+                        sizes="280px"
+                        className="object-cover"
                       />
                     ) : (
                       <video

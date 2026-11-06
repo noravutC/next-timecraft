@@ -84,9 +84,13 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
   const [phrase, setPhrase] = React.useState('');
 
-  React.useEffect(() => {
+  // clear the typed phrase when the dialog closes (state reset during render,
+  // no effect needed)
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) setPhrase('');
-  }, [open]);
+  }
 
   const config = VARIANTS[variant];
   const Icon = config.Icon;

@@ -18,10 +18,6 @@ export const InlineDescription = ({
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!editing) setDraft(value ?? '');
-  }, [value, editing]);
-
-  useEffect(() => {
     if (editing) ref.current?.focus();
   }, [editing]);
 
@@ -53,7 +49,10 @@ export const InlineDescription = ({
 
   return (
     <div
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        setDraft(value ?? '');
+        setEditing(true);
+      }}
       className={cn(
         '-mx-2 min-h-11 cursor-text rounded-md px-2 py-1.5 text-base leading-5.5 text-pretty hover:bg-surface-hover',
         value ? 'text-ink-muted' : 'text-ink-subtle',
