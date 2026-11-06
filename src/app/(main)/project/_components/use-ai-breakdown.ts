@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { aiServices } from '@/services/ai.service';
 import type { AiSettingsStatus } from '@/app/api/ai/settings/route';
 import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
+import { isGuestSession } from '@/lib/guest';
+import { isProviderReady, type Provider } from './ai-breakdown-providers';
 
 export type BoardColumnLike = {
   id: string;
   title: string;
+  color?: string;
   nextCursorFraction: string | null;
   cards: { orderFraction: string | null }[];
 };
 
-export const PROVIDER_LABELS = { claude: 'Claude', gemini: 'Gemini' } as const;
-export type Provider = keyof typeof PROVIDER_LABELS;
-
 export type TabKey = 'generate' | 'settings';
+
+/** Tasks created by the last run, listed in the sheet as they stream in. */
+export type BreakdownResult = { columnTitle: string; titles: string[] };
 
 /**
  * State + handlers ของ AI Breakdown sheet:
@@ -23,18 +27,24 @@ export type TabKey = 'generate' | 'settings';
  */
 export function useAiBreakdown(columns: BoardColumnLike[]) {
   const createTasks = useTaskStore((s) => s.createTasks);
+  const { data: session } = useSession();
+  const isGuest = isGuestSession(session);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabKey>('generate');
   const [settings, setSettings] = useState<AiSettingsStatus | null>(null);
   const [goal, setGoal] = useState('');
   const [columnId, setColumnId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<BreakdownResult | null>(null);
 
-  // เปิด sheet ใหม่ให้กลับมาแท็บ Generate เสมอ (adjust-state-on-prop-change)
+  // เปิด sheet ใหม่ให้กลับมาแท็บ Generate และล้างผลรอบก่อน (adjust-state-on-prop-change)
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setTab('generate');
+    if (open) {
+      setTab('generate');
+      setResult(null);
+    }
   }
 
   useEffect(() => {
@@ -46,18 +56,18 @@ export function useAiBreakdown(columns: BoardColumnLike[]) {
   }, [open, settings]);
 
   const targetColumn = columns.find((c) => c.id === columnId) ?? columns[0];
-  const provider: Provider = settings?.provider ?? 'claude';
-  // Claude มี key ฝั่ง server ให้ fallback ได้ — Gemini ต้องมี key ของตัวเอง
+  // guests can't save a provider choice; they always run on the server's Claude key
+  const provider: Provider = isGuest
+    ? 'claude'
+    : (settings?.provider ?? 'claude');
   const keyReady = settings
-    ? provider === 'claude'
-      ? settings.hasClaudeKey || settings.hasServerFallback
-      : settings.hasGeminiKey
+    ? isProviderReady(settings, provider, isGuest)
     : false;
   const canGenerate =
     !isGenerating && keyReady && goal.trim().length >= 3 && Boolean(settings);
 
   const switchProvider = (next: Provider) => {
-    if (!settings || settings.provider === next) return;
+    if (!settings || isGuest || settings.provider === next) return;
     const prev = settings;
     setSettings({ ...settings, provider: next });
     aiServices.updateSettings({ provider: next }).catch(() => {
@@ -69,6 +79,7 @@ export function useAiBreakdown(columns: BoardColumnLike[]) {
   const handleGenerate = async () => {
     if (!canGenerate || !targetColumn) return;
     setIsGenerating(true);
+    setResult({ columnTitle: targetColumn.title, titles: [] });
 
     let lastFraction = targetColumn.cards.at(-1)?.orderFraction ?? null;
     let created = 0;
@@ -94,24 +105,22 @@ export function useAiBreakdown(columns: BoardColumnLike[]) {
               },
             ]);
             created += 1;
+            setResult((r) => r && { ...r, titles: [...r.titles, task.title] });
           },
           onDone: (count) => {
-            toast.success(
-              count > 0
-                ? `Added ${count} tasks to ${targetColumn.title}`
-                : 'AI returned no tasks — try a more specific goal',
-            );
+            if (count === 0) {
+              toast('AI returned no tasks. Try a more specific goal.');
+            }
           },
           onError: (message) => toast.error(message),
         },
       );
-      if (created > 0) {
-        setGoal('');
-        setOpen(false);
-      }
+      // the goal stays so it can be tweaked and run again
+      if (created === 0) setResult(null);
     } catch (error) {
       console.error('AI breakdown failed:', error);
       toast.error('AI request failed');
+      if (created === 0) setResult(null);
     } finally {
       setIsGenerating(false);
     }
@@ -122,6 +131,7 @@ export function useAiBreakdown(columns: BoardColumnLike[]) {
     setOpen,
     tab,
     setTab,
+    isGuest,
     settings,
     setSettings,
     goal,
@@ -130,8 +140,9 @@ export function useAiBreakdown(columns: BoardColumnLike[]) {
     isGenerating,
     targetColumn,
     provider,
-    keyReady,
+    needsKey: Boolean(settings) && !keyReady,
     canGenerate,
+    result,
     switchProvider,
     handleGenerate,
   };
