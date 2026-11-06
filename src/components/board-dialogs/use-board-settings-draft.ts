@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useProjectStore } from '@/store';
 import { useTaskStore } from '@/store/use-task.store';
 import { TAG_LIMIT } from '@/lib/project-settings/constants';
-import { hashTagColor } from '@/lib/project-settings/tag-palette';
 import {
   dropTagRename,
   hasTagRenames,
   recordTagRename,
+  savedNameOf,
   type TagRenames,
 } from '@/helper/utils/tag-rename';
+import { projectServices } from '@/services/projects.service';
 import {
   withSettingsDefaults,
   type ProjectSettings,
@@ -43,6 +44,21 @@ export function useBoardSettingsDraft({
   const [draft, setDraft] = useState<BoardSettingsDraft | null>(null);
   const [draftTag, setDraftTag] = useState('');
   const [renames, setRenames] = useState<TagRenames>({});
+  const [tagCounts, setTagCounts] = useState<Record<string, number> | null>(
+    null,
+  );
+  const projectId = project?.id ?? null;
+  useEffect(() => {
+    if (!open || !projectId) return;
+    let active = true;
+    projectServices
+      .getTagCounts(projectId)
+      .then((counts) => active && setTagCounts(counts))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [open, projectId]);
   const [saving, setSaving] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -100,40 +116,37 @@ export function useBoardSettingsDraft({
     setDraftTag('');
   };
 
-  /** false when the name is refused, so the field stays open */
-  const renameTag = (tag: string, name: string) => {
+  /**
+   * A tag's new name and color, from its edit row. False when the name is
+   * refused, so the row stays open.
+   */
+  const saveTag = (tag: string, name: string, color: string) => {
     if (!project) return false;
-    const next = name.trim();
-    if (!next || next === tag) return true;
-    if (!acceptTagName(next, tag)) return false;
+    const next = name.trim() || tag;
+    if (next !== tag && !acceptTagName(next, tag)) return false;
     setDraft((d) => {
       if (!d) return d;
-      // the color goes with the name, even one it only had by default
-      const { [tag]: color, ...tagColors } = d.settings.tagColors;
+      const { [tag]: _old, ...tagColors } = d.settings.tagColors;
       return {
         ...d,
         tags: d.tags.map((t) => (t === tag ? next : t)),
         settings: {
           ...d.settings,
-          tagColors: { ...tagColors, [next]: color ?? hashTagColor(tag) },
+          tagColors: { ...tagColors, [next]: color },
         },
       };
     });
-    setRenames((r) => recordTagRename(r, project.tags ?? [], tag, next));
+    if (next !== tag) {
+      setRenames((r) => recordTagRename(r, project.tags ?? [], tag, next));
+    }
     return true;
   };
 
-  const recolorTag = (tag: string, color: string) =>
-    setDraft(
-      (d) =>
-        d && {
-          ...d,
-          settings: {
-            ...d.settings,
-            tagColors: { ...d.settings.tagColors, [tag]: color },
-          },
-        },
-    );
+  /** Tasks using a tag, counted under the name it was saved with. */
+  const tagUses = (tag: string) => {
+    const saved = savedNameOf(renames, project?.tags ?? [], tag);
+    return saved ? (tagCounts?.[saved] ?? 0) : 0;
+  };
 
   const removeTag = (tag: string) => {
     setRenames((r) => dropTagRename(r, tag));
@@ -213,8 +226,8 @@ export function useBoardSettingsDraft({
     setConfirmDelete,
     patchSettings,
     addTag,
-    renameTag,
-    recolorTag,
+    saveTag,
+    tagUses,
     removeTag,
     handleSave,
     handleArchive,

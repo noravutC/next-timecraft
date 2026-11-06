@@ -15,7 +15,11 @@ export const hasTagRenames = (renames: TagRenames) =>
   Object.keys(renames).length > 0;
 
 /** The saved name behind a tag as it reads now, or null for a new tag. */
-const savedNameOf = (renames: TagRenames, saved: string[], current: string) =>
+export const savedNameOf = (
+  renames: TagRenames,
+  saved: string[],
+  current: string,
+) =>
   Object.keys(renames).find((from) => renames[from] === current) ??
   (saved.includes(current) && !Object.hasOwn(renames, current)
     ? current

@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { columnsTable, tasksTable } from '@/db/schema';
 import { renameTagsIn, type TagRenames } from '@/helper/utils/tag-rename';
-import { and, arrayOverlaps, eq, inArray } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, sql } from 'drizzle-orm';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -39,4 +39,22 @@ export async function renameBoardTags(
       .where(eq(tasksTable.id, row.id));
   }
   return rows.length;
+}
+
+/** How many live tasks on the board carry each tag. */
+export async function countBoardTags(
+  projectId: string,
+): Promise<Record<string, number>> {
+  const rows = await db.execute<{ tag: string; n: number }>(sql`
+    select tag, count(*)::int as n
+    from ${tasksTable} t
+    cross join lateral unnest(t.tags) as tag
+    where t.archived = false
+      and t.column_id in (
+        select id from ${columnsTable}
+        where project_id = ${projectId} and is_deleted = false
+      )
+    group by tag
+  `);
+  return Object.fromEntries(rows.map((r) => [r.tag, r.n]));
 }

@@ -59,8 +59,8 @@ export const BoardSettingsDialog = ({
     setConfirmDelete,
     patchSettings,
     addTag,
-    renameTag,
-    recolorTag,
+    saveTag,
+    tagUses,
     removeTag,
     handleSave,
     handleArchive,
@@ -142,8 +142,8 @@ export const BoardSettingsDialog = ({
                 draftTag={draftTag}
                 onDraftTagChange={setDraftTag}
                 onAddTag={addTag}
-                onRenameTag={renameTag}
-                onRecolorTag={recolorTag}
+                onSaveTag={saveTag}
+                tagUses={tagUses}
                 onRemoveTag={removeTag}
                 onPickNextColor={(color) =>
                   patchSettings({ nextTagColor: color })
