@@ -13,6 +13,7 @@ const ACTION_LABELS: Record<Notification['type'], string> = {
   comment_mention: 'mentioned you on',
   comment_reply: 'commented on',
   board_invite: 'invited you to',
+  workspace_invite: 'invited you to',
   member_removed: 'removed you from',
   task_assigned: 'assigned you to',
 };

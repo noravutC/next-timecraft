@@ -2,6 +2,7 @@ import type {
   BoardInviteNotificationPayload,
   CommentNotificationPayload,
   Notification,
+  WorkspaceInviteNotificationPayload,
 } from '@/types';
 import { formatDateShort, formatRelativePast } from './date-format';
 
@@ -18,13 +19,18 @@ export const isTaskNotification = (n: Pick<Notification, 'type'>) =>
   n.type === 'comment_reply' ||
   n.type === 'task_assigned';
 
-/** Bold object at the end of the sentence: the task title, or the board name. */
+/** Bold object at the end of the sentence: the task, board or workspace name. */
 export const notificationTarget = (
   n: Pick<Notification, 'type' | 'payload'>,
-): string =>
-  isTaskNotification(n)
-    ? (n.payload as CommentNotificationPayload).taskTitle
-    : (n.payload as BoardInviteNotificationPayload).projectName;
+): string => {
+  if (isTaskNotification(n)) {
+    return (n.payload as CommentNotificationPayload).taskTitle;
+  }
+  if (n.type === 'workspace_invite') {
+    return (n.payload as WorkspaceInviteNotificationPayload).organizationName;
+  }
+  return (n.payload as BoardInviteNotificationPayload).projectName;
+};
 
 /** What each filter chip shows. */
 export const filterNotifications = (

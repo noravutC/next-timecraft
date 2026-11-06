@@ -33,7 +33,8 @@ export function StepCreateInvite({ model, actions }: StepCreateInviteProps) {
       className="flex flex-col gap-6"
     >
       <StepHeading title="Invite your team">
-        Add teammate emails now, or skip and invite them from a board later.
+        They’ll get an email with a link to join. Members can open and work on
+        every board in the workspace. You can skip this for now.
       </StepHeading>
 
       <div className="flex flex-col gap-2.5">

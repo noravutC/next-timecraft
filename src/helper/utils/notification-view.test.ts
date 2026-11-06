@@ -68,6 +68,22 @@ describe('notificationTarget', () => {
     expect(notificationTarget(items[0])).toBe('Migrate sign-in');
     expect(notificationTarget(items[2])).toBe('Website Relaunch');
   });
+
+  it('names the workspace for a workspace invitation', () => {
+    expect(
+      notificationTarget({
+        type: 'workspace_invite',
+        payload: {
+          organizationId: 'o1',
+          organizationName: 'Northwind Studio',
+          actorUserId: 'u1',
+          actorName: 'Ploy S.',
+          role: 'member',
+          token: 't',
+        },
+      }),
+    ).toBe('Northwind Studio');
+  });
 });
 
 describe('formatNotificationTime', () => {

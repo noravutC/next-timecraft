@@ -5,7 +5,9 @@ import { useOpenTask } from '@/components/task-detail/use-open-task';
 import type {
   BoardInviteNotificationPayload,
   CommentNotificationPayload,
+  MemberRemovedNotificationPayload,
   Notification,
+  WorkspaceInviteNotificationPayload,
 } from '@/types';
 
 /**
@@ -27,9 +29,15 @@ export function useOpenNotification(onNavigate: () => void) {
       );
       return;
     }
+    if (n.type === 'workspace_invite') {
+      router.push(
+        `/join/${(n.payload as WorkspaceInviteNotificationPayload).token}`,
+      );
+      return;
+    }
     if (n.type === 'member_removed') {
       // nothing left to open: drop the board from our list
-      removeProject(n.payload.projectId);
+      removeProject((n.payload as MemberRemovedNotificationPayload).projectId);
       return;
     }
     // comment_mention / comment_reply / task_assigned open the task

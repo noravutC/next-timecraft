@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import {
   aiUsageLogsTable,
+  organizationInvitationsTable,
   projectInvitationsTable,
   projectsTable,
 } from '@/db/schema';
@@ -9,20 +10,32 @@ import { and, count, eq, gte } from 'drizzle-orm';
 // Counts behind the daily ceilings in lib/api/quotas.ts. They read rows the
 // actions already write, so the limits survive restarts without new tables.
 
+// board and workspace invitations share one daily limit: both send email
 export async function countInvitesSentSince(
   userId: string,
   since: Date,
 ): Promise<number> {
-  const [row] = await db
-    .select({ n: count() })
-    .from(projectInvitationsTable)
-    .where(
-      and(
-        eq(projectInvitationsTable.invitedBy, userId),
-        gte(projectInvitationsTable.createdAt, since),
+  const [[boards], [workspaces]] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(projectInvitationsTable)
+      .where(
+        and(
+          eq(projectInvitationsTable.invitedBy, userId),
+          gte(projectInvitationsTable.createdAt, since),
+        ),
       ),
-    );
-  return row?.n ?? 0;
+    db
+      .select({ n: count() })
+      .from(organizationInvitationsTable)
+      .where(
+        and(
+          eq(organizationInvitationsTable.invitedBy, userId),
+          gte(organizationInvitationsTable.createdAt, since),
+        ),
+      ),
+  ]);
+  return (boards?.n ?? 0) + (workspaces?.n ?? 0);
 }
 
 export async function countBoardsCreatedSince(

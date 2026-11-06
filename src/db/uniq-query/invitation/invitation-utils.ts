@@ -8,7 +8,7 @@ import type {
 } from "@/types";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // pending = ยังไม่ accepted/revoked และยังไม่หมดอายุ (สถานะ derive จาก timestamps
 // — ฝั่ง logic ล้วนดู invitationStatus() ใน src/helper/utils/invitation-status.ts)

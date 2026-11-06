@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { ArrowRight } from 'lucide-react';
 import { useProjectStore } from '@/store';
+import { canCreateBoards } from '@/lib/rbac/workspace-permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +19,7 @@ import {
 import { FirstBoardHeader } from './first-board-header';
 import { BoardCoverField } from './board-cover-field';
 import { useBoardCover } from './use-board-cover';
+import { NoBoardsYet } from './no-boards-yet';
 
 /** Empty workspace: name the first board and pick its template. */
 export const CreateFirstProject = () => {
@@ -31,10 +34,24 @@ export const CreateFirstProject = () => {
   const [templateId, setTemplateId] = useState(BOARD_TEMPLATES[0].id);
   const canCreate = name.trim().length > 0 && !creating;
 
+  const { data: session } = useSession();
+
   const handleCreate = () => {
     if (!canCreate) return;
     void createBoard({ name, templateId, coverImage: cover.coverImage });
   };
+
+  // members and board guests can't create boards here: nothing to set up
+  if (session && !canCreateBoards(session.user?.orgRole)) {
+    return (
+      <NoBoardsYet
+        workspace={workspace}
+        canStartWorkspace={
+          Boolean(session.user?.canCreateOrg) && !session.user?.organizationId
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">

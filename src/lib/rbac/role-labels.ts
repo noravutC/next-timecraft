@@ -1,5 +1,6 @@
 import type { ProjectRole } from '@/lib/rbac/permissions';
 import type { InvitableRole } from '@/types';
+import type { WorkspaceRole } from './workspace-permissions';
 
 export const ROLE_LABELS: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -14,3 +15,33 @@ export const INVITABLE_ROLES: readonly InvitableRole[] = [
   'viewer',
   'admin',
 ];
+
+export const WORKSPACE_ROLE_LABELS: Record<WorkspaceRole, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  member: 'Member',
+  guest: 'Guest',
+};
+
+/**
+ * How an invited workspace role reads in a sentence, and what it lets you do
+ * (see boardRoleForWorkspaceRole and canCreateBoards).
+ */
+export const WORKSPACE_JOIN_COPY: Record<
+  WorkspaceRole,
+  { article: 'a' | 'an'; hint: string }
+> = {
+  owner: { article: 'an', hint: 'You can manage everything once you join.' },
+  admin: {
+    article: 'an',
+    hint: 'You can create boards, invite people and manage every board once you join.',
+  },
+  member: {
+    article: 'a',
+    hint: 'You can open and work on every board in it once you join.',
+  },
+  guest: {
+    article: 'a',
+    hint: 'You can open the boards you’re invited to once you join.',
+  },
+};

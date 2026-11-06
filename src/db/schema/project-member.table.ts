@@ -1,5 +1,5 @@
 import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { projectMembershipRoleEnum } from "./enums";
+import { projectMemberSourceEnum, projectMembershipRoleEnum } from "./enums";
 import { projectsTable } from "./project.table";
 import { usersTable } from "./user.table";
 
@@ -14,6 +14,7 @@ export const projectMembersTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
     role: projectMembershipRoleEnum("role").notNull().default("viewer"),
+    source: projectMemberSourceEnum("source").notNull().default("direct"),
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

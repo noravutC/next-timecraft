@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WORKSPACE_INVITABLE_ROLES } from '@/lib/rbac/workspace-permissions';
 
 // What the logo picker produces: a small square PNG, JPEG or WebP data URL.
 // Never a remote URL, which would load a tracking image for every member.
@@ -18,3 +19,16 @@ export const createOrganizationSchema = z.object({
 });
 
 export type CreateOrganizationBody = z.infer<typeof createOrganizationSchema>;
+
+// the onboarding step and the members page send a few addresses at once
+export const MAX_WORKSPACE_INVITES_PER_REQUEST = 20;
+
+export const inviteToWorkspaceSchema = z.object({
+  emails: z
+    .array(z.email().max(255))
+    .min(1)
+    .max(MAX_WORKSPACE_INVITES_PER_REQUEST),
+  role: z.enum(WORKSPACE_INVITABLE_ROLES),
+});
+
+export type InviteToWorkspaceBody = z.infer<typeof inviteToWorkspaceSchema>;

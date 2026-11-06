@@ -10,7 +10,8 @@ import { LoaderScreen } from '@/components/ui/loader';
 import { inviteView } from '@/helper/utils/invite-view';
 import { boardUrl } from '@/helper/utils/board-url';
 import type { InvitationPreview } from '@/types';
-import { InviteStateCard } from './_components/invite-state-card';
+import { InviteStateCard } from '@/components/invitations/invite-state-card';
+import { boardInviteTarget } from './_components/board-invite-target';
 
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -39,7 +40,8 @@ export default function InvitePage() {
     try {
       const res = await projectServices.acceptInvitation(token);
       // re-read the session so it knows about the new board membership
-      await update();
+      // (an empty payload: update() without one only reads the session)
+      await update({});
       toast.success('Invitation accepted. Welcome aboard!');
       // open the board just joined, not whichever board comes first
       router.replace(boardUrl({ board: res.created?.projectId ?? null }));
@@ -74,7 +76,8 @@ export default function InvitePage() {
               account is created on Google sign-in by hydrateTokenFromDb) */}
           <InviteStateCard
             view={view}
-            preview={preview}
+            target={boardInviteTarget(preview)}
+            invitedEmail={preview?.email ?? null}
             sessionEmail={session?.user?.email ?? ''}
             accepting={accepting}
             onAccept={() => void handleAccept()}

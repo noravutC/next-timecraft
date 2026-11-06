@@ -13,6 +13,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "comment_mention",
   "comment_reply",
   "board_invite",
+  "workspace_invite",
   "member_removed",
   "task_assigned",
 ]);
@@ -31,6 +32,15 @@ export type CommentNotificationPayload = {
 export type BoardInviteNotificationPayload = {
   projectId: string;
   projectName: string;
+  actorUserId: string;
+  actorName: string;
+  role: string;
+  token: string;
+};
+
+export type WorkspaceInviteNotificationPayload = {
+  organizationId: string;
+  organizationName: string;
   actorUserId: string;
   actorName: string;
   role: string;
@@ -56,6 +66,7 @@ export type TaskAssignedNotificationPayload = {
 export type NotificationPayload =
   | CommentNotificationPayload
   | BoardInviteNotificationPayload
+  | WorkspaceInviteNotificationPayload
   | MemberRemovedNotificationPayload
   | TaskAssignedNotificationPayload;
 

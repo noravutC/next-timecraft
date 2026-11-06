@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { appendEmail } from "@/helper/utils/email-list";
 import { useWorkspaceLogoPicker } from "@/components/workspace/use-workspace-logo-picker";
+import { invitesSummary } from "@/helper/utils/invite-result";
 
 const STEP_LABELS = ["Name", "Logo", "Invite"];
 export const slideVariants = {
@@ -24,7 +25,7 @@ export const slideVariants = {
 export const CreateOrganization = () => {
   const router = useRouter();
   const { update } = useSession();
-  const { createOrganization } = useOrganizationStore();
+  const { createOrganization, inviteToWorkspace } = useOrganizationStore();
 
   const [step, setStep] = useState(0);
   const [orgName, setOrgName] = useState("");
@@ -64,10 +65,25 @@ export const CreateOrganization = () => {
         return;
       }
 
+      // the workspace exists either way: invitations are best effort
+      let invites: string | null = null;
+      if (emails.length > 0) {
+        try {
+          invites = invitesSummary(
+            await inviteToWorkspace(createdOrganization.id, {
+              emails,
+              role: "member",
+            }),
+          );
+        } catch {
+          toast.error("The workspace is ready, but the invitations didn’t go out");
+        }
+      }
+
       // Payload is ignored server-side: update() just makes the jwt callback
       // re-read org/role from the DB (no argument would only GET the session).
       await update({});
-      toast.success("Workspace created");
+      toast.success("Workspace created", { description: invites ?? undefined });
       router.replace("/project");
     } catch (error) {
       console.error("Failed to create organization:", error);
