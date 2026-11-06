@@ -5,3 +5,7 @@ export const isApplePlatform = (): boolean =>
 
 /** Modifier key label for shortcut hints, e.g. "⌘" + "K". */
 export const modKeyLabel = (): string => (isApplePlatform() ? '⌘' : 'Ctrl');
+
+/** "⌘Z" on Apple keyboards, "Ctrl Z" elsewhere. */
+export const shortcutLabel = (key: string): string =>
+  isApplePlatform() ? `⌘${key}` : `Ctrl ${key}`;

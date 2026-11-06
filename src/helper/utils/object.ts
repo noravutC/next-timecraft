@@ -34,3 +34,10 @@ export const chunk = <T>(array: T[], size: number): T[][] => {
   }
   return pieces;
 };
+
+/** The same keys, with the values they have in `source` (to undo a change). */
+export const pickKeys = <T extends object, K extends keyof T>(
+  source: T,
+  keys: K[],
+): Pick<T, K> =>
+  Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;

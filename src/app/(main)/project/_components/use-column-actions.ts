@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { offerUndo } from '@/components/undo/offer-undo';
 import { useColumnStore } from '@/store/use-column.store';
 import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
 import type { UpdateColumnPayload } from '@/types';
@@ -39,20 +40,19 @@ export function useColumnActions(column: TColumn, allColumns: TColumn[]) {
   };
 
   const restore = async () => {
-    try {
-      await restoreColumns([column.id]);
-      await fetchTasksByColumns([column.id], TASK_PAGE_SIZE);
-    } catch {
-      toast.error('Couldn’t bring the column back');
-    }
+    await restoreColumns([column.id]);
+    await fetchTasksByColumns([column.id], TASK_PAGE_SIZE);
   };
 
   const remove = async () => {
     setConfirmDelete(false);
     try {
       await deleteColumns([column.id]);
-      toast(`Deleted the ${column.title} column`, {
-        action: { label: 'Undo', onClick: () => void restore() },
+      offerUndo({
+        icon: 'trash',
+        title: `Deleted the ${column.title} column`,
+        undo: restore,
+        undoneTitle: `${column.title} is back`,
       });
     } catch {
       toast.error('Couldn’t delete the column');

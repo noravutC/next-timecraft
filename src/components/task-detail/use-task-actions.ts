@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useBoardAccess } from '@/components/project/use-board-access';
+import { offerUndo } from '@/components/undo/offer-undo';
 import { boardsToMoveTo } from '@/helper/utils/board-switcher';
 import { useProjectStore } from '@/store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
@@ -70,8 +71,13 @@ export function useTaskActions(task: Task | undefined) {
       if (!task) return;
       close();
       setArchived(true)?.catch((error) => failed(error, 'Couldn’t archive it'));
-      toast('Task archived', {
-        action: { label: 'Undo', onClick: () => void setArchived(false) },
+      offerUndo({
+        icon: 'archive',
+        title: 'Task archived',
+        detail: task.title,
+        undo: async () => setArchived(false),
+        undoneTitle: 'Back on the board',
+        redo: { label: 'Archive again', run: async () => setArchived(true) },
       });
     },
     confirmDelete,
