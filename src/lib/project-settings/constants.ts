@@ -55,3 +55,15 @@ export const TAG_PALETTE: TagPalette[] = [
   { value: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', border: 'rgba(139,92,246,0.30)', text: '#6d28d9' },
   { value: '#64748b', bg: 'rgba(100,116,139,0.10)', border: 'rgba(100,116,139,0.30)', text: '#334155' },
 ];
+
+// column dots: the swatches in a column's menu and in Add column
+export const COLUMN_COLORS: { value: string; label: string }[] = [
+  { value: '#A3A3A3', label: 'Gray' },
+  { value: '#3B82F6', label: 'Blue' },
+  { value: '#F59E0B', label: 'Amber' },
+  { value: '#8B5CF6', label: 'Violet' },
+  { value: '#10B981', label: 'Green' },
+  { value: '#EF4444', label: 'Red' },
+  { value: '#EC4899', label: 'Pink' },
+  { value: '#06B6D4', label: 'Cyan' },
+];

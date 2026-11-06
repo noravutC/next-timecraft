@@ -21,13 +21,20 @@ type ColumnStore = {
     payload: UpdateColumnPayload[],
   ) => Promise<ColumnCache[] | null>;
   deleteColumns: (colIds: string[]) => Promise<void>;
+  /** optimistic: rename, recolor, WIP limit or move one column */
+  patchColumn: (
+    columnId: string,
+    patch: Omit<UpdateColumnPayload, "id">,
+  ) => Promise<void>;
+  /** brings deleted columns back into the board */
+  restoreColumns: (colIds: string[]) => Promise<ColumnCache[]>;
   fetchColumns: (
     projectId: string,
     limitTasks?: number,
   ) => Promise<ColumnCache[]>;
 };
 
-export const useColumnStore = create<ColumnStore>((set) => ({
+export const useColumnStore = create<ColumnStore>((set, get) => ({
   status: "none",
   columns: {},
   columnsLoader: {},
@@ -134,6 +141,27 @@ export const useColumnStore = create<ColumnStore>((set) => ({
       set({ status: "error" });
       throw error;
     }
+  },
+  patchColumn: async (columnId, patch) => {
+    const snapshot = get().columns[columnId];
+    if (!snapshot) return;
+    set((state) => ({
+      columns: { ...state.columns, [columnId]: { ...snapshot, ...patch } },
+    }));
+    try {
+      await columnServices.updateColumns([columnId], [{ id: columnId, ...patch }]);
+    } catch (error) {
+      set((state) => ({ columns: { ...state.columns, [columnId]: snapshot } }));
+      throw error;
+    }
+  },
+  restoreColumns: async (colIds) => {
+    const { updated } = await columnServices.restoreColumns(colIds);
+    const restored = (updated ?? []).map((c) => ({ ...c, timestamp: Date.now() }));
+    set((state) => ({
+      columns: { ...state.columns, ...toRecord(restored, "id") },
+    }));
+    return restored;
   },
   fetchColumns: async (projectId, limitTasks = 50) => {
     if (!projectId) {

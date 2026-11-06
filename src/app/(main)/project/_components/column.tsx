@@ -16,6 +16,10 @@ import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
 import { CardSkeleton } from './card-skeleton';
 import { TColumnState, useColumnDnd } from './use-column-dnd';
+import { ColumnHeader } from './column-header';
+import { useColumnActions } from './use-column-actions';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { deleteColumnMessage } from '@/helper/utils/column-copy';
 import { useBoardAccess } from '@/components/project/use-board-access';
 
 const stateStyles: Record<TColumnState['type'], string> = {
@@ -66,9 +70,12 @@ export const Column = ({
   const isLoading = columnsLoader[column.id] ?? false;
   const access = useBoardAccess();
   const canAddCards = access.can('task:create');
+  const canManage = access.can('column:update');
+  const actions = useColumnActions(column, allColumns);
   const state = useColumnDnd({
     column,
-    canDrag: access.can('column:update'),
+    // a column being renamed stays put
+    canDrag: canManage && !actions.renaming,
     outerRef: outerFullHeightRef,
     scrollableRef,
     headerRef,
@@ -121,45 +128,15 @@ export const Column = ({
         <div
           className={`flex max-h-full min-h-0 flex-1 flex-col ${state.type === 'is-column-over' ? 'invisible' : ''}`}
         >
-          <div
-            className="flex h-11 flex-row items-center gap-2 pr-1.5 pl-3.5"
-            ref={headerRef}
-          >
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: column.color ?? '#94A3B8' }}
-            />
-            <h2 className="truncate text-sm font-semibold text-ink">
-              {column.title}
-            </h2>
-            <span
-              className={cn(
-                'font-mono text-xs',
-                column.wipLimit > 0 && column.totalTasks > column.wipLimit
-                  ? 'font-medium text-destructive'
-                  : 'text-ink-subtle',
-              )}
-            >
-              {column.wipLimit > 0
-                ? `${column.totalTasks}/${column.wipLimit}`
-                : column.totalTasks}
-            </span>
-            <div className="flex-1" />
-            {canAddCards ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setAddingAt('top')}
-                aria-label={`Add a card to the top of ${column.title}`}
-                disabled={isLoading}
-                className="size-7 text-ink-subtle hover:bg-surface-active hover:text-ink"
-              >
-                <Plus className="size-3.75" />
-              </Button>
-            ) : (
-              <span aria-hidden className="size-7" />
-            )}
-          </div>
+          <ColumnHeader
+            column={column}
+            headerRef={headerRef}
+            actions={actions}
+            canAddCards={canAddCards}
+            canManage={canManage}
+            loading={isLoading}
+            onAddTop={() => setAddingAt('top')}
+          />
           {addingAt === 'top' && (
             <AddCardInline
               columnId={column.id}
@@ -237,6 +214,15 @@ export const Column = ({
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={actions.confirmDelete}
+        onOpenChange={actions.setConfirmDelete}
+        variant="destructive"
+        title={`Delete the ${column.title} column?`}
+        description={deleteColumnMessage(column.totalTasks)}
+        primaryLabel="Delete column"
+        onConfirm={actions.remove}
+      />
     </div>
   );
 };

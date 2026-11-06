@@ -64,32 +64,27 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
     const updatedColumns = await db.transaction(async (tx) => {
       const rowsUpdated = [];
 
+      // only the fields sent change: a rename doesn't need the order, a
+      // move doesn't need the name
       for (const item of body) {
-        if (item.id && item.orderFraction) {
-          const [updated] = await tx
-            .update(columnsTable)
-            .set({
-              name: item.name,
-              color: item.color,
-              wipLimit: item.wipLimit,
-              orderFraction: item.orderFraction,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(columnsTable.id, item.id),
-                eq(columnsTable.isDeleted, false),
-              ),
-            )
-            .returning();
+        const [updated] = await tx
+          .update(columnsTable)
+          .set({
+            name: item.name,
+            color: item.color,
+            wipLimit: item.wipLimit,
+            orderFraction: item.orderFraction,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(columnsTable.id, item.id),
+              eq(columnsTable.isDeleted, false),
+            ),
+          )
+          .returning();
 
-          if (updated) rowsUpdated.push(updated);
-        } else {
-          console.log(
-            "Lacking column id or order fraction when update bulk column at: ",
-            item.name,
-          );
-        }
+        if (updated) rowsUpdated.push(updated);
       }
 
       return rowsUpdated;
