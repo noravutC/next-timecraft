@@ -69,7 +69,11 @@ export interface TimeCraftJWT extends Record<string, unknown> {
   picture?: string | null;
 }
 
-const hydrateTokenFromDb = async (token: TimeCraftJWT, email: string) => {
+// Look the user up by a value the server already trusts: the provider's email
+// at sign-in, or the token's own id afterwards. Never by client input.
+type UserLookup = { email: string } | { id: string };
+
+const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
   const [dbUser] = await db
     .select({
       id: usersTable.id,
@@ -80,7 +84,11 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, email: string) => {
       providerId: usersTable.providerId,
     })
     .from(usersTable)
-    .where(eq(usersTable.email, email))
+    .where(
+      "id" in lookup
+        ? eq(usersTable.id, lookup.id)
+        : eq(usersTable.email, lookup.email),
+    )
     .limit(1);
 
   if (!dbUser) {
@@ -146,13 +154,18 @@ export const authConfig: NextAuthConfig = {
     maxAge: 48 * 60 * 60,
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       // Guest account is already provisioned in authorize()
       if (account?.provider === "guest") {
         return true;
       }
 
       if (!user.email) {
+        return false;
+      }
+
+      // Users are matched by email, so only accept addresses Google has verified.
+      if (account?.provider === "google" && profile?.email_verified === false) {
         return false;
       }
 
@@ -182,70 +195,36 @@ export const authConfig: NextAuthConfig = {
 
       return true;
     },
-    async jwt({ token, user, trigger, session }) {
-      if (trigger === "update" && session?.user) {
-        const updatedUser = session.user as {
-          fullName?: string;
-          avatar?: string | null;
-          provider?: string;
-          providerId?: string;
-          organizationId?: string;
-          systemRole?: TimeCraftJWT["systemRole"];
-          canCreateOrg?: boolean;
-          email?: string | null;
-          name?: string | null;
-          image?: string | null;
-        };
-
-        if (typeof updatedUser.fullName === "string") {
-          token.fullName = updatedUser.fullName;
-          token.name = updatedUser.fullName;
-        }
-        if (updatedUser.avatar !== undefined) {
-          token.avatar = updatedUser.avatar ?? null;
-          token.picture = updatedUser.avatar ?? null;
-        }
-        if (typeof updatedUser.provider === "string") {
-          token.provider = updatedUser.provider;
-        }
-        if (typeof updatedUser.providerId === "string") {
-          token.providerId = updatedUser.providerId;
-        }
-        if (typeof updatedUser.organizationId === "string") {
-          token.organizationId = updatedUser.organizationId;
-        }
-        if (typeof updatedUser.systemRole === "string") {
-          token.systemRole = updatedUser.systemRole;
-        }
-        if (typeof updatedUser.canCreateOrg === "boolean") {
-          token.canCreateOrg = updatedUser.canCreateOrg;
-        }
-        if (typeof updatedUser.email === "string") {
-          token.email = updatedUser.email;
-        }
+    async jwt({ token, user, trigger }) {
+      const current = token as TimeCraftJWT;
+      // Sign-in: the email comes from the provider (or guest authorize()).
+      // Afterwards only the token's own id is trusted. The `update()` payload
+      // is client-controlled, so it is ignored: `trigger === "update"` only
+      // means "re-read the access context from the DB".
+      const lookup: UserLookup | null = user?.email
+        ? { email: user.email }
+        : current.id
+          ? { id: current.id }
+          : null;
+      if (!lookup) {
+        return token;
       }
 
       const hasAccessContext =
-        Boolean(token.id) &&
-        Boolean(token.systemRole) &&
-        typeof token.canCreateOrg === "boolean" &&
-        (token.canCreateOrg ? true : Boolean(token.organizationId));
+        Boolean(current.id) &&
+        Boolean(current.systemRole) &&
+        typeof current.canCreateOrg === "boolean" &&
+        (current.canCreateOrg ? true : Boolean(current.organizationId));
 
       // Avoid hitting DB on every `/api/auth/session` request.
-      // Re-hydrate on sign-in or when token is still incomplete.
-      const shouldHydrate = Boolean(user) || !hasAccessContext;
-
+      const shouldHydrate =
+        Boolean(user) || trigger === "update" || !hasAccessContext;
       if (!shouldHydrate) {
         return token;
       }
 
-      const email = user?.email ?? session?.user?.email ?? token.email;
-      if (!email) {
-        return token;
-      }
-
       try {
-        return hydrateTokenFromDb(token as TimeCraftJWT, email);
+        return await hydrateTokenFromDb(current, lookup);
       } catch (error) {
         console.error("next-auth jwt callback error:", error);
         // Keep previous token so client session doesn't collapse to 500/unauth.
