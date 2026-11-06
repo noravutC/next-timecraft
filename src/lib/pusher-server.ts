@@ -25,16 +25,21 @@ export const triggerExclusive = (
     socket_id: socketIdFromRequest(req),
   });
 
-/** Shows a new notification in its recipient's bell; nothing if there's none. */
+/**
+ * Shows a new notification in its recipient's bell; nothing if there's none.
+ * Without a request (a scheduled job), nobody's socket is left out.
+ */
 export const pushNotification = (
-  req: Request,
+  req: Request | null,
   notification: { userId: string } | null,
 ): Promise<unknown> =>
   notification
-    ? triggerExclusive(
-        req,
-        `user-${notification.userId}`,
-        'notification-added',
-        notification,
-      ).catch((e) => console.error('Pusher notif failed:', e))
+    ? pusherServer
+        .trigger(
+          privateChannel(`user-${notification.userId}`),
+          'notification-added',
+          notification,
+          req ? { socket_id: socketIdFromRequest(req) } : undefined,
+        )
+        .catch((e) => console.error('Pusher notif failed:', e))
     : Promise.resolve();

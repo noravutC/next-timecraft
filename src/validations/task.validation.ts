@@ -51,6 +51,8 @@ export const updateTaskSchema = z
       dueDate: dateString.nullable().optional(),
       archived: z.boolean().optional(),
       estimatedHours: z.number().int().min(0).max(10_000).optional(),
+      // days before the due date to remind assignees; null for none
+      remindDaysBefore: z.number().int().min(0).max(30).nullable().optional(),
     }),
   )
   .min(1, 'Payload must be a non-empty array')

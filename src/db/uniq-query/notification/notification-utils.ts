@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { notificationsTable, usersTable } from "@/db/schema";
+import { queueNotificationEmails } from "@/db/uniq-query/jobs/notification-jobs";
 import {
   wantsInApp,
   withPrefDefaults,
@@ -117,11 +118,23 @@ export async function createNotification(args: {
   return created ?? null;
 }
 
+/**
+ * The bell for those who want it, and an email queued for everyone (it goes
+ * out if their settings say so when it's sent).
+ */
 export async function createNotifications(args: {
   recipientIds: string[];
   type: Notification["type"];
   payload: NotificationPayload;
+  /** makes the queued emails unique, e.g. a task and its due date */
+  emailKey?: string;
 }): Promise<Notification[]> {
+  await queueNotificationEmails({
+    recipientIds: args.recipientIds,
+    type: args.type,
+    payload: args.payload,
+    key: args.emailKey,
+  });
   const recipients = await filterByInAppPrefs(args.recipientIds, args.type);
   if (recipients.length === 0) return [];
   return db

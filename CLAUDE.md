@@ -194,6 +194,7 @@ ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns
 RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
 EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
 APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
+CRON_SECRET=                     # optional: guards /api/cron/run (reminders, notification emails, column purge); without it the route refuses every call
 NEXTAUTH_URL=                    # public site URL (OAuth callbacks)
 NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
 SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only

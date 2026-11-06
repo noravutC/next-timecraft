@@ -82,3 +82,44 @@ export const filterTimeZones = (
       o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q),
   );
 };
+
+/** The calendar day a moment falls on in that zone. */
+export const zonedDay = (
+  at: Date,
+  tz: string,
+): { year: number; month: number; day: number } => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(at);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return { year: part('year'), month: part('month'), day: part('day') };
+};
+
+/** The moment it's that wall-clock time in that zone (daylight time included). */
+export const zonedTimeToUtc = (
+  date: { year: number; month: number; day: number },
+  hour: number,
+  tz: string,
+): Date => {
+  const asUtc = Date.UTC(date.year, date.month - 1, date.day, hour);
+  // twice: the first guess can sit on the other side of a clock change
+  const first = asUtc - timeZoneOffsetMinutes(tz, new Date(asUtc)) * 60_000;
+  return new Date(asUtc - timeZoneOffsetMinutes(tz, new Date(first)) * 60_000);
+};
+
+/** `days` calendar days after a date (negative for before). */
+export const addDays = (
+  date: { year: number; month: number; day: number },
+  days: number,
+): { year: number; month: number; day: number } => {
+  const moved = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
+  return {
+    year: moved.getUTCFullYear(),
+    month: moved.getUTCMonth() + 1,
+    day: moved.getUTCDate(),
+  };
+};

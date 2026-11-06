@@ -65,6 +65,7 @@ const KIND_OF: Record<NotificationRow['type'], PrefKind> = {
   member_removed: 'roles',
   role_changed: 'roles',
   invite_accepted: 'accepted',
+  due_reminder: 'due',
 };
 
 /** The settings row a notification type belongs to. */
@@ -114,7 +115,7 @@ export const PREF_KIND_COPY: Record<PrefKind, { label: string; hint: string }> =
     assigned: { label: 'Assigned to you', hint: 'Someone adds you to a task.' },
     due: {
       label: 'Due date reminders',
-      hint: 'A task of yours is due the next day.',
+      hint: 'A task of yours is coming up, at the reminder set on it.',
     },
     invites: {
       label: 'Invitations',

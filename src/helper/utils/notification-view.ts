@@ -1,6 +1,7 @@
 import type {
   BoardInviteNotificationPayload,
   CommentNotificationPayload,
+  DueReminderNotificationPayload,
   InviteAcceptedNotificationPayload,
   Notification,
   RoleChangedNotificationPayload,
@@ -21,7 +22,18 @@ const isMention = (n: Pick<Notification, 'type'>) =>
 export const isTaskNotification = (n: Pick<Notification, 'type'>) =>
   n.type === 'comment_mention' ||
   n.type === 'comment_reply' ||
-  n.type === 'task_assigned';
+  n.type === 'task_assigned' ||
+  n.type === 'due_reminder';
+
+/** "Due today", "Due tomorrow", "Due in 2 days", "Due in a week" */
+export const dueReminderLabel = (daysBefore: number): string =>
+  daysBefore === 0
+    ? 'Due today'
+    : daysBefore === 1
+      ? 'Due tomorrow'
+      : daysBefore === 7
+        ? 'Due in a week'
+        : `Due in ${daysBefore} days`;
 
 /** Bold object at the end of the sentence: the task, board or workspace name. */
 export const notificationTarget = (
@@ -77,6 +89,7 @@ export const NOTIFICATION_KINDS = {
   unread: null,
   mentions: ['comment_mention'],
   assigned: ['task_assigned'],
+  due: ['due_reminder'],
   invites: ['board_invite', 'workspace_invite'],
 } as const satisfies Record<string, readonly Notification['type'][] | null>;
 
@@ -95,6 +108,7 @@ export const kindCounts = (
     unread: rows.reduce((sum, r) => sum + r.unread, 0),
     mentions: totalOf(NOTIFICATION_KINDS.mentions),
     assigned: totalOf(NOTIFICATION_KINDS.assigned),
+    due: totalOf(NOTIFICATION_KINDS.due),
     invites: totalOf(NOTIFICATION_KINDS.invites),
   };
 };
@@ -105,8 +119,18 @@ export const kindCounts = (
  */
 export const notificationParts = (
   n: Pick<Notification, 'type' | 'payload'>,
-): { before: string; strong: string; after: string } => {
+): { before: string; strong: string; after: string; system?: boolean } => {
   switch (n.type) {
+    // from TimeCraft, not a person: "**Due tomorrow:** Set up Resend domain"
+    case 'due_reminder': {
+      const p = n.payload as DueReminderNotificationPayload;
+      return {
+        before: '',
+        strong: `${dueReminderLabel(p.daysBefore)}:`,
+        after: p.taskTitle,
+        system: true,
+      };
+    }
     case 'comment_mention':
       return {
         before: 'mentioned you on',

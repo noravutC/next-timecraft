@@ -1,39 +1,28 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import Link from 'next/link';
+import { Check, Clock, Mail } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  isFixedKind,
-  PREF_KIND_COPY,
-  type PrefKind,
-} from '@/helper/utils/notification-prefs';
+import { Switch } from '@/components/ui/switch';
+import { useWorkspace } from '@/components/workspace/use-workspace-name';
+import { timeZoneLabel } from '@/helper/utils/time-zone';
 import { isGuestSession } from '@/lib/guest';
-import { cn } from '@/lib/utils';
 import { SettingsHeading } from '../_components/settings-heading';
+import { PrefsTable } from './_components/prefs-table';
 import { useNotificationPrefs } from './_components/use-notification-prefs';
-
-// due-date reminders join this list when they're sent
-const ROWS: PrefKind[] = [
-  'mentions',
-  'replies',
-  'assigned',
-  'invites',
-  'roles',
-  'accepted',
-];
 
 export default function NotificationSettingsPage() {
   const { data: session } = useSession();
   const guest = isGuestSession(session);
-  const { prefs, setChannel } = useNotificationPrefs();
+  const workspace = useWorkspace();
+  const { prefs, setChannel, setEmail } = useNotificationPrefs();
 
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <SettingsHeading title="Notifications">
-          Choose what shows up in the bell.
+          Choose what reaches you, and where.
         </SettingsHeading>
         {!guest && (
           <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-surface-hover px-2.5 text-xs text-ink-muted">
@@ -46,51 +35,58 @@ export default function NotificationSettingsPage() {
       {guest && (
         <p className="rounded-popover border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-text">
           Everyone in the guest demo shares this account, so these settings
-          can’t be changed.
+          can’t be changed and no emails go out.
         </p>
       )}
 
       {!prefs ? (
         <Skeleton className="h-96 w-full rounded-popover" />
       ) : (
-        <div className="overflow-hidden rounded-popover border border-line">
-          <div className="flex h-10 items-center gap-3 border-b border-line bg-surface px-4 text-xs text-ink-subtle">
-            <span className="flex-1">When</span>
-            <span className="w-20 text-center">In the app</span>
-          </div>
-          {ROWS.map((kind, index) => {
-            const fixed = isFixedKind(kind);
-            return (
-              <label
-                key={kind}
-                className={cn(
-                  'flex min-h-16 items-center gap-3 px-4 py-3',
-                  index > 0 && 'border-t border-line',
-                  !fixed && !guest && 'cursor-pointer',
-                )}
-              >
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-base font-medium text-ink">
-                    {PREF_KIND_COPY[kind].label}
-                  </span>
-                  <span className="text-xs text-ink-subtle">
-                    {PREF_KIND_COPY[kind].hint}
-                  </span>
-                </span>
-                <span className="flex w-20 justify-center">
-                  <Checkbox
-                    aria-label={`${PREF_KIND_COPY[kind].label} in the app`}
-                    checked={prefs.kinds[kind].app}
-                    disabled={fixed || guest}
-                    onCheckedChange={(on) =>
-                      void setChannel(kind, 'app', on === true)
-                    }
-                  />
-                </span>
-              </label>
-            );
-          })}
-        </div>
+        <>
+          <label className="flex items-center gap-3 rounded-popover border border-line px-4 py-3.5">
+            <Mail className="size-4 shrink-0 text-ink-subtle" />
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-base font-medium text-ink">
+                Email notifications
+              </span>
+              <span className="text-sm text-ink-subtle">
+                Sent to {session?.user?.email}. Turn this off to keep everything
+                in the bell.
+              </span>
+            </span>
+            <Switch
+              checked={prefs.email}
+              disabled={guest}
+              onCheckedChange={(on) => void setEmail(on)}
+              aria-label="Email notifications"
+            />
+          </label>
+          <PrefsTable
+            prefs={prefs}
+            locked={guest}
+            onChange={(kind, channel, on) => void setChannel(kind, channel, on)}
+          />
+          <p className="flex items-start gap-2 text-sm text-ink-subtle">
+            <Clock className="mt-0.5 size-3.75 shrink-0" />
+            <span>
+              Due date reminders go out at 9:00 AM in the workspace time zone
+              {workspace ? `, ${timeZoneLabel(workspace.timeZone)}` : ''}.
+              {workspace && (
+                <>
+                  {' '}
+                  Change it in{' '}
+                  <Link
+                    href="/settings/workspace"
+                    className="text-ink-muted underline underline-offset-2"
+                  >
+                    Workspace › General
+                  </Link>
+                  .
+                </>
+              )}
+            </span>
+          </p>
+        </>
       )}
     </>
   );

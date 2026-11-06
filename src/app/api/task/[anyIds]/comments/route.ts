@@ -261,6 +261,18 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           );
         }
 
+        if (replyRecipients.length > 0) {
+          await tx.insert(jobQueueTable).values(
+            replyRecipients.map((uid) => ({
+              jobType: "send_notification" as const,
+              payload: { kind: "comment_reply", recipientId: uid, ...payload },
+              idempotencyKey: `comment_reply:${comment.id}:${uid}`,
+              priority: 5,
+              scheduledAt: new Date(),
+            })),
+          );
+        }
+
         if (replyInbox.length > 0) {
           const replyRows = await tx
             .insert(notificationsTable)

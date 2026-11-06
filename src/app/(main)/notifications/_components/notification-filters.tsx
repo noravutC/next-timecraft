@@ -18,6 +18,7 @@ const KINDS: { kind: NotificationKind; label: string }[] = [
   { kind: 'unread', label: 'Unread' },
   { kind: 'mentions', label: 'Mentions' },
   { kind: 'assigned', label: 'Assigned' },
+  { kind: 'due', label: 'Due dates' },
   { kind: 'invites', label: 'Invites' },
 ];
 

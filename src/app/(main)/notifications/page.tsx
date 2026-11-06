@@ -38,7 +38,10 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (page.items) {
-      void fetchUsers(page.items.map((n) => n.payload.actorUserId));
+      // reminders come from TimeCraft itself: no person to look up
+      void fetchUsers(
+        page.items.map((n) => n.payload.actorUserId).filter(Boolean),
+      );
     }
   }, [page.items, fetchUsers]);
 
