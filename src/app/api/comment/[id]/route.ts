@@ -16,23 +16,18 @@ import { triggerExclusive } from "@/lib/pusher-server";
 import { authorize } from "@/lib/rbac/authorize";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const MAX_BODY_LEN = 5000;
+import { parseId } from "@/lib/api/params";
+import {
+  updateCommentSchema,
+  type UpdateCommentBody,
+} from "@/validations/comment.validation";
 
 type RouteParams = { id: string };
-
-const updateCommentSchema = z.object({
-  body: z.string().trim().min(1, "Body is required").max(MAX_BODY_LEN),
-  mentions: z.array(z.string()).optional().default([]),
-});
-
-type UpdateCommentBody = z.infer<typeof updateCommentSchema>;
 
 export const PATCH = createParamHandle<RouteParams, UpdateCommentBody>(
   { body: updateCommentSchema },
   async ({ request, params, body, userId }) => {
-    const commentId = params.id;
+    const commentId = parseId(params.id);
     const text = body.body;
     const mentions = [...new Set(body.mentions)];
 
@@ -67,7 +62,8 @@ export const PATCH = createParamHandle<RouteParams, UpdateCommentBody>(
       .limit(1);
 
     const sinceCreated = Date.now() - new Date(createdAt).getTime();
-    const markEdited = sinceCreated > 60_000;
+    // a moderator rewriting someone else's comment is always shown as edited
+    const markEdited = sinceCreated > 60_000 || !isAuthor;
 
     const [updated] = await db
       .update(taskCommentsTable)
@@ -123,7 +119,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateCommentBody>(
 export const DELETE = createParamHandle<RouteParams>(
   {},
   async ({ request, params, userId }) => {
-    const commentId = params.id;
+    const commentId = parseId(params.id);
 
     const link = await getCommentLink(commentId);
     if (!link) throw new NotFoundError("Comment not found");

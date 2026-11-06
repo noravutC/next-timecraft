@@ -34,17 +34,21 @@ export function checkRateLimit(key: string, config: RateLimitConfig): Result {
   }
 
   timestamps.push(now);
+  // re-insert so Map order is least-recently-used first
+  hits.delete(key);
   hits.set(key, timestamps);
 
   if (hits.size > MAX_KEYS) {
-    // drop expired entries; if everything is live, drop oldest keys
-    for (const [k, ts] of hits) {
-      if (ts.every((t) => t <= windowStart)) hits.delete(k);
-      if (hits.size <= MAX_KEYS) break;
-    }
+    const oldest = hits.keys().next().value;
+    if (oldest !== undefined) hits.delete(oldest);
   }
 
   return { ok: true };
+}
+
+/** test hook: number of tracked keys */
+export function rateLimitKeyCount() {
+  return hits.size;
 }
 
 /** test hook — clears all counters */

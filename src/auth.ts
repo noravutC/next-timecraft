@@ -5,9 +5,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { and, eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { membershipsTable, organizationsTable, usersTable } from "@/db/schema";
+import { clientIp } from "@/lib/api/client-ip";
+import { checkRateLimit } from "@/lib/api/rate-limit";
 
 const GUEST_EMAIL = "guest@timecraft.demo";
 const GUEST_NAME = "Guest User";
+const GUEST_LOGIN_LIMIT = { limit: 10, windowMs: 60_000 };
 
 const provisionGuestAccount = async () => {
   const [guestUser] = await db
@@ -136,8 +139,13 @@ export const authConfig: NextAuthConfig = {
       id: "guest",
       name: "Guest",
       credentials: {},
-      async authorize() {
-        return provisionGuestAccount();
+      async authorize(_credentials, request) {
+        // anyone can mint a guest session: throttle per IP so it can't be scripted
+        const allowed = checkRateLimit(
+          `guest-login:${clientIp(request)}`,
+          GUEST_LOGIN_LIMIT,
+        ).ok;
+        return allowed ? provisionGuestAccount() : null;
       },
     }),
   ],

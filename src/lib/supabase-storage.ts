@@ -46,6 +46,55 @@ export const classifyMime = (mime: string): AttachmentKind | null => {
 export const maxBytesFor = (kind: AttachmentKind): number =>
   kind === "image" ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
 
+const sanitizeFileName = (name: string): string =>
+  name
+    .replace(/[^\w.\-]+/g, "_")
+    .replace(/_+/g, "_")
+    .slice(0, 80);
+
+// <projectId>/<taskId>/<uuid>-<safe file name>
+export const buildCommentMediaPath = (
+  projectId: string,
+  taskId: string,
+  fileName: string,
+): string =>
+  `${projectId}/${taskId}/${crypto.randomUUID()}-${sanitizeFileName(fileName)}`;
+
+const UUID_SEGMENT = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const MEDIA_FILE_PATTERN = new RegExp(`^${UUID_SEGMENT}-[\\w.\\-]{1,80}$`, "i");
+
+/** Exactly the shape buildCommentMediaPath() produces for this task, so no `..` or other folders. */
+export const isCommentMediaPath = (
+  path: string,
+  projectId: string,
+  taskId: string,
+): boolean => {
+  const prefix = `${projectId}/${taskId}/`;
+  return (
+    path.startsWith(prefix) && MEDIA_FILE_PATTERN.test(path.slice(prefix.length))
+  );
+};
+
+/**
+ * Size/type sent with the signed-URL request are only what the client claims.
+ * Check what was actually stored; delete it if it breaks the rules.
+ */
+export async function verifyUploadedObject(
+  path: string,
+  kind: AttachmentKind,
+): Promise<boolean> {
+  if (!supabaseAdmin) return false;
+  const bucket = supabaseAdmin.storage.from(COMMENT_MEDIA_BUCKET);
+  const { data, error } = await bucket.info(path);
+  if (error || !data) return false;
+  const ok =
+    typeof data.size === "number" &&
+    data.size <= maxBytesFor(kind) &&
+    classifyMime(data.contentType ?? "") === kind;
+  if (!ok) await bucket.remove([path]);
+  return ok;
+}
+
 const REMOVE_BATCH = 100;
 
 // ลบไฟล์ใน bucket แบบ best-effort — ไม่ throw เพราะเรียกหลังลบ DB row ไปแล้ว

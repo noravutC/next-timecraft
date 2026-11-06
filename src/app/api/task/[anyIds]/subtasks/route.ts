@@ -7,15 +7,18 @@ import { fetchSubtasks } from "@/db/uniq-query/task/subtask-utils";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseId } from "@/lib/api/params";
+import {
+  createSubtaskSchema,
+  type CreateSubtaskBody,
+} from "@/validations/subtask.validation";
 
-const MAX_TITLE_LEN = 500;
 type RouteParams = { anyIds: string };
 
 export const GET = createParamHandle<RouteParams>(
   {},
   async ({ params, userId }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const link = await getTaskColumnLink(taskId);
     if (!link) throw new NotFoundError("Task not found");
 
@@ -29,17 +32,10 @@ export const GET = createParamHandle<RouteParams>(
   },
 );
 
-const createSubtaskSchema = z.object({
-  title: z.string().trim().min(1, "Title is required").max(MAX_TITLE_LEN),
-  orderFraction: z.string().trim().optional(),
-});
-
-type CreateSubtaskBody = z.infer<typeof createSubtaskSchema>;
-
 export const POST = createParamHandle<RouteParams, CreateSubtaskBody>(
   { body: createSubtaskSchema },
   async ({ request, params, body, userId }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const link = await getTaskColumnLink(taskId);
     if (!link) throw new NotFoundError("Task not found");
 

@@ -6,20 +6,18 @@ import { createParamHandle } from "@/lib/api/handle";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseId } from "@/lib/api/params";
+import {
+  markCommentsReadSchema,
+  type MarkCommentsReadBody,
+} from "@/validations/comment.validation";
 
 type RouteParams = { anyIds: string };
 
-const markReadSchema = z.object({
-  lastReadCommentId: z.string().nullable().optional(),
-});
-
-type MarkReadBody = z.infer<typeof markReadSchema>;
-
-export const POST = createParamHandle<RouteParams, MarkReadBody>(
-  { body: markReadSchema },
+export const POST = createParamHandle<RouteParams, MarkCommentsReadBody>(
+  { body: markCommentsReadSchema },
   async ({ params, body, userId }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const lastReadCommentId = body.lastReadCommentId ?? null;
 
     const link = await getTaskProjectLink(taskId);

@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { notificationsTable } from "@/db/schema";
 import type { Notification, NotificationPayload } from "@/types";
-import { and, count, desc, eq, isNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lt } from "drizzle-orm";
 
 type CursorParts = { createdAt: Date; id: string };
 
@@ -103,4 +103,24 @@ export async function createNotifications(args: {
       })),
     )
     .returning();
+}
+
+/** Mark the user's own notifications read: the given ids, or all when ids is "all". */
+export async function markNotificationsRead(
+  userId: string,
+  ids: string[] | "all",
+): Promise<number> {
+  if (ids !== "all" && ids.length === 0) return 0;
+  const rows = await db
+    .update(notificationsTable)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(notificationsTable.userId, userId),
+        isNull(notificationsTable.readAt),
+        ids === "all" ? undefined : inArray(notificationsTable.id, ids),
+      ),
+    )
+    .returning({ id: notificationsTable.id });
+  return rows.length;
 }

@@ -1,11 +1,15 @@
 import * as Sentry from '@sentry/nextjs';
 import { auth } from '@/auth';
+import { toRouteKey } from '@/helper/utils/route-key';
+import { isGuestSession } from '@/lib/guest';
 import { logger } from '@/lib/logger';
 import { authorizeOrThrow, type AuthorizeMode } from '@/lib/rbac/authorize';
 import { Permission } from '@/lib/rbac/permissions';
 import { Session } from 'next-auth';
+import { DrizzleQueryError } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { ZodType } from 'zod';
+import { clientIp } from './client-ip';
 import { checkRateLimit, RateLimitConfig } from './rate-limit';
 import {
   AppError,
@@ -45,18 +49,42 @@ type BaseConfig<TBody, TParams = undefined> = {
 
 const DEFAULT_RATE_LIMIT: RateLimitConfig = { limit: 120, windowMs: 60_000 };
 
+// All guests share one user id, so they are told apart by IP instead —
+// otherwise one guest could exhaust the limit for every other visitor.
+const rateLimitIdentity = (request: Request, session: Session) =>
+  isGuestSession(session) ? `guest:${clientIp(request)}` : session.user.id;
+
+const consume = (key: string, config: RateLimitConfig, message?: string) => {
+  const result = checkRateLimit(key, config);
+  if (!result.ok) throw new TooManyRequestsError(result.retryAfterSec, message);
+};
+
+// Keyed by route pattern (ids collapsed), so new ids don't mint new buckets.
 const enforceRateLimit = (
   request: Request,
-  userId: string,
+  session: Session,
   config: RateLimitConfig | undefined,
-) => {
-  const { pathname } = new URL(request.url);
-  const result = checkRateLimit(
-    `${userId}:${pathname}`,
+) =>
+  consume(
+    `${rateLimitIdentity(request, session)}:${toRouteKey(new URL(request.url).pathname)}`,
     config ?? DEFAULT_RATE_LIMIT,
   );
-  if (!result.ok) throw new TooManyRequestsError(result.retryAfterSec);
-};
+
+/**
+ * Extra named budget inside a handler (e.g. a daily cap on one action).
+ * Throws 429 when spent. Same identity rules as the per-route limit.
+ */
+export const enforceQuota = (
+  ctx: { request: Request; session: Session },
+  name: string,
+  config: RateLimitConfig,
+  message?: string,
+) =>
+  consume(
+    `${rateLimitIdentity(ctx.request, ctx.session)}:quota:${name}`,
+    config,
+    message,
+  );
 
 const errorResponse = (statusCode: number, message: string) =>
   NextResponse.json({ message, status: statusCode }, { status: statusCode });
@@ -65,8 +93,20 @@ const toAppError = (error: unknown): AppError => {
   if (error instanceof AppError) return error;
   if (error instanceof SyntaxError)
     return new BadRequestError('Invalid JSON body');
-  logger.error({ err: error }, 'unhandled api error');
-  Sentry.captureException(error);
+  // DrizzleQueryError's message embeds every bound param (titles, emails…);
+  // log the SQL shape and the driver error only.
+  const reported =
+    error instanceof DrizzleQueryError
+      ? Object.assign(
+          new Error(error.cause?.message ?? 'Database query failed'),
+          {
+            query: error.query,
+            code: (error.cause as { code?: string } | undefined)?.code,
+          },
+        )
+      : error;
+  logger.error({ err: reported }, 'unhandled api error');
+  Sentry.captureException(reported);
   return new AppError(500, 'Internal server error');
 };
 
@@ -76,11 +116,11 @@ const logRequest = (
   startedAt: number,
   userId?: string,
 ) => {
-  const { pathname } = new URL(request.url);
   logger.info(
     {
       method: request.method,
-      path: pathname,
+      // ids/tokens collapsed: invite tokens must not land in logs
+      path: toRouteKey(new URL(request.url).pathname),
       status,
       durationMs: Date.now() - startedAt,
       userId,
@@ -128,7 +168,7 @@ export function createHandle<TBody = undefined>(
     try {
       const session = await requireSession();
       userId = session.user.id;
-      enforceRateLimit(request, userId, config.rateLimit);
+      enforceRateLimit(request, session, config.rateLimit);
       const body = await parseBody(request, config.body);
 
       if (config.permission) {
@@ -164,7 +204,7 @@ export function createParamHandle<TParams, TBody = undefined>(
     try {
       const session = await requireSession();
       userId = session.user.id;
-      enforceRateLimit(request, userId, config.rateLimit);
+      enforceRateLimit(request, session, config.rateLimit);
       const params = await context.params;
       const body = await parseBody(request, config.body);
 

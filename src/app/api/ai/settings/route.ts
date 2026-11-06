@@ -1,6 +1,8 @@
 import { db } from "@/db";
 import { aiSettingsTable } from "@/db/schema";
+import { ForbiddenError } from "@/lib/api/errors";
 import { createHandle } from "@/lib/api/handle";
+import { isGuestSession } from "@/lib/guest";
 import { encryptSecret } from "@/lib/ai/crypto";
 import { getAiSettings } from "@/db/uniq-query/ai/ai-utils";
 import { NextResponse } from "next/server";
@@ -39,7 +41,14 @@ type UpdateBody = z.infer<typeof updateSchema>;
 
 export const PUT = createHandle<UpdateBody>(
   { body: updateSchema },
-  async ({ userId, body }) => {
+  async ({ userId, body, session }) => {
+    // the guest account is shared by every visitor: a key saved here would
+    // be usable (and replaceable) by all of them
+    if (isGuestSession(session)) {
+      throw new ForbiddenError(
+        "Guest accounts can't store API keys. Sign in with Google to add your own.",
+      );
+    }
     const values: Partial<typeof aiSettingsTable.$inferInsert> = {
       updatedAt: new Date(),
     };

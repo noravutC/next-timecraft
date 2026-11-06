@@ -1,10 +1,6 @@
 import { db } from '@/db';
-import {
-  columnsTable,
-  taskAssigneesTable,
-  taskPriorityLevelEnum,
-  tasksTable,
-} from '@/db/schema';
+import { taskAssigneesTable, tasksTable } from '@/db/schema';
+import { getActiveColumnLinks } from '@/db/uniq-query/column/column-utils';
 import { NotFoundError } from '@/lib/api/errors';
 import { createHandle } from '@/lib/api/handle';
 import { authorizeOrThrow } from '@/lib/rbac/authorize';
@@ -28,47 +24,22 @@ import {
   type SQL,
 } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const cursorSchema = z.object({
-  orderFraction: z.string().min(1),
-  id: z.string().uuid(),
-});
-
-const filterSchema = z
-  .object({
-    q: z.string().trim().min(1).max(200).optional(),
-    priorities: z
-      .array(z.enum(taskPriorityLevelEnum.enumValues))
-      .max(10)
-      .optional(),
-    tags: z.array(z.string().min(1).max(100)).max(50).optional(),
-    assigneeIds: z.array(z.string().uuid()).max(50).optional(),
-  })
-  .optional();
-
-const getTasksByColumnsSchema = z.object({
-  colIds: z.array(z.string().min(1)).min(1, 'colIds must be a non-empty array'),
-  limit: z.number().int().positive().max(100),
-  // per-column cursor: only tasks AFTER this (orderFraction, id) are returned
-  cursors: z.record(z.string(), cursorSchema).optional(),
-  filter: filterSchema,
-});
-
-type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
+import {
+  getTasksByColumnsSchema,
+  type GetTasksByColumnsBody,
+} from '@/validations/task.validation';
 
 export const POST = createHandle<GetTasksByColumnsBody>(
   { body: getTasksByColumnsSchema },
   async ({ body, userId }) => {
-    const { colIds, limit, cursors, filter } = body;
+    const { limit, cursors, filter } = body;
 
-    const columnLinks = await db
-      .select({ projectId: columnsTable.projectId })
-      .from(columnsTable)
-      .where(inArray(columnsTable.id, colIds));
+    const columnLinks = await getActiveColumnLinks([...new Set(body.colIds)]);
     if (columnLinks.length === 0) {
       throw new NotFoundError('Columns not found');
     }
+    // Only query columns that were found AND authorized below.
+    const colIds = columnLinks.map((c) => c.columnId);
 
     const uniqProjectIds = [...new Set(columnLinks.map((c) => c.projectId))];
     await authorizeOrThrow(userId, uniqProjectIds, 'project:view');

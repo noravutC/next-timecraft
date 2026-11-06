@@ -1,179 +1,43 @@
-import { auth } from "@/auth";
-import { db } from "@/db";
-import { membershipsTable, organizationsTable } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import {
+  createOwnedOrganization,
+  getUserOrganizations,
+  toOrganizationCache,
+} from '@/db/uniq-query/organization/organization-utils';
+import { BadRequestError } from '@/lib/api/errors';
+import { createHandle } from '@/lib/api/handle';
+import {
+  createOrganizationSchema,
+  type CreateOrganizationBody,
+} from '@/validations/organization.validation';
+import { NextResponse } from 'next/server';
 
-type CreateOrganizationBody = {
-  name?: string;
-  description?: string | null;
-};
-
-const toOrganizationCache = (organization: {
-  id: string;
-  name: string;
-  description: string | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}) => ({
-  ...organization,
-  timestamp: Date.now(),
+export const GET = createHandle({}, async ({ userId }) => {
+  const organizations = await getUserOrganizations(userId);
+  return NextResponse.json(
+    { data: organizations, message: 'Get organizations success', status: 200 },
+    { status: 200 },
+  );
 });
 
-export async function GET() {
-  const session = await auth();
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        data: [],
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  try {
-    const joinedOrganizations = await db
-      .select({
-        organization: organizationsTable,
-      })
-      .from(membershipsTable)
-      .innerJoin(
-        organizationsTable,
-        eq(membershipsTable.organizationId, organizationsTable.id),
-      )
-      .where(eq(membershipsTable.userId, sessionUserId))
-      .orderBy(desc(organizationsTable.createdAt));
-
-    const organizations = joinedOrganizations.map((row) =>
-      toOrganizationCache(row.organization),
-    );
-
-    return NextResponse.json(
-      {
-        data: organizations,
-        message: "Get organizations success",
-        status: 200,
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Failed to fetch organizations:", error);
-    return NextResponse.json(
-      {
-        data: [],
-        message: "Failed to fetch organizations",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  const session = await auth();
-  const sessionUserId = session?.user?.id;
-
-  if (!sessionUserId) {
-    return NextResponse.json(
-      {
-        created: null,
-        message: "Not authenticated",
-        status: 401,
-      },
-      { status: 401 },
-    );
-  }
-
-  if (session.user?.canCreateOrg === false) {
-    return NextResponse.json(
-      {
-        created: null,
-        message: "Forbidden — user is not allowed to create an organization",
-        status: 403,
-      },
-      { status: 403 },
-    );
-  }
-
-  try {
-    const body = (await request.json()) as CreateOrganizationBody;
-    const name = body.name?.trim() ?? "";
-    const description = body.description?.trim() || null;
-
-    if (!name) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "Organization name is required",
-          status: 400,
-        },
-        { status: 400 },
-      );
-    }
-
-    const [ownerMembership] = await db
-      .select({ id: membershipsTable.id })
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.userId, sessionUserId),
-          eq(membershipsTable.role, "owner"),
-        ),
-      )
-      .limit(1);
-
-    if (ownerMembership) {
-      return NextResponse.json(
-        {
-          created: null,
-          message: "User already has owned organization",
-          status: 400,
-        },
-        { status: 400 },
-      );
-    }
-
-    const createdOrganization = await db.transaction(async (tx) => {
-      const [organization] = await tx
-        .insert(organizationsTable)
-        .values({
-          name,
-          description,
-          createdBy: sessionUserId,
-        })
-        .returning();
-
-      await tx.insert(membershipsTable).values({
-        userId: sessionUserId,
-        organizationId: organization.id,
-        role: "owner",
-      });
-
-      return organization;
+// one owned org per user, enforced from the DB (never from session flags)
+export const POST = createHandle<CreateOrganizationBody>(
+  { body: createOrganizationSchema },
+  async ({ userId, body }) => {
+    const created = await createOwnedOrganization(userId, {
+      name: body.name,
+      description: body.description || null,
     });
+    if (!created) {
+      throw new BadRequestError('User already has owned organization');
+    }
 
     return NextResponse.json(
       {
-        created: toOrganizationCache(createdOrganization),
-        message: "Create organization success",
+        created: toOrganizationCache(created),
+        message: 'Create organization success',
         status: 201,
       },
       { status: 201 },
     );
-  } catch (error) {
-    console.error("Failed to create organization:", error);
-    return NextResponse.json(
-      {
-        created: null,
-        message: "Failed to create organization",
-        status: 500,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

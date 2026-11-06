@@ -7,32 +7,19 @@ import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const MAX_TITLE_LEN = 500;
+import { parseId } from "@/lib/api/params";
+import {
+  updateSubtaskSchema,
+  type UpdateSubtaskBody,
+} from "@/validations/subtask.validation";
 
 type RouteParams = { id: string };
-
-const updateSubtaskSchema = z
-  .object({
-    title: z.string().trim().min(1).max(MAX_TITLE_LEN).optional(),
-    completed: z.boolean().optional(),
-    orderFraction: z.string().trim().min(1).optional(),
-  })
-  .refine(
-    (v) =>
-      v.title !== undefined ||
-      v.completed !== undefined ||
-      v.orderFraction !== undefined,
-    "At least one field is required",
-  );
-
-type UpdateSubtaskBody = z.infer<typeof updateSubtaskSchema>;
 
 export const PATCH = createParamHandle<RouteParams, UpdateSubtaskBody>(
   { body: updateSubtaskSchema },
   async ({ request, params, body, userId }) => {
-    const link = await getSubtaskTaskLink(params.id);
+    const subtaskId = parseId(params.id);
+    const link = await getSubtaskTaskLink(subtaskId);
     if (!link) throw new NotFoundError("Subtask not found");
 
     await authorizeOrThrow(userId, [link.projectId], "task:update");
@@ -48,7 +35,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateSubtaskBody>(
     const [updated] = await db
       .update(subtasksTable)
       .set(patch)
-      .where(eq(subtasksTable.id, params.id))
+      .where(eq(subtasksTable.id, subtaskId))
       .returning();
 
     triggerExclusive(
@@ -68,15 +55,16 @@ export const PATCH = createParamHandle<RouteParams, UpdateSubtaskBody>(
 export const DELETE = createParamHandle<RouteParams>(
   {},
   async ({ request, params, userId }) => {
-    const link = await getSubtaskTaskLink(params.id);
+    const subtaskId = parseId(params.id);
+    const link = await getSubtaskTaskLink(subtaskId);
     if (!link) throw new NotFoundError("Subtask not found");
 
     await authorizeOrThrow(userId, [link.projectId], "task:update");
 
-    await db.delete(subtasksTable).where(eq(subtasksTable.id, params.id));
+    await db.delete(subtasksTable).where(eq(subtasksTable.id, subtaskId));
 
     triggerExclusive(request, `task-${link.taskId}`, "subtask-deleted", {
-      id: params.id,
+      id: subtaskId,
     }).catch((e) => console.error("Pusher subtask-deleted failed:", e));
 
     return NextResponse.json(
