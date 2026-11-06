@@ -96,13 +96,9 @@ export const CreateOrganization = () => {
         return;
       }
 
-      await update({
-        user: {
-          organizationId: createdOrganization.id,
-          systemRole: "owner",
-          canCreateOrg: false,
-        },
-      });
+      // Payload is ignored server-side: update() just makes the jwt callback
+      // re-read org/role from the DB (no argument would only GET the session).
+      await update({});
       toast.success("Organization created successfully");
       router.replace("/project");
     } catch (error) {
