@@ -2,7 +2,8 @@
 
 import { ChevronsUpDown, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
-import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
+import { useWorkspace } from '@/components/workspace/use-workspace-name';
+import { WorkspaceLogo } from '@/components/workspace/workspace-logo';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
@@ -33,7 +34,7 @@ export const ProjectHeader = () => {
   const { users } = useUserStore();
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const openBoardSettings = useNavStore((s) => s.openBoardSettings);
-  const workspaceName = useWorkspaceName();
+  const workspace = useWorkspace();
   const canInvite = useBoardAccess().can('member:invite');
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
@@ -49,10 +50,13 @@ export const ProjectHeader = () => {
         <Logo size={24} textSize="md" textClassName="hidden sm:block" />
         <BreadcrumbSlash />
         {/* phones keep logo / board only */}
-        {workspaceName && (
+        {workspace && (
           <span className="hidden min-w-0 items-center gap-2.5 sm:flex">
-            <span className="truncate text-base font-medium text-ink-muted">
-              {workspaceName}
+            <span className="flex min-w-0 items-center gap-2">
+              <WorkspaceLogo workspace={workspace} />
+              <span className="truncate text-base font-medium text-ink-muted">
+                {workspace.name}
+              </span>
             </span>
             <BreadcrumbSlash />
           </span>

@@ -29,7 +29,7 @@ export async function getUserOrganizations(userId: string) {
  */
 export async function createOwnedOrganization(
   userId: string,
-  input: { name: string; description: string | null },
+  input: { name: string; description: string | null; logo: string | null },
 ): Promise<OrganizationRow | null> {
   return db.transaction(async (tx) => {
     await tx.execute(

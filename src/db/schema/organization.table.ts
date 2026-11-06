@@ -5,6 +5,8 @@ export const organizationsTable = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  // small square data URL, resized in the browser before upload
+  logo: text("logo"),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),

@@ -5,7 +5,7 @@ export type Organizations = InferSelectModel<typeof organizationsTable>;
 export type NewOrganizationRow = InferInsertModel<typeof organizationsTable>;
 export type CreateOrganizationPayload = Pick<
   NewOrganizationRow,
-  "name" | "description"
+  "name" | "description" | "logo"
 >;
 
 export interface OrganizationCache extends Organizations {

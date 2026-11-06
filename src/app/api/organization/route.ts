@@ -26,6 +26,7 @@ export const POST = createHandle<CreateOrganizationBody>(
     const created = await createOwnedOrganization(userId, {
       name: body.name,
       description: body.description || null,
+      logo: body.logo ?? null,
     });
     if (!created) {
       throw new BadRequestError('User already has owned organization');

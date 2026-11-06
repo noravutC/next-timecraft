@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TemplatePicker } from '@/components/board-templates/template-picker';
 import { useCreateBoard } from '@/components/board-templates/use-create-board';
-import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
+import { useWorkspace } from '@/components/workspace/use-workspace-name';
 import { BOARD_TEMPLATES } from '@/helper/default-project';
 import {
   findBoardTemplate,
@@ -20,7 +20,8 @@ import { useBoardCover } from './use-board-cover';
 
 /** Empty workspace: name the first board and pick its template. */
 export const CreateFirstProject = () => {
-  const workspaceName = useWorkspaceName();
+  const workspace = useWorkspace();
+  const workspaceName = workspace?.name ?? null;
   const hasBoards = useProjectStore((s) => Object.keys(s.projects).length > 0);
   const setNeedCreateProject = useProjectStore((s) => s.setNeedCreateProject);
   const { creating, createBoard } = useCreateBoard();
@@ -37,7 +38,7 @@ export const CreateFirstProject = () => {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">
-      <FirstBoardHeader workspaceName={workspaceName} />
+      <FirstBoardHeader workspace={workspace} />
 
       <main className="flex flex-1 justify-center px-5 py-16">
         <div className="flex w-full max-w-190 flex-col gap-7">
