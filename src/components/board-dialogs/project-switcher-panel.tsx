@@ -21,6 +21,10 @@ import {
 } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
+import { useOpenTask } from '@/components/task-detail/use-open-task';
+import { SearchScopeBar, type SearchScope } from './parts/search-scope';
+import { SwitcherTaskResults } from './parts/switcher-task-results';
+import { useTaskSearch } from './use-task-search';
 import {
   filterSwitcherActions,
   orderBoardsForSwitcher,
@@ -56,6 +60,16 @@ export const ProjectSwitcherPanel = ({
 
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [scope, setScope] = useState<SearchScope>('all');
+  const search = useTaskSearch(query, scope === 'here' ? projectIsUsing : null);
+  const openTask = useOpenTask();
+  // when results arrive, the best task is the one Enter opens
+  const [highlighted, setHighlighted] = useState('');
+  const [seenHits, setSeenHits] = useState(search.hits);
+  if (search.hits !== seenHits) {
+    setSeenHits(search.hits);
+    if (search.hits[0]) setHighlighted(`task-${search.hits[0].taskId}`);
+  }
 
   // เปิดใหม่ทุกครั้งเริ่มค้นจากช่องว่าง (adjust-state-on-prop-change ไม่ใช้ effect)
   const [prevOpen, setPrevOpen] = useState(open);
@@ -64,6 +78,7 @@ export const ProjectSwitcherPanel = ({
     if (open) {
       setQuery('');
       setShowArchived(false);
+      setScope('all');
     }
   }
 
@@ -139,20 +154,49 @@ export const ProjectSwitcherPanel = ({
       onOpenChange={(next) => !next && onClose()}
       title="Switch boards"
       description="Search boards or run a board action"
-      commandProps={{ shouldFilter: false, loop: true }}
+      commandProps={{
+        shouldFilter: false,
+        loop: true,
+        value: highlighted,
+        onValueChange: setHighlighted,
+      }}
     >
       <CommandInput
         value={query}
         onValueChange={setQuery}
-        placeholder="Search boards or type a command"
-        aria-label="Search boards"
+        placeholder="Search boards and tasks, or type a command"
+        aria-label="Search boards and tasks"
         trailing={<Kbd>esc</Kbd>}
       />
+      {search.active && (
+        <SearchScopeBar
+          scope={scope}
+          onScope={setScope}
+          canSearchHere={Boolean(projectIsUsing)}
+        />
+      )}
       <CommandList>
+        {search.active && (
+          <>
+            <SwitcherTaskResults
+              hits={search.hits}
+              query={query}
+              searching={search.searching}
+              onSelect={(hit) => {
+                onClose();
+                void openTask(hit.taskId);
+              }}
+            />
+            {boards.length > 0 && <CommandSeparator alwaysRender />}
+          </>
+        )}
         {boards.length === 0 && query.trim() ? (
-          <p className="px-3 py-7 text-center text-sm leading-5 text-ink-subtle">
-            No boards match “{query.trim()}”
-          </p>
+          // task results already say what matched
+          !search.active && (
+            <p className="px-3 py-7 text-center text-sm leading-5 text-ink-subtle">
+              No boards match “{query.trim()}”
+            </p>
+          )
         ) : (
           <CommandGroup
             heading={workspaceName ? `Boards in ${workspaceName}` : 'Boards'}
