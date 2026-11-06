@@ -40,6 +40,29 @@ export const AiBreakdownProviderCard = ({
   const [isSaving, setIsSaving] = useState(false);
   const hasDraft = apiKey.trim().length > 0;
 
+  const [isRemoving, setIsRemoving] = useState(false);
+  const handleRemove = async () => {
+    if (isRemoving) return;
+    setIsRemoving(true);
+    try {
+      const { updated } = await aiServices.updateSettings(
+        provider === 'claude' ? { claudeApiKey: null } : { geminiApiKey: null },
+      );
+      if (updated) onSaved(updated);
+      toast.success(`${meta.label} key removed`);
+    } catch (error) {
+      console.error('Remove AI key failed:', error);
+      toast.error(`Couldn’t remove the ${meta.label} key`);
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+  // without your key: TimeCraft's shared Claude key if the server has one
+  const afterRemoval =
+    provider === 'claude' && settings.hasServerFallback
+      ? 'Removing it switches you back to TimeCraft’s key and its daily limit.'
+      : `Removing it turns ${meta.label} off until you add a key again.`;
+
   const handleSave = async () => {
     const trimmed = apiKey.trim();
     // nothing typed yet: point the user at the field instead of a dead click
@@ -138,6 +161,23 @@ export const AiBreakdownProviderCard = ({
           </p>
         )}
       </div>
+
+      {hasKey && !disabled && (
+        <div className="flex items-center gap-3 border-t border-line-soft pt-3">
+          <p className="flex-1 text-xs leading-5 text-ink-subtle">
+            {afterRemoval}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleRemove()}
+            disabled={isRemoving}
+            className="shrink-0 border-danger-line text-danger-text hover:border-danger-line hover:bg-danger-soft hover:text-danger-text"
+          >
+            {isRemoving ? 'Removing…' : 'Remove key'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
