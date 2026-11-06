@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import type { WorkspaceRole } from "@/lib/rbac/workspace-permissions";
 import {
   membershipsTable,
   projectMembersTable,
@@ -88,7 +89,7 @@ export async function getProjectNameById(
 export async function getOrgRole(
   userId: string,
   organizationId: string,
-): Promise<string | null> {
+): Promise<WorkspaceRole | null> {
   const [membership] = await db
     .select({ role: membershipsTable.role })
     .from(membershipsTable)

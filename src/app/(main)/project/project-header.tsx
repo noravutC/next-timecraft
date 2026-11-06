@@ -8,6 +8,7 @@ import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
+import { useBoardAccess } from '@/components/project/use-board-access';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
   Tooltip,
@@ -33,6 +34,7 @@ export const ProjectHeader = () => {
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const openBoardSettings = useNavStore((s) => s.openBoardSettings);
   const workspaceName = useWorkspaceName();
+  const canInvite = useBoardAccess().can('member:invite');
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
   const members = projectValue?.members ?? [];
@@ -135,15 +137,17 @@ export const ProjectHeader = () => {
               </AvatarGroup>
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-line"
-              onClick={() => openBoardSettings('members')}
-            >
-              <UserPlus className="size-3.75" />
-              <span className="sr-only sm:not-sr-only">Invite</span>
-            </Button>
+            {canInvite && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-line"
+                onClick={() => openBoardSettings('members')}
+              >
+                <UserPlus className="size-3.75" />
+                <span className="sr-only sm:not-sr-only">Invite</span>
+              </Button>
+            )}
 
             <HeaderDivider />
 

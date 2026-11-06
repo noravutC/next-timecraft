@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Plus, Settings2, UserPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import {
+  Building2,
+  ChevronRight,
+  Plus,
+  Settings2,
+  UserPlus,
+} from 'lucide-react';
 import { useNavStore, useProjectStore } from '@/store';
 import {
   CommandDialog,
@@ -19,6 +27,8 @@ import {
   splitArchivedBoards,
 } from '@/helper/utils/board-switcher';
 import { cn } from '@/lib/utils';
+import { canCreateBoards } from '@/lib/rbac/workspace-permissions';
+import { useBoardAccess } from '@/components/project/use-board-access';
 import { SwitcherBoardItem } from './parts/switcher-board-item';
 import { SwitcherActionItem } from './parts/switcher-action-item';
 import { SwitcherFooter } from './parts/switcher-footer';
@@ -39,6 +49,10 @@ export const ProjectSwitcherPanel = ({
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const openBoardSettings = useNavStore((s) => s.openBoardSettings);
   const workspaceName = useWorkspaceName();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const access = useBoardAccess();
+  const hasWorkspace = Boolean(session?.user?.organizationId);
 
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
@@ -66,15 +80,34 @@ export const ProjectSwitcherPanel = ({
     setProjectIsUsing(id);
     onClose();
   };
+  // offer only what the server will allow
+  const createAction = canCreateBoards(session?.user?.orgRole)
+    ? [
+        {
+          id: 'create',
+          icon: Plus,
+          label: 'Create new board',
+          dashed: true,
+          run: () => setBoardDialog('create'),
+        },
+      ]
+    : !hasWorkspace
+      ? [
+          {
+            id: 'workspace',
+            icon: Building2,
+            label: 'Create your own workspace',
+            dashed: true,
+            run: () => {
+              onClose();
+              router.push('/organization/create');
+            },
+          },
+        ]
+      : [];
   const actions = filterSwitcherActions(
     [
-      {
-        id: 'create',
-        icon: Plus,
-        label: 'Create new board',
-        dashed: true,
-        run: () => setBoardDialog('create'),
-      },
+      ...createAction,
       ...(current
         ? [
             {
@@ -84,12 +117,16 @@ export const ProjectSwitcherPanel = ({
               hint: current.name,
               run: () => openBoardSettings('general'),
             },
-            {
-              id: 'invite',
-              icon: UserPlus,
-              label: 'Invite members',
-              run: () => openBoardSettings('members'),
-            },
+            ...(access.can('member:invite')
+              ? [
+                  {
+                    id: 'invite',
+                    icon: UserPlus,
+                    label: 'Invite members',
+                    run: () => openBoardSettings('members'),
+                  },
+                ]
+              : []),
           ]
         : []),
     ],

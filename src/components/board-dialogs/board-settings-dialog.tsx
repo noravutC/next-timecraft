@@ -1,5 +1,6 @@
 'use client';
 
+import { Lock } from 'lucide-react';
 import { useNavStore, type BoardSettingsTab } from '@/store';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import { SettingsGeneralTab } from './parts/settings-general-tab';
 import { BoardTagsEditor } from './parts/board-tags-editor';
 import { BoardDangerZone } from './parts/board-danger-zone';
 import { useBoardSettingsDraft } from './use-board-settings-draft';
+import { useBoardAccess } from '@/components/project/use-board-access';
 
 interface BoardSettingsDialogProps {
   open: boolean;
@@ -25,6 +27,13 @@ interface BoardSettingsDialogProps {
 }
 
 const TAB_CONTENT = 'min-h-0 overflow-y-auto p-6';
+
+const ReadOnlySettingsNote = () => (
+  <p className="mb-5 flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink-muted">
+    <Lock className="size-3.75 shrink-0 text-ink-subtle" />
+    Only the board’s owner and admins can change these settings.
+  </p>
+);
 
 /** Board settings: General · Tags · Members · Danger zone. */
 export const BoardSettingsDialog = ({
@@ -52,11 +61,14 @@ export const BoardSettingsDialog = ({
     handleArchive,
     handleDelete,
   } = useBoardSettingsDraft({ open, onClose });
+  const access = useBoardAccess(project?.id);
 
   if (!project || !draft) return null;
 
   // General กับ Tags แก้เป็น draft แล้วกด Save; Members / Danger zone มีผลทันที
   const showFooter = tab === 'general' || tab === 'tags';
+  // editors and viewers see the settings but can't change them
+  const canEdit = access.can('project:update');
 
   return (
     <>
@@ -92,7 +104,9 @@ export const BoardSettingsDialog = ({
             </TabsList>
 
             <TabsContent value="general" className={TAB_CONTENT}>
+              {!canEdit && <ReadOnlySettingsNote />}
               <SettingsGeneralTab
+                readOnly={!canEdit}
                 draft={draft}
                 coverImage={project.coverImage}
                 onNameChange={(name) => setDraft((d) => d && { ...d, name })}
@@ -103,7 +117,9 @@ export const BoardSettingsDialog = ({
               />
             </TabsContent>
             <TabsContent value="tags" className={TAB_CONTENT}>
+              {!canEdit && <ReadOnlySettingsNote />}
               <BoardTagsEditor
+                readOnly={!canEdit}
                 tags={draft.tags}
                 tagColors={draft.settings.tagColors}
                 nextTagColor={draft.settings.nextTagColor}
@@ -122,13 +138,15 @@ export const BoardSettingsDialog = ({
             <TabsContent value="danger" className={TAB_CONTENT}>
               <BoardDangerZone
                 archived={!!project.archived}
+                canArchive={canEdit}
+                canDelete={access.can('project:delete')}
                 onArchiveClick={() => setConfirmArchive(true)}
                 onDeleteClick={() => setConfirmDelete(true)}
               />
             </TabsContent>
           </Tabs>
 
-          {showFooter && (
+          {showFooter && canEdit && (
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>
                 Cancel
@@ -138,6 +156,13 @@ export const BoardSettingsDialog = ({
                 disabled={saving || !draft.name.trim()}
               >
                 {saving ? 'Saving…' : 'Save changes'}
+              </Button>
+            </DialogFooter>
+          )}
+          {showFooter && !canEdit && (
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose}>
+                Close
               </Button>
             </DialogFooter>
           )}
