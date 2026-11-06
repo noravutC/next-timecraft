@@ -13,6 +13,7 @@ export function EngineeringHighlights() {
       <div className="mx-auto max-w-292 px-6 py-24">
         <div className="mb-10 flex flex-wrap items-end gap-4">
           <SectionIntro
+            scale="caseStudy"
             eyebrow="Engineering under the hood"
             title="What makes the board feel instant."
             className="flex-1 basis-105"
@@ -35,7 +36,9 @@ export function EngineeringHighlights() {
               key={item.title}
               className="flex flex-col gap-2 rounded-xl border border-line bg-background p-6"
             >
-              <h3 className="text-lg leading-6 font-semibold">{item.title}</h3>
+              <h3 className="text-copy leading-6 font-semibold">
+                {item.title}
+              </h3>
               <p className="text-base leading-5.5 text-pretty text-ink-muted">
                 {item.body}
               </p>

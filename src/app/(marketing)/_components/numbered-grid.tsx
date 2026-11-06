@@ -10,7 +10,7 @@ const CELL_STYLES = {
   /** product features: roomier cells, 20px titles */
   feature: { cell: 'p-8', title: 'text-xl leading-7' },
   /** case-study decisions: 18px titles */
-  decision: { cell: 'p-7', title: 'text-lg leading-6.5' },
+  decision: { cell: 'p-7', title: 'text-lead leading-6.5' },
 } as const;
 
 interface NumberedGridProps {

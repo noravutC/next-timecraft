@@ -5,7 +5,15 @@
 
 @theme inline {
   /* type scale (px): 4xs 9 · 3xs 10 · 2xs 11 · xs 12 · sm 13 · base 14 · md 15 ·
-     lg 17 · xl 20 · 2xl 24 · 3xl 32. Body copy is base; controls are sm. */
+     lg 17 · xl 20 · 2xl 24 · 3xl 32. Body copy is base; controls are sm.
+     Role sizes (font-size / line-height):
+       copy 16/26 and lead 18/28: marketing paragraphs and hero leads
+       title-sm 22/28 and title 28/34: invite cards, sign-in and onboarding
+       price 44/48: plan price
+     Display sizes are fluid like the prototype (min, vw, max at 1440):
+       heading 32-44 and heading-sm 30-42: section headings
+       cta 36-56 and cta-sm 36-52: closing call to action
+       display 44-76 and display-sm 42-72: page hero */
   --text-4xs: 0.5625rem; /* initials in 20-22px avatars */
   --text-4xs--line-height: 1;
   --text-3xs: 0.625rem;
@@ -28,6 +36,28 @@
   --text-2xl--line-height: 2rem;
   --text-3xl: 2rem;
   --text-3xl--line-height: 2.375rem;
+  --text-copy: 1rem;
+  --text-copy--line-height: 1.625rem;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.75rem;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.75rem;
+  --text-title: 1.75rem;
+  --text-title--line-height: 2.125rem;
+  --text-price: 2.75rem;
+  --text-price--line-height: 3rem;
+  --text-heading-sm: clamp(1.875rem, 4vw, 2.625rem);
+  --text-heading-sm--line-height: 1.1;
+  --text-heading: clamp(2rem, 4.4vw, 2.75rem);
+  --text-heading--line-height: 1.1;
+  --text-cta-sm: clamp(2.25rem, 5vw, 3.25rem);
+  --text-cta-sm--line-height: 1.05;
+  --text-cta: clamp(2.25rem, 5.4vw, 3.5rem);
+  --text-cta--line-height: 1.05;
+  --text-display-sm: clamp(2.625rem, 6.4vw, 4.5rem);
+  --text-display-sm--line-height: 1.02;
+  --text-display: clamp(2.75rem, 7vw, 4.75rem);
+  --text-display--line-height: 1.02;
 
   /* elevation: only things that float get a shadow */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);

@@ -50,7 +50,7 @@ export default function Login() {
       <main className="grid flex-1 place-items-center px-4 pt-6 pb-16">
         <div className="flex w-full max-w-90 flex-col gap-7">
           <div className="flex flex-col gap-2 text-center">
-            <h1 className="text-2xl leading-8.5 font-semibold tracking-tight">
+            <h1 className="text-title font-semibold tracking-tight">
               Sign in to TimeCraft
             </h1>
             <p className="text-md text-ink-muted">

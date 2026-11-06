@@ -37,6 +37,7 @@ export function SyncDemoSection() {
       <div className="mx-auto grid max-w-292 items-center gap-12 px-6 py-24 lg:grid-cols-2">
         <div className="flex flex-col gap-3.5">
           <SectionIntro
+            scale="caseStudy"
             eyebrow="Explaining optimistic UI"
             title="The card moves first. The server catches up."
             body="The card commits to its new column in 0 ms while a simulated server ack lands a beat later. State machine: idle, moved, syncing, synced, with the delay exposed as a design token you can tweak."

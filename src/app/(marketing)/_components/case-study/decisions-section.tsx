@@ -7,6 +7,7 @@ export function DecisionsSection() {
     <section id="decisions" className="scroll-mt-16 border-t border-line">
       <div className="mx-auto max-w-292 px-6 py-24">
         <SectionIntro
+          scale="caseStudy"
           eyebrow="Design decisions"
           title="Restraint, so the work stands out."
           className="mb-10"

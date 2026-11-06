@@ -7,10 +7,10 @@ export function CaseStudyHero() {
       <span className="font-mono text-xs leading-6 text-brand">
         UI engineering case study · everything below is live
       </span>
-      <h1 className="max-w-215 text-5xl leading-none font-semibold tracking-tighter text-balance sm:text-6xl lg:text-7xl">
+      <h1 className="max-w-215 text-display-sm font-semibold tracking-tighter text-balance">
         TimeCraft: designing a board that moves.
       </h1>
-      <p className="max-w-160 text-lg leading-7 text-pretty text-ink-muted">
+      <p className="max-w-160 text-lead text-pretty text-ink-muted">
         A production Kanban SaaS I designed, built and deployed solo. This page
         shows the interaction engineering behind it: hand-rolled drag physics,
         an optimistic-UI simulation, and the system underneath.

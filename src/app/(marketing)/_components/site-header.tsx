@@ -35,7 +35,7 @@ export function SiteHeader({
         )}
       >
         <Link href={homeHref} aria-label="TimeCraft home" className="shrink-0">
-          <Logo size={24} textSize="lg" />
+          <Logo size={24} textSize="copy" />
         </Link>
         <nav
           aria-label="Sections"

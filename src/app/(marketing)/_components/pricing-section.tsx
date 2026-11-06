@@ -53,7 +53,7 @@ const TierCard = ({ tier, annual }: { tier: PricingTier; annual: boolean }) => {
       )}
     >
       <div className="flex items-center gap-2">
-        <h3 className="text-lg font-semibold">{tier.name}</h3>
+        <h3 className="text-copy leading-6 font-semibold">{tier.name}</h3>
         {tier.planned && (
           <span className="h-5 rounded-full bg-surface-hover px-1.75 font-mono text-2xs leading-5 text-ink-muted">
             Planned
@@ -62,7 +62,7 @@ const TierCard = ({ tier, annual }: { tier: PricingTier; annual: boolean }) => {
       </div>
       <div className="flex flex-col gap-1">
         <span className="flex items-baseline gap-1.5">
-          <span className="text-5xl leading-12 font-semibold tracking-tighter">
+          <span className="text-price font-semibold tracking-tighter">
             {price}
           </span>
           <span className="text-base text-ink-subtle">{unit}</span>

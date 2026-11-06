@@ -19,7 +19,7 @@ export function HowItWorksSection() {
               <span className="grid size-8 place-items-center rounded-lg border border-line font-mono text-xs">
                 {step.no}
               </span>
-              <h3 className="text-lg leading-6.5 font-semibold tracking-tight">
+              <h3 className="text-lead leading-6.5 font-semibold tracking-tight">
                 {step.title}
               </h3>
               <p className="text-md leading-6 text-pretty text-ink-muted">

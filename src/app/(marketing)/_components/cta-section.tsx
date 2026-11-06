@@ -5,7 +5,7 @@ export function CtaSection() {
   return (
     <section id="cta" className="border-t border-line">
       <div className="mx-auto flex max-w-312 flex-col items-center gap-5.5 px-6 py-28 text-center">
-        <h2 className="text-4xl leading-none font-semibold tracking-tighter text-balance sm:text-5xl lg:text-6xl">
+        <h2 className="text-cta font-semibold tracking-tighter text-balance">
           Your best work, on schedule.
         </h2>
         <p className="max-w-130 text-lg leading-6.75 text-ink-muted">

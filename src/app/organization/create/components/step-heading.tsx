@@ -9,7 +9,7 @@ type StepHeadingProps = {
 export function StepHeading({ title, children }: StepHeadingProps) {
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-2xl leading-8.5 font-semibold tracking-tight text-ink">
+      <h1 className="text-title font-semibold tracking-tight text-ink">
         {title}
       </h1>
       <p className="text-md text-ink-muted">{children}</p>

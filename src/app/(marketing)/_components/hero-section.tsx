@@ -11,10 +11,10 @@ export function HeroSection() {
           <span className="size-1.5 rounded-full bg-brand" />
           Kanban · Realtime · AI
         </span>
-        <h1 className="max-w-205 text-5xl leading-none font-semibold tracking-tighter text-balance sm:text-6xl lg:text-7xl">
+        <h1 className="max-w-205 text-display font-semibold tracking-tighter text-balance">
           Every task, in motion.
         </h1>
-        <p className="max-w-155 text-lg leading-7 text-pretty text-ink-muted">
+        <p className="max-w-155 text-lead text-pretty text-ink-muted">
           TimeCraft is a kanban board for small teams. Drag cards across lanes,
           watch teammates&rsquo; changes land live, and let AI break big fuzzy
           goals into tasks you can actually start on.

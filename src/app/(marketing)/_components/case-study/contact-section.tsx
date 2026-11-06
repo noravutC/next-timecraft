@@ -14,10 +14,10 @@ export function ContactSection() {
       className="scroll-mt-16 border-t border-line bg-surface"
     >
       <div className="mx-auto flex max-w-292 flex-col items-center gap-4.5 px-6 py-24 text-center">
-        <h2 className="text-4xl leading-none font-semibold tracking-tighter sm:text-5xl">
+        <h2 className="text-cta-sm font-semibold tracking-tighter">
           Let&rsquo;s talk.
         </h2>
-        <p className="max-w-120 text-lg leading-6.5 text-ink-muted">
+        <p className="max-w-120 text-copy text-ink-muted">
           Open to full-stack roles and interesting projects. The fastest way to
           reach me is email.
         </p>
