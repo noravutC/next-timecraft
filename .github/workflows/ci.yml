@@ -80,3 +80,4 @@ jobs:
           build-args: |
             NEXT_PUBLIC_PUSHER_KEY=5d804b66a55a28f9aeb7
             NEXT_PUBLIC_PUSHER_CLUSTER=ap1
+            NEXT_PUBLIC_SUPABASE_URL=https://egafogvlhftyzslzmkcv.supabase.co
