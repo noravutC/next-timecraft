@@ -33,9 +33,14 @@ const emptyState: TaskState = {
   initialized: false,
 };
 
+/** A comment that didn't reach the server: what to send again on Retry. */
+type FailedSend = { taskId: string; request: CreateCommentPayload };
+
 type CommentStore = {
   byTask: Record<string, TaskState>;
   pendingClientIds: Record<string, true>;
+  /** by clientId; the comment stays in the list with its text */
+  failedSends: Record<string, FailedSend>;
   fetchInitial: (taskId: string) => Promise<void>;
   fetchMore: (taskId: string) => Promise<void>;
   create: (
@@ -50,6 +55,8 @@ type CommentStore = {
       attachmentInputs?: AttachmentInput[];
     },
   ) => Promise<TaskCommentWithAuthor | null>;
+  /** sends a failed comment again; the server ignores a repeat */
+  retry: (clientId: string) => Promise<TaskCommentWithAuthor | null>;
   toggleReaction: (commentId: string, taskId: string, emoji: string, userId: string) => Promise<void>;
   ingestReactionChanged: (taskId: string, commentId: string, reactions: ReactionSummary[]) => void;
   update: (
@@ -94,9 +101,74 @@ const sortDescByCreatedAt = (a: TaskCommentWithAuthor, b: TaskCommentWithAuthor)
   return a.id < b.id ? 1 : -1;
 };
 
+const bumpCommentCount = (taskId: string, by: number) =>
+  useTaskStore.setState((s) => {
+    const t = s.tasks[taskId];
+    if (!t) return s;
+    return {
+      tasks: {
+        ...s.tasks,
+        [taskId]: {
+          ...t,
+          commentCount: Math.max((t.commentCount ?? 0) + by, 0),
+        },
+      },
+    };
+  });
+
+/**
+ * Posts a comment already shown in the list. On failure it stays there,
+ * text and all, marked for Retry.
+ */
+async function sendComment(
+  taskId: string,
+  clientId: string,
+  request: CreateCommentPayload,
+): Promise<TaskCommentWithAuthor | null> {
+  const set = useCommentStore.setState;
+  set((s) => ({
+    pendingClientIds: { ...s.pendingClientIds, [clientId]: true },
+  }));
+  bumpCommentCount(taskId, 1);
+  try {
+    const res = await commentServices.create(taskId, request);
+    const real = res.created;
+    if (!real) throw new Error("No comment returned");
+
+    set((s) => {
+      const prev = s.byTask[taskId];
+      if (!prev) return s;
+      const replaced = prev.items.map((c) =>
+        c.clientId === clientId ? real : c,
+      );
+      return {
+        byTask: {
+          ...s.byTask,
+          [taskId]: { ...prev, items: replaced.sort(sortDescByCreatedAt) },
+        },
+      };
+    });
+    return real;
+  } catch (err) {
+    bumpCommentCount(taskId, -1);
+    set((s) => ({
+      failedSends: { ...s.failedSends, [clientId]: { taskId, request } },
+    }));
+    console.error(err);
+    return null;
+  } finally {
+    set((s) => {
+      const next = { ...s.pendingClientIds };
+      delete next[clientId];
+      return { pendingClientIds: next };
+    });
+  }
+}
+
 export const useCommentStore = create<CommentStore>((set, get) => ({
   byTask: {},
   pendingClientIds: {},
+  failedSends: {},
 
   fetchInitial: async (taskId) => {
     const cur = get().byTask[taskId];
@@ -109,11 +181,15 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
     }));
     try {
       const res = await commentServices.fetchPage(taskId, null, PAGE_SIZE);
+      // comments that failed to send live only here: keep them in the list
+      const unsent = (get().byTask[taskId]?.items ?? []).filter(
+        (c) => c.clientId && get().failedSends[c.clientId],
+      );
       set((s) => ({
         byTask: {
           ...s.byTask,
           [taskId]: {
-            items: res.data.items,
+            items: [...unsent, ...res.data.items].sort(sortDescByCreatedAt),
             cursor: res.data.nextCursor,
             hasMore: res.data.hasMore,
             unreadCount: res.data.unreadCount,
@@ -207,86 +283,26 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
             items: [optimistic, ...prev.items].sort(sortDescByCreatedAt),
           },
         },
-        pendingClientIds: { ...s.pendingClientIds, [clientId]: true },
       };
     });
 
-    useTaskStore.setState((s) => {
-      const t = s.tasks[taskId];
-      if (!t) return s;
-      return {
-        tasks: {
-          ...s.tasks,
-          [taskId]: { ...t, commentCount: (t.commentCount ?? 0) + 1 },
-        },
-      };
+    return sendComment(taskId, clientId, {
+      body: payload.body,
+      mentions: payload.mentions,
+      clientId,
+      attachments: payload.attachmentInputs ?? [],
     });
+  },
 
-    try {
-      const body: CreateCommentPayload = {
-        body: payload.body,
-        mentions: payload.mentions,
-        clientId,
-        attachments: payload.attachmentInputs ?? [],
-      };
-      const res = await commentServices.create(taskId, body);
-      const real = res.created;
-      if (!real) throw new Error("No comment returned");
-
-      set((s) => {
-        const prev = s.byTask[taskId];
-        if (!prev) return s;
-        const replaced = prev.items.map((c) =>
-          c.clientId === clientId ? real : c,
-        );
-        return {
-          byTask: {
-            ...s.byTask,
-            [taskId]: {
-              ...prev,
-              items: replaced.sort(sortDescByCreatedAt),
-            },
-          },
-        };
-      });
-      return real;
-    } catch (err) {
-      set((s) => {
-        const prev = s.byTask[taskId];
-        if (!prev) return s;
-        return {
-          byTask: {
-            ...s.byTask,
-            [taskId]: {
-              ...prev,
-              items: prev.items.filter((c) => c.clientId !== clientId),
-            },
-          },
-        };
-      });
-      useTaskStore.setState((s) => {
-        const t = s.tasks[taskId];
-        if (!t) return s;
-        return {
-          tasks: {
-            ...s.tasks,
-            [taskId]: {
-              ...t,
-              commentCount: Math.max((t.commentCount ?? 0) - 1, 0),
-            },
-          },
-        };
-      });
-      toast.error("Failed to send comment");
-      console.error(err);
-      return null;
-    } finally {
-      set((s) => {
-        const next = { ...s.pendingClientIds };
-        delete next[clientId];
-        return { pendingClientIds: next };
-      });
-    }
+  retry: async (clientId) => {
+    const failed = get().failedSends[clientId];
+    if (!failed) return null;
+    set((s) => {
+      const next = { ...s.failedSends };
+      delete next[clientId];
+      return { failedSends: next };
+    });
+    return sendComment(failed.taskId, clientId, failed.request);
   },
 
   update: async (commentId, taskId, payload) => {

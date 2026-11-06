@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { appendEmail } from './email-list';
 import { firstImageFile } from './image-file';
 import { inviteView } from './invite-view';
-import { signInDestination } from './sign-in-destination';
+import {
+  closesAfterSignIn,
+  SIGN_IN_AGAIN_URL,
+  signInDestination,
+} from './sign-in-destination';
 
 describe('signInDestination', () => {
   it('sends users with a workspace to their boards', () => {
@@ -105,5 +109,15 @@ describe('appendEmail', () => {
     expect(appendEmail([], '   ')).toBeNull();
     expect(appendEmail([], 'ploy')).toBeNull();
     expect(appendEmail(['ploy@example.com'], 'PLOY@example.com')).toBeNull();
+  });
+});
+
+describe('closesAfterSignIn', () => {
+  it('is true only for the window "Sign in again" opens', () => {
+    expect(
+      closesAfterSignIn(new URL(SIGN_IN_AGAIN_URL, 'http://x').search),
+    ).toBe(true);
+    expect(closesAfterSignIn('')).toBe(false);
+    expect(closesAfterSignIn('?then=project')).toBe(false);
   });
 });

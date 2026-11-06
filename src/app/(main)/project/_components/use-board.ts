@@ -3,6 +3,7 @@ import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-an
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -50,6 +51,17 @@ export function useBoard() {
   const { settings } = useContext(SettingsContext);
 
   const projectId = useProjectStore((s) => s.projectIsUsing);
+  const boardName = useProjectStore((s) =>
+    s.projectIsUsing ? (s.projects[s.projectIsUsing]?.name ?? null) : null,
+  );
+  // the board whose columns or tasks failed to load; shown in place
+  const [failedBoard, setFailedBoard] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const loadFailed = failedBoard !== null && failedBoard === projectId;
+  const retryLoad = useCallback(() => {
+    setFailedBoard(null);
+    setAttempt((n) => n + 1);
+  }, []);
   const columns = useColumnStore(useShallow((s) => s.columns));
   const fetchColumns = useColumnStore((s) => s.fetchColumns);
   const updateColumns = useColumnStore((s) => s.updateColumns);
@@ -85,16 +97,15 @@ export function useBoard() {
     (async () => {
       try {
         await fetchColumns(projectId);
-        if (!active) return;
       } catch {
-        toast.error('Failed to load board data.');
+        if (active) setFailedBoard(projectId);
       }
     })();
 
     return () => {
       active = false;
     };
-  }, [fetchColumns, projectId]);
+  }, [fetchColumns, projectId, attempt]);
 
   const board = useMemo(
     () =>
@@ -122,11 +133,11 @@ export function useBoard() {
   // filter เปลี่ยน (เดิมยิงแยกทีละ column)
   const columnIdsKey = board.columns.map((c) => c.id).join(',');
   useEffect(() => {
-    if (!columnIdsKey) return;
-    fetchTasksByColumns(columnIdsKey.split(','), TASK_PAGE_SIZE).catch(
-      () => {},
+    if (!columnIdsKey || !projectId) return;
+    fetchTasksByColumns(columnIdsKey.split(','), TASK_PAGE_SIZE).catch(() =>
+      setFailedBoard(projectId),
     );
-  }, [columnIdsKey, filterKey, fetchTasksByColumns]);
+  }, [columnIdsKey, filterKey, fetchTasksByColumns, projectId, attempt]);
 
   // ref สำหรับ DnD callbacks เสมอใช้ข้อมูลล่าสุด (อัปเดตหลัง commit ไม่ใช่ระหว่าง render)
   const boardRef = useRef(board);
@@ -257,5 +268,13 @@ export function useBoard() {
 
   const panCursor = useSpacebarPan(scrollableRef);
 
-  return { scrollableRef, board, panCursor, settings };
+  return {
+    scrollableRef,
+    board,
+    panCursor,
+    settings,
+    boardName,
+    loadFailed,
+    retryLoad,
+  };
 }

@@ -23,6 +23,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { MarkdownView } from './parts/markdown-view';
 import { CommentReactions, ReactionPicker } from './parts/comment-reactions';
 import { FileChip } from './parts/file-chip';
+import { CommentSendFailed } from './parts/comment-send-failed';
 import { splitAttachments } from '@/helper/utils/attachment-kinds';
 
 interface CommentItemProps {
@@ -54,6 +55,10 @@ export const CommentItem = ({
     ),
   );
   const remove = useCommentStore((s) => s.remove);
+  const retry = useCommentStore((s) => s.retry);
+  const failed = useCommentStore((s) =>
+    Boolean(comment.clientId && s.failedSends[comment.clientId]),
+  );
 
   const isPending = comment.id.startsWith('temp-');
   const hasReactions = comment.reactions.length > 0;
@@ -98,7 +103,7 @@ export const CommentItem = ({
       ref={ref}
       className={cn(
         'group flex gap-3 transition-opacity',
-        isPending && 'opacity-60',
+        isPending && !failed && 'opacity-60',
       )}
     >
       <UserAvatar
@@ -184,7 +189,13 @@ export const CommentItem = ({
         ) : (
           <>
             {comment.body && (
-              <div className="text-base leading-5.5 break-words text-ink">
+              <div
+                className={cn(
+                  'text-base leading-5.5 break-words text-ink',
+                  failed &&
+                    'rounded-lg border border-dashed border-danger-line px-2.5 py-2 text-ink-muted',
+                )}
+              >
                 <MarkdownView
                   value={comment.body}
                   mentionNames={mentionNames}
@@ -232,6 +243,11 @@ export const CommentItem = ({
                   />
                 ))}
               </div>
+            )}
+            {failed && comment.clientId && (
+              <CommentSendFailed
+                onRetry={() => comment.clientId && void retry(comment.clientId)}
+              />
             )}
             {hasReactions && (
               <CommentReactions

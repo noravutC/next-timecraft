@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getSession } from "next-auth/react";
 import { getPusherSocketId } from "@/lib/pusher-client";
 
 const apiClient = axios.create({
@@ -26,14 +27,20 @@ apiClient.interceptors.request.use(
   },
 );
 
+// A 401 means the session may have run out: re-read it, so the app shows
+// "Your session expired" (once, however many requests failed together)
+let sessionCheck: Promise<unknown> | null = null;
+const recheckSession = () => {
+  sessionCheck ??= getSession().finally(() => {
+    sessionCheck = null;
+  });
+};
+
 // Response Interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      console.log("Unauthorized - Redirect to login");
-      // Optional: Add logic to handle unauthorized requests
-    }
+    if (error.response?.status === 401) recheckSession();
     return Promise.reject(error);
   },
 );
