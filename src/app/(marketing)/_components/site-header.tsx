@@ -37,20 +37,22 @@ export function SiteHeader({
         <Link href={homeHref} aria-label="TimeCraft home" className="shrink-0">
           <Logo size={24} textSize="copy" />
         </Link>
-        <nav
-          aria-label="Sections"
-          className="hidden flex-wrap items-center gap-6 text-base md:flex"
-        >
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-ink-muted transition-colors hover:text-ink"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        {links.length > 0 && (
+          <nav
+            aria-label="Sections"
+            className="hidden flex-wrap items-center gap-6 text-base md:flex"
+          >
+            {links.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-ink-muted transition-colors hover:text-ink"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        )}
         <span className="flex-1" />
         {children}
       </div>

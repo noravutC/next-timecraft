@@ -14,6 +14,14 @@ export const FOOTER_NAV = [
   { label: 'Features', href: '#features' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Integrations', href: '#integrations' },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Sign in', href: '/login' },
+];
+
+export const LEGAL_FOOTER_NAV = [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
   { label: 'Sign in', href: '/login' },
 ];
 
