@@ -10,6 +10,7 @@ import {
 import { LoaderStatus } from '@/types/global/types';
 import { taskServices } from '@/services/tasks.service';
 import { toRecord, toValueRecord } from '@/helper/utils/object';
+import { shiftPriorityCounts } from '@/helper/utils/priority-counts';
 import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
 import { useAssigneeStore } from './use-assignee.store';
@@ -85,6 +86,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
       set((state) => ({
         tasks: { ...state.tasks, ...toRecord(createdTasks, 'id') },
+        priorityCounts: shiftPriorityCounts(
+          state.priorityCounts,
+          createdTasks.map((t) => [null, t]),
+        ),
         status: 'none',
       }));
       return createdTasks;
@@ -105,15 +110,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       taskIds.map((id) => [id, useTaskStore.getState().tasks[id]]),
     );
 
-    set((state) => ({
-      tasksLoader: { ...state.tasksLoader, ...toValueRecord(taskIds, true) },
-      tasks: {
-        ...state.tasks,
-        ...Object.fromEntries(
-          taskIds.map((id, i) => [id, { ...state.tasks[id], ...payload[i] }]),
+    set((state) => {
+      const next = taskIds.map((id, i) => ({
+        ...state.tasks[id],
+        ...payload[i],
+      }));
+      return {
+        tasksLoader: { ...state.tasksLoader, ...toValueRecord(taskIds, true) },
+        tasks: {
+          ...state.tasks,
+          ...Object.fromEntries(taskIds.map((id, i) => [id, next[i]])),
+        },
+        priorityCounts: shiftPriorityCounts(
+          state.priorityCounts,
+          taskIds.map((id, i) => [state.tasks[id], next[i]]),
         ),
-      },
-    }));
+      };
+    });
 
     try {
       const { updated } = await taskServices.updateTasks(taskIds, payload);
@@ -133,19 +146,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
       return updated;
     } catch (error) {
-      set((state) => ({
-        tasks: {
-          ...state.tasks,
-          ...Object.fromEntries(
-            taskIds
-              .filter(
-                (id) =>
-                  latestUpdateReqByTask[id] === reqId && snapshotByTask[id],
-              )
-              .map((id) => [id, snapshotByTask[id]]),
+      set((state) => {
+        const reverted = taskIds.filter(
+          (id) => latestUpdateReqByTask[id] === reqId && snapshotByTask[id],
+        );
+        return {
+          tasks: {
+            ...state.tasks,
+            ...Object.fromEntries(
+              reverted.map((id) => [id, snapshotByTask[id]]),
+            ),
+          },
+          priorityCounts: shiftPriorityCounts(
+            state.priorityCounts,
+            reverted.map((id) => [state.tasks[id], snapshotByTask[id]]),
           ),
-        },
-      }));
+        };
+      });
       throw error;
     } finally {
       set((state) => ({
@@ -170,7 +187,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set((state) => {
         const newTasks = { ...state.tasks };
         taskIds.forEach((id) => delete newTasks[id]);
-        return { tasks: newTasks, status: 'none' };
+        return {
+          tasks: newTasks,
+          priorityCounts: shiftPriorityCounts(
+            state.priorityCounts,
+            taskIds.map((id) => [state.tasks[id], null]),
+          ),
+          status: 'none',
+        };
       });
     } catch (error) {
       set({ status: 'error' });
@@ -266,6 +290,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         return state;
       }
       return {
+        // unknown previous state (task not loaded) → leave counts alone
+        priorityCounts: state.tasks[task.id]
+          ? shiftPriorityCounts(state.priorityCounts, [
+              [state.tasks[task.id], task],
+            ])
+          : state.priorityCounts,
         tasks: {
           ...state.tasks,
           [task.id]: {
@@ -282,11 +312,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     if (!tasks.length) return;
     const ts = Date.now();
     set((state) => {
+      const priorityCounts = shiftPriorityCounts(
+        state.priorityCounts,
+        tasks.map((t) => [state.tasks[t.id], t]),
+      );
       const visible = tasks.filter(
         (t) => state.tasks[t.id] || !isBeyondLoadedWindow(state.taskPages, t),
       );
-      if (!visible.length) return state;
+      if (!visible.length) return { priorityCounts };
       return {
+        priorityCounts,
         tasks: {
           ...state.tasks,
           ...Object.fromEntries(
@@ -305,7 +340,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set((state) => {
       const next = { ...state.tasks };
       taskIds.forEach((id) => delete next[id]);
-      return { tasks: next };
+      return {
+        tasks: next,
+        priorityCounts: shiftPriorityCounts(
+          state.priorityCounts,
+          taskIds.map((id) => [state.tasks[id], null]),
+        ),
+      };
     });
   },
 }));

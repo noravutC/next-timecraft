@@ -5,17 +5,14 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { TColumn } from './data';
 import { blockBoardPanningAttr } from './data-attributes';
 import { Card, CardShadow } from './card';
-import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
+import { useTaskStore } from '@/store/use-task.store';
 import { cn } from '@/lib/utils';
 import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { useNavStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useColumnStore } from '@/store/use-column.store';
-import {
-  selectFilterKey,
-  useBoardFilterStore,
-} from '@/store/use-board-filter.store';
+import { useBoardFilterStore } from '@/store/use-board-filter.store';
 import { AddCardInline } from './add-card-inline';
 import { CardSkeleton } from './card-skeleton';
 import { TColumnState, useColumnDnd } from './use-column-dnd';
@@ -57,8 +54,6 @@ export const Column = ({
   const innerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
-  const filterKey = useBoardFilterStore(selectFilterKey);
   const isFiltering = useBoardFilterStore(
     (s) => s.toFilterPayload() !== undefined,
   );
@@ -86,11 +81,6 @@ export const Column = ({
     setSeenSignal(newTaskSignal);
     if (allColumns[0]?.id === column.id) setAddingAt('top');
   }
-
-  // fetch task หน้าแรกของ column นี้เมื่อ mount และทุกครั้งที่ filter เปลี่ยน
-  useEffect(() => {
-    fetchTasksByColumns([column.id], TASK_PAGE_SIZE).catch(() => {});
-  }, [column.id, fetchTasksByColumns, filterKey]);
 
   // เลื่อนใกล้ท้าย list แล้วยังมี task เหลือ → โหลดเพิ่มทีละ TASK_PAGE_SIZE
   useEffect(() => {

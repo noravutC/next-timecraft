@@ -16,6 +16,9 @@ type ProjectStore = {
     [projectId: string]: ProjectCache;
   };
   setProjectIsUsing: (projectId: string | null) => void;
+  /** keep the open board; fall back to the first one only when none is open
+   *  or the open one is gone */
+  ensureActiveProject: () => void;
   setNeedCreateProject: (needCreateProject: boolean) => void;
   createProject: (
     payload: CreateProjectPayload,
@@ -41,6 +44,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   projects: {},
   setProjectIsUsing: (projectId) => {
     set({ projectIsUsing: projectId });
+  },
+  ensureActiveProject: () => {
+    const { projectIsUsing, projects } = get();
+    if (projectIsUsing && projects[projectIsUsing]) return;
+    const [first] = Object.keys(projects);
+    if (first) set({ projectIsUsing: first });
   },
   setNeedCreateProject: (needCreateProject) => {
     set({ needCreateProject });

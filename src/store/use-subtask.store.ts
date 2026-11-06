@@ -1,14 +1,10 @@
-import { create } from "zustand";
-import { toast } from "sonner";
-import { subtaskServices } from "@/services/subtask.service";
-import { generateFractionBetween } from "@/helper/utils/fraction-string-indexing";
-import { progressFromItems } from "@/helper/utils/subtask-progress";
-import type {
-  Subtask,
-  SubtaskProgress,
-  UpdateSubtaskPayload,
-} from "@/types";
-import type { LoaderStatus } from "@/types/global/types";
+import { create } from 'zustand';
+import { toast } from 'sonner';
+import { subtaskServices } from '@/services/subtask.service';
+import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
+import { progressFromItems } from '@/helper/utils/subtask-progress';
+import type { Subtask, SubtaskProgress, UpdateSubtaskPayload } from '@/types';
+import type { LoaderStatus } from '@/types/global/types';
 
 type TaskState = {
   items: Subtask[];
@@ -16,7 +12,7 @@ type TaskState = {
   initialized: boolean;
 };
 
-const empty: TaskState = { items: [], status: "none", initialized: false };
+const empty: TaskState = { items: [], status: 'none', initialized: false };
 
 const sortItems = (items: Subtask[]) =>
   [...items].sort((a, b) => {
@@ -54,30 +50,39 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
 
   fetch: async (taskId) => {
     const cur = get().byTask[taskId];
-    if (cur?.status === "fetching") return;
+    if (cur?.status === 'fetching') return;
     set((s) => ({
       byTask: {
         ...s.byTask,
-        [taskId]: { ...(s.byTask[taskId] ?? empty), status: "fetching" },
+        [taskId]: { ...(s.byTask[taskId] ?? empty), status: 'fetching' },
       },
     }));
     try {
       const res = await subtaskServices.list(taskId);
-      set((s) => ({
-        byTask: {
-          ...s.byTask,
-          [taskId]: {
-            items: sortItems(res.data ?? []),
-            status: "none",
-            initialized: true,
+      set((s) => {
+        // keep rows added while the list was loading (still temp, or
+        // already saved but not in this response)
+        const loaded = res.data ?? [];
+        const loadedIds = new Set(loaded.map((it) => it.id));
+        const added = (s.byTask[taskId]?.items ?? []).filter(
+          (it) => !loadedIds.has(it.id),
+        );
+        return {
+          byTask: {
+            ...s.byTask,
+            [taskId]: {
+              items: sortItems([...loaded, ...added]),
+              status: 'none',
+              initialized: true,
+            },
           },
-        },
-      }));
+        };
+      });
     } catch (err) {
       set((s) => ({
         byTask: {
           ...s.byTask,
-          [taskId]: { ...(s.byTask[taskId] ?? empty), status: "error" },
+          [taskId]: { ...(s.byTask[taskId] ?? empty), status: 'error' },
         },
       }));
       console.error(err);
@@ -89,7 +94,7 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
     const last = items[items.length - 1]?.orderFraction ?? null;
     const orderFraction = generateFractionBetween(last, null);
     const tempId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? `temp-${crypto.randomUUID()}`
         : `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const now = new Date();
@@ -118,15 +123,22 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
     });
 
     try {
-      const res = await subtaskServices.create(taskId, { title, orderFraction });
+      const res = await subtaskServices.create(taskId, {
+        title,
+        orderFraction,
+      });
       if (!res.created) return;
       const created = res.created;
       set((s) => {
         const prev = s.byTask[taskId];
         if (!prev) return s;
-        const replaced = prev.items.some((it) => it.id === created.id)
+        const hasCreated = prev.items.some((it) => it.id === created.id);
+        const hasTemp = prev.items.some((it) => it.id === tempId);
+        const replaced = hasCreated
           ? prev.items.filter((it) => it.id !== tempId)
-          : prev.items.map((it) => (it.id === tempId ? created : it));
+          : hasTemp
+            ? prev.items.map((it) => (it.id === tempId ? created : it))
+            : [...prev.items, created]; // temp row was dropped meanwhile
         return {
           byTask: {
             ...s.byTask,
@@ -148,7 +160,7 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
           },
         };
       });
-      toast.error("Failed to add subtask");
+      toast.error('Failed to add subtask');
       console.error(err);
     }
   },
@@ -174,8 +186,9 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
     try {
       await subtaskServices.update(subtaskId, payload);
     } catch (err) {
-      if (snapshot) set((s) => ({ byTask: { ...s.byTask, [taskId]: snapshot } }));
-      toast.error("Failed to update subtask");
+      if (snapshot)
+        set((s) => ({ byTask: { ...s.byTask, [taskId]: snapshot } }));
+      toast.error('Failed to update subtask');
       console.error(err);
     } finally {
       const next = (pendingUpdatesBySubtask[subtaskId] ?? 1) - 1;
@@ -202,8 +215,9 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
     try {
       await subtaskServices.remove(subtaskId);
     } catch (err) {
-      if (snapshot) set((s) => ({ byTask: { ...s.byTask, [taskId]: snapshot } }));
-      toast.error("Failed to delete subtask");
+      if (snapshot)
+        set((s) => ({ byTask: { ...s.byTask, [taskId]: snapshot } }));
+      toast.error('Failed to delete subtask');
       console.error(err);
     }
   },
@@ -261,7 +275,14 @@ export const useSubtaskStore = create<SubtaskStore>((set, get) => ({
   },
 
   ingestProgress: (progress) =>
-    set((s) => ({ progressByTask: { ...s.progressByTask, ...progress } })),
+    set((s) => {
+      const next = { ...s.progressByTask, ...progress };
+      // a card with no subtasks left shows no count at all
+      for (const [taskId, p] of Object.entries(progress)) {
+        if (p.total === 0) delete next[taskId];
+      }
+      return { progressByTask: next };
+    }),
 
   progressOf: (taskId) => {
     const state = get().byTask[taskId];

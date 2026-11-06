@@ -1,16 +1,20 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { privateChannel } from "@/helper/utils/realtime-channel";
-import { pusherClient } from "@/lib/pusher-client";
-import { useTaskStore } from "@/store/use-task.store";
-import { useAssigneeStore } from "@/store/use-assignee.store";
-import type { TaskAssigneeUser } from "@/services/assignee.service";
-import { Task } from "@/types";
+import { useEffect } from 'react';
+import { privateChannel } from '@/helper/utils/realtime-channel';
+import { pusherClient } from '@/lib/pusher-client';
+import { useTaskStore } from '@/store/use-task.store';
+import { useSubtaskStore } from '@/store/use-subtask.store';
+import { useAssigneeStore } from '@/store/use-assignee.store';
+import type { TaskAssigneeUser } from '@/services/assignee.service';
+import { Task } from '@/types';
 
 export const useRealtimeBoard = (projectId?: string | null) => {
-  const { updateTaskFromRealtime, addTasksFromRealtime, removeTasksFromRealtime } =
-    useTaskStore();
+  const {
+    updateTaskFromRealtime,
+    addTasksFromRealtime,
+    removeTasksFromRealtime,
+  } = useTaskStore();
 
   useEffect(() => {
     if (!projectId) return;
@@ -18,27 +22,44 @@ export const useRealtimeBoard = (projectId?: string | null) => {
     const channelName = privateChannel(`project-${projectId}`);
     const channel = pusherClient.subscribe(channelName);
 
-    channel.bind("tasks-created", (tasks: Task[]) => {
+    channel.bind('tasks-created', (tasks: Task[]) => {
       addTasksFromRealtime(tasks);
     });
 
-    channel.bind("tasks-updated", (tasks: Task[]) => {
+    channel.bind('tasks-updated', (tasks: Task[]) => {
       tasks.forEach((t) => updateTaskFromRealtime(t));
     });
 
-    channel.bind("tasks-deleted", (ids: string[]) => {
+    channel.bind('tasks-deleted', (ids: string[]) => {
       removeTasksFromRealtime(ids);
     });
 
     channel.bind(
-      "task-assignees-updated",
+      'task-assignees-updated',
       (data: { taskId: string; assignees: TaskAssigneeUser[] }) => {
         useAssigneeStore.getState().ingestRealtime(data.taskId, data.assignees);
       },
     );
 
     channel.bind(
-      "task-comment-count",
+      'subtask-progress',
+      ({
+        taskId,
+        done,
+        total,
+      }: {
+        taskId: string;
+        done: number;
+        total: number;
+      }) => {
+        useSubtaskStore
+          .getState()
+          .ingestProgress({ [taskId]: { done, total } });
+      },
+    );
+
+    channel.bind(
+      'task-comment-count',
       ({ taskId, delta }: { taskId: string; delta: number }) => {
         useTaskStore.setState((s) => {
           const t = s.tasks[taskId];

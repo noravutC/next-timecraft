@@ -7,15 +7,30 @@ type OrganizationStore = {
   status: LoaderStatus;
   organization: OrganizationCache | null;
   fetchUserOrganization: (orgId: string) => Promise<OrganizationCache | null>;
+  /** the request itself; call fetchUserOrganization, which dedupes */
+  loadOrganization: (orgId: string) => Promise<OrganizationCache | null>;
   createOrganization: (
     payload: CreateOrganizationPayload,
   ) => Promise<OrganizationCache | null>;
 };
 
-export const useOrganizationStore = create<OrganizationStore>((set) => ({
+// one request at a time per org: header, switcher and first-board page all
+// ask for the workspace on mount
+let inflight: { orgId: string; promise: Promise<OrganizationCache | null> } | null =
+  null;
+
+export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
   status: "none",
   organization: null,
-  fetchUserOrganization: async (orgId) => {
+  fetchUserOrganization: (orgId) => {
+    if (inflight?.orgId === orgId) return inflight.promise;
+    const promise = get().loadOrganization(orgId).finally(() => {
+      inflight = null;
+    });
+    inflight = { orgId, promise };
+    return promise;
+  },
+  loadOrganization: async (orgId) => {
     set({ status: "fetching" });
     try {
       const response = await organizationServices.getOrganizations();
