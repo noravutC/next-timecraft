@@ -39,6 +39,19 @@ export type TaskAssigneeLite = TaskAssigneeUser;
 class TaskService {
   private client = apiClient;
 
+  /** Adds time spent; answers with the task as it is now. */
+  async logTime(
+    taskId: string,
+    body: { minutes: number; day: string; note?: string },
+  ): Promise<TaskCache> {
+    return this.client
+      .post(`/task/${taskId}/time`, body)
+      .then((response) => response.data.data as TaskCache)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to log time');
+      });
+  }
+
   /** What blocks a task and what it blocks. */
   async getDependencies(
     taskId: string,

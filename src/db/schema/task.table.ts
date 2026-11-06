@@ -37,6 +37,8 @@ export const tasksTable = pgTable("tasks", {
   remindedAt: timestamp("reminded_at", { withTimezone: true }),
   estimatedHours: integer("estimated_hours").notNull().default(0),
   loggedHours: integer("logged_hours").notNull().default(0),
+  // time spent, summed from every "Log time" (logged_hours is unused)
+  loggedMinutes: integer("logged_minutes").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

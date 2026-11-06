@@ -21,6 +21,7 @@ import { TagPicker } from './tag-picker';
 import { AssigneePicker, type AssigneeCandidate } from './assignee-picker';
 import { EstimatePicker } from './estimate-picker';
 import { TaskDependencyRows } from './task-dependencies';
+import { TimeSpentRow } from './time-spent';
 
 interface TaskAssignee {
   userId: string;
@@ -46,7 +47,7 @@ interface TaskPropertiesProps {
   reminderTimeZone: string | null;
 }
 
-/** Status · Priority · Assignees · Due date · Labels · Estimate · Blockers */
+/** Status · Priority · Assignees · Due date · Labels · Estimate · Blockers · Time */
 export const TaskProperties = ({
   task,
   columns,
@@ -170,5 +171,12 @@ export const TaskProperties = ({
         readOnly={readOnly}
       />
     )}
+
+    <TimeSpentRow
+      taskId={task.id}
+      minutes={task.loggedMinutes ?? 0}
+      estimateHours={task.estimatedHours ?? 0}
+      readOnly={readOnly}
+    />
   </div>
 );

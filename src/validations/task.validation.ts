@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_LOG_MINUTES } from '@/helper/utils/duration';
 import { taskPriorityLevelEnum } from '@/db/schema/enums';
 import { MAX_IDS_PER_REQUEST } from '@/lib/api/params';
 
@@ -148,3 +149,12 @@ export type CalendarRangeBody = z.infer<typeof calendarRangeSchema>;
 export const addDependencySchema = z.object({ dependsOnTaskId: z.guid() });
 
 export type AddDependencyBody = z.infer<typeof addDependencySchema>;
+
+export const logTimeSchema = z.object({
+  minutes: z.number().int().min(1).max(MAX_LOG_MINUTES),
+  // the day the time was spent, as the person's own calendar has it
+  day: z.iso.date(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export type LogTimeBody = z.infer<typeof logTimeSchema>;

@@ -160,3 +160,23 @@ describe('groupActivityByDay labels', () => {
     expect(days.map((d) => d.label)).toEqual(['Today', 'Yesterday']);
   });
 });
+
+describe('time logs in the history', () => {
+  it('says how long, which day, and the note', () => {
+    const now = new Date(2026, 10, 7);
+    expect(
+      describeActivity(
+        {
+          type: 'time_logged',
+          data: { minutes: 45, day: '2026-11-06', note: 'callback fix' },
+        },
+        now,
+      ),
+    ).toEqual({
+      icon: 'estimate',
+      verb: 'logged',
+      object: '45m',
+      note: 'on Nov 6 · callback fix',
+    });
+  });
+});

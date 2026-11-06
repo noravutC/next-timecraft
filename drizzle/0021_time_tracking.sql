@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "logged_minutes" integer DEFAULT 0 NOT NULL;
