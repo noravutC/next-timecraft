@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { dueUrgency, formatDueLabel } from './date-format';
+import {
+  dueDatePresets,
+  dueUrgency,
+  formatDueLabel,
+  fromDateInputValue,
+  toDateInputValue,
+} from './date-format';
 
 describe('dueUrgency', () => {
   it('marks past due dates as overdue', () => {
@@ -35,5 +41,38 @@ describe('formatDueLabel', () => {
     const now = new Date(2026, 10, 6);
     expect(formatDueLabel(new Date(2026, 10, 12), now)).toBe('Nov 12');
     expect(formatDueLabel(new Date(2027, 0, 3), now)).toBe('Jan 3, 2027');
+  });
+});
+
+describe('dueDatePresets', () => {
+  it('counts from the given day', () => {
+    // Thursday 2026-11-05
+    const presets = dueDatePresets(new Date(2026, 10, 5, 15, 30));
+    const byLabel = Object.fromEntries(
+      presets.map((p) => [p.label, toDateInputValue(p.date)]),
+    );
+    expect(byLabel).toEqual({
+      Today: '2026-11-05',
+      Tomorrow: '2026-11-06',
+      'In 3 days': '2026-11-08',
+      'Next Monday': '2026-11-09',
+      'In 2 weeks': '2026-11-19',
+    });
+  });
+
+  it('never picks today as next Monday', () => {
+    const monday = dueDatePresets(new Date(2026, 10, 9));
+    const next = monday.find((p) => p.label === 'Next Monday')!;
+    expect(toDateInputValue(next.date)).toBe('2026-11-16');
+  });
+});
+
+describe('date input values', () => {
+  it('round-trips a local date', () => {
+    expect(toDateInputValue(fromDateInputValue('2026-11-12'))).toBe(
+      '2026-11-12',
+    );
+    expect(fromDateInputValue('')).toBeNull();
+    expect(toDateInputValue(null)).toBe('');
   });
 });

@@ -30,3 +30,25 @@ export function buildMentionInsertion(
   const replaced = upto.replace(/@([^\s@]*)$/, `@${name} `);
   return { value: replaced + after, cursor: replaced.length };
 }
+
+/** Marker href for mention links rendered by MarkdownView. */
+export const MENTION_HREF = "#mention";
+
+/**
+ * Turn "@Full Name" for the given names into markdown links pointing at
+ * MENTION_HREF, so the viewer can style them. Longest names first, so
+ * "@Ann Lee" wins over "@Ann".
+ */
+export function linkMentions(text: string, names: readonly string[]): string {
+  const sorted = [...new Set(names)]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  if (sorted.length === 0) return text;
+  const pattern = sorted
+    .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const re = new RegExp(`(^|\\s)@(${pattern})(?=\\s|$|[.,!?;:])`, "g");
+  return text.replace(re, (_m, lead: string, name: string) => {
+    return `${lead}[@${name}](${MENTION_HREF})`;
+  });
+}

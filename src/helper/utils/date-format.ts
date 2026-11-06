@@ -56,9 +56,50 @@ export const formatDueLabel = (date: Date, now: Date = new Date()): string => {
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";
-  return date.toLocaleDateString("en-US", {
+  return formatMonthDay(date, now);
+};
+
+/** "Nov 12", with the year only when it isn't this year: "Jan 3, 2027". */
+export const formatMonthDay = (date: Date, now: Date = new Date()): string =>
+  date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     ...(date.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}),
   });
+
+/** Quick picks in the due-date menu, counted from `today` (midnight). */
+export const dueDatePresets = (
+  today: Date = new Date(),
+): { label: string; date: Date }[] => {
+  const start = new Date(today);
+  start.setHours(0, 0, 0, 0);
+  const plus = (days: number) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + days);
+    return d;
+  };
+  // next Monday, never today: Monday → the following Monday
+  const toMonday = (1 + 7 - start.getDay()) % 7 || 7;
+  return [
+    { label: "Today", date: plus(0) },
+    { label: "Tomorrow", date: plus(1) },
+    { label: "In 3 days", date: plus(3) },
+    { label: "Next Monday", date: plus(toMonday) },
+    { label: "In 2 weeks", date: plus(14) },
+  ];
+};
+
+/** yyyy-mm-dd for <input type="date">, in local time. */
+export const toDateInputValue = (d: Date | null): string => {
+  if (!d) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+};
+
+/** Parse an <input type="date"> value as a local date (null when empty). */
+export const fromDateInputValue = (value: string): Date | null => {
+  if (!value) return null;
+  const [yyyy, mm, dd] = value.split("-").map(Number);
+  return new Date(yyyy, mm - 1, dd);
 };

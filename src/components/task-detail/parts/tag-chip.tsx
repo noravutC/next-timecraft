@@ -10,47 +10,41 @@ interface TagChipProps {
   tag: string;
   tagColors: Required<ProjectSettings>['tagColors'];
   onRemove?: () => void;
+  /** sm 22px (cards) · md 24px (task sheet) */
   size?: 'sm' | 'md';
 }
 
+/** A label: color dot + name on a hairline pill. */
 export const TagChip = ({
   tag,
   tagColors,
   onRemove,
   size = 'md',
-}: TagChipProps) => {
-  const palette = paletteFor(tagColors[tag] ?? hashTagColor(tag));
-  return (
-    <Button
-      variant={'ghost'}
-      size={'xs'}
-      className={cn(
-        'inline-flex items-center gap-2 rounded-full border font-semibold p-0',
-        size === 'sm' ? 'px-3 text-xs' : 'text-sm',
-      )}
+}: TagChipProps) => (
+  <span
+    className={cn(
+      'inline-flex items-center gap-1.5 rounded-full border border-line text-xs text-ink-muted',
+      size === 'sm' ? 'h-5.5 px-2' : 'h-6 px-2.25',
+      onRemove && 'gap-1 pr-1',
+    )}
+  >
+    <span
+      className="mr-0.5 size-1.5 shrink-0 rounded-full"
       style={{
-        backgroundColor: palette.bg,
-        borderColor: palette.border,
-        color: palette.text,
+        backgroundColor: paletteFor(tagColors[tag] ?? hashTagColor(tag)).value,
       }}
-    >
-      <span
-        className={cn(
-          'shrink-0 rounded-full',
-          size === 'sm' ? 'size-2' : 'size-2.5',
-        )}
-        style={{ backgroundColor: palette.value }}
-      />
-      {tag}
-      {onRemove && (
-        <div
-          onClick={onRemove}
-          aria-label={`Remove ${tag}`}
-          className="ml-0.5 text-foreground flex size-4 items-center justify-center rounded-full transition-colors bg-black/10 hover:bg-black/20"
-        >
-          <X className="size-2.5" />
-        </div>
-      )}
-    </Button>
-  );
-};
+    />
+    {tag}
+    {onRemove && (
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        onClick={onRemove}
+        aria-label={`Remove label ${tag}`}
+        className="size-4.5 rounded-full text-ink-subtle"
+      >
+        <X className="size-3" />
+      </Button>
+    )}
+  </span>
+);

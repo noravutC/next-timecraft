@@ -1,54 +1,52 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 interface InlineDescriptionProps {
   value: string | null;
   onCommit: (next: string) => void;
 }
 
-export const InlineDescription = ({ value, onCommit }: InlineDescriptionProps) => {
+export const InlineDescription = ({
+  value,
+  onCommit,
+}: InlineDescriptionProps) => {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value ?? "");
+  const [draft, setDraft] = useState(value ?? '');
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!editing) setDraft(value ?? "");
+    if (!editing) setDraft(value ?? '');
   }, [value, editing]);
 
   useEffect(() => {
-    if (editing && ref.current) {
-      ref.current.focus();
-      ref.current.style.height = "auto";
-      ref.current.style.height = `${Math.max(ref.current.scrollHeight, 64)}px`;
-    }
+    if (editing) ref.current?.focus();
   }, [editing]);
 
   const commit = () => {
     setEditing(false);
-    if ((draft || "") !== (value || "")) onCommit(draft);
+    if ((draft || '') !== (value || '')) onCommit(draft);
   };
 
   if (editing) {
     return (
-      <textarea
+      <Textarea
         ref={ref}
         value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          e.target.style.height = "auto";
-          e.target.style.height = `${Math.max(e.target.scrollHeight, 64)}px`;
-        }}
+        onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
-          if (e.key === "Escape") {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
             setEditing(false);
-            setDraft(value ?? "");
+            setDraft(value ?? '');
           }
         }}
         placeholder="Add a description…"
-        className="w-full resize-none border-0 bg-transparent p-0 text-sm leading-relaxed outline-none"
+        aria-label="Description"
+        className="min-h-24 leading-5.5"
       />
     );
   }
@@ -57,14 +55,14 @@ export const InlineDescription = ({ value, onCommit }: InlineDescriptionProps) =
     <div
       onClick={() => setEditing(true)}
       className={cn(
-        "cursor-text text-sm leading-relaxed min-h-17.5",
-        !value && "text-muted-foreground",
+        '-mx-2 min-h-11 cursor-text rounded-md px-2 py-1.5 text-base leading-5.5 text-pretty hover:bg-surface-hover',
+        value ? 'text-ink-muted' : 'text-ink-subtle',
       )}
     >
       {value ? (
         <p className="whitespace-pre-wrap">{value}</p>
       ) : (
-        "Add a description…"
+        'Add a description…'
       )}
     </div>
   );

@@ -207,12 +207,10 @@ export function CardDisplay({
             </span>
           )}
           {subtasks && (
-            <span
-              className="flex items-center gap-1.25"
-              aria-label={`${subtasks.done} of ${subtasks.total} subtasks done`}
-            >
+            <span className="flex items-center gap-1.25">
               <SquareCheck className="size-3.5" />
               {subtasks.done}/{subtasks.total}
+              <span className="sr-only"> subtasks done</span>
             </span>
           )}
           {commentCount > 0 && (

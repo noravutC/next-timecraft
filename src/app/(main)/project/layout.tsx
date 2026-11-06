@@ -6,7 +6,7 @@ import { Loader } from '@/components/ui/loader';
 import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
 import { BoardDialogs } from '@/components/bottom-menu/board-dialogs';
-import { TaskDetailDialog } from '@/components/task-detail/task-detail-dialog';
+import { TaskDetailSheet } from '@/components/task-detail/task-detail-sheet';
 
 export default function ProjectLayout({
   children,
@@ -58,7 +58,7 @@ export default function ProjectLayout({
           </div>
         </>
       )}
-      <TaskDetailDialog />
+      <TaskDetailSheet />
     </div>
   );
 }

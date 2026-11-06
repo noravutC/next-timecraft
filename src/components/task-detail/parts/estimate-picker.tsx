@@ -1,45 +1,30 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
-interface Option {
-  label: string;
-  hours: number;
-}
-
-const OPTIONS: Option[] = [
-  { label: "1h", hours: 1 },
-  { label: "2h", hours: 2 },
-  { label: "4h", hours: 4 },
-  { label: "1d", hours: 8 },
-  { label: "2d", hours: 16 },
-  { label: "1w", hours: 40 },
+// value = hours, stored as the option key
+const ESTIMATE_OPTIONS = [
+  { value: '1', label: '1h' },
+  { value: '2', label: '2h' },
+  { value: '4', label: '4h' },
+  { value: '8', label: '1d' },
+  { value: '16', label: '2d' },
+  { value: '40', label: '1w' },
 ];
 
 interface EstimatePickerProps {
+  /** hours; 0 = no estimate */
   value: number;
   onChange: (next: number) => void;
 }
 
+/** 1h … 1w; picking the current value again clears it. */
 export const EstimatePicker = ({ value, onChange }: EstimatePickerProps) => (
-  <div className="flex w-fit items-center gap-1.5">
-    {OPTIONS.map((opt) => {
-      const active = value === opt.hours;
-      return (
-        <button
-          key={opt.label}
-          type="button"
-          onClick={() => onChange(active ? 0 : opt.hours)}
-          className={cn(
-            "h-7 cursor-pointer rounded-md border px-3 text-xs font-medium transition-colors",
-            active
-              ? "border-brand bg-brand text-white"
-              : "border-line bg-background text-ink-subtle hover:bg-surface-hover hover:text-ink",
-          )}
-        >
-          {opt.label}
-        </button>
-      );
-    })}
-  </div>
+  <SegmentedControl
+    aria-label="Estimate"
+    options={ESTIMATE_OPTIONS}
+    value={value ? String(value) : null}
+    onChange={(next) => onChange(Number(next) === value ? 0 : Number(next))}
+    optionClassName="h-6.5 min-w-9.5 px-2 font-mono text-xs font-normal"
+  />
 );

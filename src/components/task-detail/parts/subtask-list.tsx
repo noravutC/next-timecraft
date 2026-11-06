@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { CheckSquare, Plus, X } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useSubtaskStore } from '@/store/use-subtask.store';
+import { useRef, useState } from 'react';
+import { Plus, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSubtaskStore } from '@/store/use-subtask.store';
+import {
+  progressFromItems,
+  progressPercent,
+} from '@/helper/utils/subtask-progress';
+import { cn } from '@/lib/utils';
 
 interface Props {
   taskId: string;
@@ -21,95 +25,86 @@ export const SubtaskList = ({ taskId }: Props) => {
   const update = useSubtaskStore((s) => s.update);
   const remove = useSubtaskStore((s) => s.remove);
 
-  const [adding, setAdding] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState('');
-
-  const total = items.length;
-  const done = items.filter((i) => i.completed).length;
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const progress = progressFromItems(items);
 
   const submit = () => {
     const title = draft.trim();
     if (title) create(taskId, title);
     setDraft('');
-    setAdding(false);
   };
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CheckSquare className="size-4 text-muted-foreground" />
-          <span className="!text-md font-semibold">Subtasks</span>
-          {total > 0 && (
-            <span className="text-muted-foreground">
-              {done} / {total}
-            </span>
-          )}
+    <section>
+      <div className="mb-2.5 flex items-center gap-2">
+        <h3 className="text-sm leading-5 font-semibold text-ink">Subtasks</h3>
+        {progress && (
+          <span className="font-mono text-xs text-ink-subtle">
+            {progress.done}/{progress.total}
+          </span>
+        )}
+        <div
+          aria-hidden
+          className="mx-2 h-1 flex-1 overflow-hidden rounded-full bg-line-soft"
+        >
+          <div
+            className="h-full rounded-full bg-brand transition-[width]"
+            style={{ width: `${progressPercent(progress)}%` }}
+          />
         </div>
         <Button
           variant="ghost"
           size="xs"
-          className="text-muted-foreground focus-visible:ring-0"
-          onClick={() => setAdding(true)}
+          onClick={() => inputRef.current?.focus()}
+          className="gap-1 px-2 text-ink-muted"
         >
-          <Plus className="size-4" /> Add
+          <Plus className="size-3.25" />
+          Add
         </Button>
       </div>
 
-      {total > 0 && (
-        <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-          <div
-            className={cn("h-full bg-brand transition-[width]")}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
-
-      <ul className="space-y-0.5">
+      <ul className="flex flex-col gap-0.5">
         {items.map((sub) => (
           <li
             key={sub.id}
-            className="group flex items-center gap-3 rounded-md py-1.5"
+            className="group -mx-2 flex min-h-9 items-center gap-2.5 rounded-md px-2 hover:bg-surface"
           >
             <Checkbox
+              id={`subtask-${sub.id}`}
+              // not saved yet: toggling the temp row would race the create
+              disabled={sub.id.startsWith('temp-')}
+              className="border-ink-faint"
               checked={sub.completed}
               onCheckedChange={(c) =>
                 update(sub.id, taskId, { completed: c === true })
               }
-              className="size-5 rounded border-border data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
             />
-            <span
+            <label
+              htmlFor={`subtask-${sub.id}`}
               className={cn(
-                'flex-1 text-sm font-semibold',
-                sub.completed && 'text-muted-foreground line-through',
+                'flex-1 cursor-pointer text-base',
+                sub.completed ? 'text-ink-faint line-through' : 'text-ink',
               )}
             >
               {sub.title}
-            </span>
+            </label>
             <Button
-              variant={'ghost'}
-              size="xs"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => remove(sub.id, taskId)}
-              aria-label="Delete subtask"
-              className="rounded w-fit h-fit !p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground"
+              disabled={sub.id.startsWith('temp-')}
+              aria-label={`Delete subtask ${sub.title}`}
+              className="text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
             >
-              <X className="size-3" />
+              <X className="size-3.5" />
             </Button>
           </li>
         ))}
-      </ul>
-
-      {adding && (
-        <div className="mt-1 flex items-center gap-3">
-          <Checkbox
-              checked={false}
-              disabled
-              className="size-5 rounded border-border data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
-            />
+        <li className="-mx-2 flex min-h-9 items-center gap-2.5 px-2 text-ink-subtle">
+          <Plus className="size-4" />
           <Input
-            className="border-none shadow-none focus-visible:ring-0 font-medium"
-            autoFocus
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={submit}
@@ -118,14 +113,17 @@ export const SubtaskList = ({ taskId }: Props) => {
                 e.preventDefault();
                 submit();
               } else if (e.key === 'Escape') {
-                setDraft('');
-                setAdding(false);
+                // Esc clears the draft first, then leaves the field
+                if (draft) setDraft('');
+                else e.currentTarget.blur();
               }
             }}
-            placeholder="Subtask...."
+            placeholder="Add a subtask"
+            aria-label="New subtask"
+            className="h-auto flex-1 border-0 bg-transparent p-0 text-base focus-visible:ring-0"
           />
-        </div>
-      )}
-    </div>
+        </li>
+      </ul>
+    </section>
   );
 };

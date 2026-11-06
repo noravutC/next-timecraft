@@ -13,7 +13,7 @@ export const AttachmentPreviewTile = memo(function AttachmentPreviewTile({
   onRemove,
 }: Props) {
   return (
-    <div className="group relative size-20 overflow-hidden rounded-md border border-border bg-muted">
+    <div className="group relative size-20 overflow-hidden rounded-lg border border-line bg-surface">
       {pending.kind === "image" ? (
         <img
           src={pending.previewUrl}

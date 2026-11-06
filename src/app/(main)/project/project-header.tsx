@@ -18,23 +18,12 @@ import {
 import { AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BreadcrumbSlash } from '@/components/breadcrumb/breadcrumb-slash';
 
 const AVATAR_LIMIT = 4;
 
 const HeaderDivider = () => (
   <div aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-line" />
-);
-
-const BreadcrumbSlash = () => (
-  <svg
-    viewBox="0 0 24 24"
-    aria-hidden
-    className="size-4.5 shrink-0 fill-none stroke-line-strong"
-    strokeWidth={1.5}
-    strokeLinecap="round"
-  >
-    <path d="M15 4 9 20" />
-  </svg>
 );
 
 export const ProjectHeader = () => {
