@@ -1,6 +1,9 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useNavStore } from "@/store";
+import { Kbd } from "@/components/ui/kbd";
 import { signOut, useSession } from "next-auth/react";
 import { LogOut } from "lucide-react";
 // components
@@ -21,6 +24,9 @@ export const UserMenu = () => {
     session?.user?.email ||
     "";
   const avatar = session?.user?.avatar || session?.user?.image || null;
+  // the shortcuts list lives with the board's dialogs
+  const onBoard = usePathname().startsWith("/project");
+  const setBoardDialog = useNavStore((s) => s.setBoardDialog);
 
   return (
     <DropdownMenu>
@@ -49,6 +55,15 @@ export const UserMenu = () => {
         <DropdownMenuItem className="h-8 px-2.5" asChild>
           <Link href="/settings/profile">My account</Link>
         </DropdownMenuItem>
+        {onBoard && (
+          <DropdownMenuItem
+            className="h-8 px-2.5"
+            onClick={() => setBoardDialog("shortcuts")}
+          >
+            <span className="flex-1">Keyboard shortcuts</span>
+            <Kbd>?</Kbd>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="h-8.5 px-2.5"

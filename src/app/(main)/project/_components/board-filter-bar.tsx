@@ -3,6 +3,8 @@
 import { Plus, Search, Settings2, Tag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Kbd } from '@/components/ui/kbd';
+import { BOARD_SEARCH_ID } from '@/helper/utils/shortcuts';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
@@ -58,14 +60,21 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
         <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
+            id={BOARD_SEARCH_ID}
             type="search"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Search tasks"
             aria-label="Search tasks"
-            className="w-full border-line pl-8 sm:w-40 lg:w-65"
+            aria-keyshortcuts="/"
+            className="w-full border-line pr-8 pl-8 sm:w-40 lg:w-65"
             data-testid="board-filter-search"
           />
+          {!draft && (
+            <Kbd className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 sm:inline-grid">
+              /
+            </Kbd>
+          )}
         </div>
 
         <FilterDropdown
