@@ -65,6 +65,14 @@ const cursorSchema = z.object({
   id: z.guid(),
 });
 
+const dueBucketSchema = z.enum(['overdue', 'this_week', 'later', 'none']);
+
+// the viewer's local midnight and the Monday after, for the due buckets
+const dueBoundsSchema = z.object({
+  today: z.iso.datetime(),
+  weekEnd: z.iso.datetime(),
+});
+
 const filterSchema = z
   .object({
     q: z.string().trim().min(1).max(200).optional(),
@@ -74,6 +82,10 @@ const filterSchema = z
       .optional(),
     tags: z.array(z.string().min(1).max(100)).max(50).optional(),
     assigneeIds: z.array(z.guid()).max(50).optional(),
+    mine: z.boolean().optional(),
+    unassigned: z.boolean().optional(),
+    due: z.array(dueBucketSchema).max(4).optional(),
+    dueBounds: dueBoundsSchema.optional(),
   })
   .optional();
 
@@ -95,6 +107,13 @@ export const getTasksByColumnsSchema = z.object({
 });
 
 export type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
+
+export const filterCountsSchema = z.object({
+  colIds: z.array(z.guid()).min(1).max(MAX_IDS_PER_REQUEST),
+  dueBounds: dueBoundsSchema,
+});
+
+export type FilterCountsBody = z.infer<typeof filterCountsSchema>;
 
 export const updateAssigneesSchema = z.object({
   userIds: z.array(z.guid()).max(50).default([]),

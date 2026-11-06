@@ -1,4 +1,5 @@
 import type { PriorityCounts, TaskCache, TaskFilter } from '@/types';
+import { dueBounds, dueBucketOf } from './due-filter';
 
 export function isTaskFilterActive(
   filter: TaskFilter | null | undefined,
@@ -8,8 +9,21 @@ export function isTaskFilterActive(
     filter.q?.trim() ||
     filter.priorities?.length ||
     filter.tags?.length ||
-    filter.assigneeIds?.length,
+    filter.assigneeIds?.length ||
+    filter.mine ||
+    filter.unassigned ||
+    filter.due?.length,
   );
+}
+
+/** "Assigned to me" as a plain assignee, once it's known who "me" is. */
+export function resolveMine(
+  filter: TaskFilter | undefined,
+  me: string | null | undefined,
+): TaskFilter | undefined {
+  if (!filter?.mine || !me) return filter;
+  const { mine: _mine, ...rest } = filter;
+  return { ...rest, assigneeIds: [...(rest.assigneeIds ?? []), me] };
 }
 
 /**
@@ -17,7 +31,7 @@ export function isTaskFilterActive(
  * hides already-loaded tasks that don't match while filtered pages stream in.
  */
 export function taskMatchesFilter(
-  task: Pick<TaskCache, 'title' | 'priority' | 'tags'>,
+  task: Pick<TaskCache, 'title' | 'priority' | 'tags' | 'dueDate'>,
   filter: TaskFilter | null | undefined,
   taskAssigneeIds: string[] = [],
 ): boolean {
@@ -38,10 +52,21 @@ export function taskMatchesFilter(
   }
 
   if (
-    filter.assigneeIds?.length &&
-    !filter.assigneeIds.some((id) => taskAssigneeIds.includes(id))
+    filter.due?.length &&
+    !filter.due.includes(
+      dueBucketOf(task.dueDate, filter.dueBounds ?? dueBounds()),
+    )
   ) {
     return false;
+  }
+
+  // the assignee choices widen each other: any of these people, or nobody
+  if (filter.assigneeIds?.length || filter.unassigned) {
+    const anyOf = filter.assigneeIds?.some((id) =>
+      taskAssigneeIds.includes(id),
+    );
+    const nobody = filter.unassigned && taskAssigneeIds.length === 0;
+    if (!anyOf && !nobody) return false;
   }
 
   return true;

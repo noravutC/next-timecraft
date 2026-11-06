@@ -1,11 +1,10 @@
 'use client';
 
-import { Plus, Search, Settings2, Tag, User } from 'lucide-react';
+import { Plus, Search, Settings2, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
 import { BOARD_SEARCH_ID } from '@/helper/utils/shortcuts';
-import { UserAvatar } from '@/components/people/user-avatar';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
@@ -13,10 +12,11 @@ import { useNavStore } from '@/store';
 import { useBoardAccess } from '@/components/project/use-board-access';
 import {
   FilterCheckItem,
-  FilterChip,
   FilterDropdown,
   FilterEmpty,
 } from './board-filter-controls';
+import { AssigneeFilterMenu, DueFilterMenu } from './board-filter-menus';
+import { BoardFilterChips } from './board-filter-chips';
 import { useBoardFilterBar } from './use-board-filter-bar';
 import { AiBreakdown } from './ai-breakdown';
 import type { TColumn } from './data';
@@ -24,25 +24,19 @@ import type { TColumn } from './data';
 // แถบเครื่องมือของบอร์ด: ซ้าย = ค้นหา + ตัวกรอง, ขวา = AI / ตั้งค่า / New task
 // แถวล่าง (เมื่อมี filter) = Showing X of Y + chips ของค่าที่เลือกไว้ + Clear all
 export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
+  const filter = useBoardFilterBar(columns);
   const {
     draft,
     setDraft,
     priorities,
     tags,
-    assigneeIds,
     togglePriority,
     toggleTag,
-    toggleAssignee,
-    clear,
     tagColors,
-    users,
-    memberIds,
     tagOptions,
     activeCount,
-    shownCount,
-    totalCount,
     priorityCounts,
-  } = useBoardFilterBar(columns);
+  } = filter;
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const requestNewTask = useNavStore((s) => s.requestNewTask);
   const access = useBoardAccess();
@@ -50,7 +44,6 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   const addTasksBlockedReason = access.archived
     ? 'Restore the board to add tasks'
     : 'Viewers can’t add tasks';
-  const search = draft.trim();
 
   return (
     <>
@@ -104,6 +97,8 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
           ))}
         </FilterDropdown>
 
+        <DueFilterMenu filter={filter} />
+
         <FilterDropdown
           icon={<Tag className="size-3.5" />}
           label="Labels"
@@ -132,33 +127,7 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
           ))}
         </FilterDropdown>
 
-        <FilterDropdown
-          icon={<User className="size-3.5" />}
-          label="Assignee"
-          title="Filter by assignee"
-          activeCount={assigneeIds.length}
-        >
-          {memberIds.map((userId) => {
-            const user = users[userId];
-            return (
-              <FilterCheckItem
-                key={userId}
-                checked={assigneeIds.includes(userId)}
-                onToggle={() => toggleAssignee(userId)}
-              >
-                <UserAvatar
-                  name={user?.fullName}
-                  image={user?.avatar}
-                  seed={userId}
-                  size="xs"
-                />
-                <span className="truncate">
-                  {user?.fullName ?? 'Unknown member'}
-                </span>
-              </FilterCheckItem>
-            );
-          })}
-        </FilterDropdown>
+        <AssigneeFilterMenu filter={filter} />
 
         <div className="flex-1" />
 
@@ -183,54 +152,7 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
         </Button>
       </div>
 
-      {activeCount > 0 && (
-        <div className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-1.5">
-          <span className="text-xs text-ink-subtle">
-            {totalCount === null
-              ? `Showing ${shownCount}`
-              : `Showing ${shownCount} of ${totalCount}`}
-          </span>
-          {search && (
-            <FilterChip
-              label={`Search: ${search}`}
-              onRemove={() => setDraft('')}
-            />
-          )}
-          {priorities.map((priority) => (
-            <FilterChip
-              key={priority}
-              label={`Priority: ${PRIORITY_STYLES[priority].label}`}
-              onRemove={() => togglePriority(priority)}
-            />
-          ))}
-          {tags.map((tag) => (
-            <FilterChip
-              key={tag}
-              label={`Label: ${tag}`}
-              dotColor={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
-              onRemove={() => toggleTag(tag)}
-            />
-          ))}
-          {assigneeIds.map((userId) => (
-            <FilterChip
-              key={userId}
-              label={`Assignee: ${users[userId]?.fullName ?? 'Unknown member'}`}
-              onRemove={() => toggleAssignee(userId)}
-            />
-          ))}
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => {
-              setDraft('');
-              clear();
-            }}
-            className="h-6.5 px-2 text-ink-muted underline underline-offset-3 hover:bg-transparent hover:text-ink"
-          >
-            Clear all
-          </Button>
-        </div>
-      )}
+      {activeCount > 0 && <BoardFilterChips filter={filter} />}
     </>
   );
 }

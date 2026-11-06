@@ -13,6 +13,8 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import invariant from 'tiny-invariant';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
+import { resolveMine } from '@/helper/utils/task-filter';
 import { SettingsContext } from '@/context/kanban/setting-provider';
 import { useColumnStore } from '@/store/use-column.store';
 import { useProjectStore } from '@/store/use-project.store';
@@ -57,15 +59,13 @@ export function useBoard() {
   const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
   useRealtimeBoard(projectId);
 
-  const filterQ = useBoardFilterStore((s) => s.q);
-  const filterPriorities = useBoardFilterStore((s) => s.priorities);
-  const filterTags = useBoardFilterStore((s) => s.tags);
-  const filterAssignees = useBoardFilterStore((s) => s.assigneeIds);
+  const filterKey = useBoardFilterStore(selectFilterKey);
+  const me = useSession().data?.user?.id ?? null;
   const filter = useMemo(
-    () => useBoardFilterStore.getState().toFilterPayload(),
-    // payload สร้างจาก state พวกนี้เท่านั้น — deps ครบแล้วแม้ lint มองไม่เห็น
+    () => resolveMine(useBoardFilterStore.getState().toFilterPayload(), me),
+    // payload สร้างจาก filter state เท่านั้น — filterKey เปลี่ยนตามทุกค่า
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filterQ, filterPriorities, filterTags, filterAssignees],
+    [filterKey, me],
   );
 
   const assigneesByTask = useAssigneeStore(useShallow((s) => s.byTask));
@@ -120,7 +120,6 @@ export function useBoard() {
 
   // task หน้าแรกของทุก column ในคำขอเดียว — โหลดใหม่เมื่อชุด column หรือ
   // filter เปลี่ยน (เดิมยิงแยกทีละ column)
-  const filterKey = useBoardFilterStore(selectFilterKey);
   const columnIdsKey = board.columns.map((c) => c.id).join(',');
   useEffect(() => {
     if (!columnIdsKey) return;

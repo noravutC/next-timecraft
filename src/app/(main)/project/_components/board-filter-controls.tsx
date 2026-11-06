@@ -19,6 +19,7 @@ export const FilterDropdown = ({
   label,
   title,
   activeCount,
+  onOpen,
   children,
 }: {
   /** ไอคอนหน้า label (14px, สี ink-subtle) */
@@ -27,9 +28,11 @@ export const FilterDropdown = ({
   /** หัวเมนู เช่น "Filter by priority" */
   title: string;
   activeCount: number;
+  /** each time the menu opens, e.g. to refresh its counts */
+  onOpen?: () => void;
   children: React.ReactNode;
 }) => (
-  <DropdownMenu>
+  <DropdownMenu onOpenChange={(open) => open && onOpen?.()}>
     <DropdownMenuTrigger asChild>
       <Button
         variant="outline"

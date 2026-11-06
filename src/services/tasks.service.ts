@@ -10,6 +10,8 @@ import {
   BoardArchive,
   TaskCache,
   TaskFilter,
+  DueBounds,
+  DueBucket,
   TaskWithBoard,
   TaskPageCursor,
   TaskPageInfo,
@@ -20,6 +22,8 @@ import {
 } from '@/types';
 
 import type { TaskAssigneeUser } from './assignee.service';
+
+export type FilterCounts = { due: Record<DueBucket, number>; mine: number };
 
 /** A copy of a task, with what its card shows besides the task row. */
 export type DuplicatedTask = APIPost<TaskCache> & {
@@ -32,6 +36,19 @@ export type TaskAssigneeLite = TaskAssigneeUser;
 
 class TaskService {
   private client = apiClient;
+
+  /** How many tasks each Due date option and "Assigned to me" would show. */
+  async getFilterCounts(
+    colIds: string[],
+    dueBounds: DueBounds,
+  ): Promise<FilterCounts> {
+    return this.client
+      .post('/task/filter-counts', { colIds, dueBounds })
+      .then((response) => response.data.data as FilterCounts)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to count tasks');
+      });
+  }
 
   async getTasksByColumns(
     colIds: string[],
