@@ -9,7 +9,7 @@ import { CtaSection } from '../_components/cta-section';
 import { MarketingFooter } from '../_components/marketing-footer';
 
 export const metadata: Metadata = {
-  title: 'TimeCraft · Every task, in motion',
+  title: { absolute: 'TimeCraft · Every task, in motion' },
   description:
     'TimeCraft is a real-time kanban board for small teams: smooth drag-and-drop, live collaboration, and AI-powered task breakdown. Free while in development.',
 };

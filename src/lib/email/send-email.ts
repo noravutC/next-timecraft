@@ -3,8 +3,7 @@ import { render } from '@react-email/components';
 import { Resend } from 'resend';
 import { logger } from '@/lib/logger';
 
-export const appUrl = () =>
-  process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+export { appUrl } from '@/lib/app-url';
 
 /**
  * Renders and sends one email through Resend. Never throws: an email only

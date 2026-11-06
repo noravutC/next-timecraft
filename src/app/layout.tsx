@@ -1,8 +1,10 @@
+import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Noto_Sans_Thai } from 'next/font/google';
 // import './globals.css';
 import './globals.css';
 import AuthProvider from '@/components/SessionProvider';
 import { Toaster } from '@/components/ui/sonner';
+import { appUrl } from '@/lib/app-url';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,6 +27,25 @@ const notoSansThai = Noto_Sans_Thai({
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
+
+const DESCRIPTION =
+  'A real-time kanban board for small teams: smooth drag-and-drop, live collaboration and AI task breakdown.';
+
+// pages name themselves ("Privacy policy"); the template adds the brand.
+// The share image is app/opengraph-image.png.
+export const metadata: Metadata = {
+  metadataBase: new URL(appUrl()),
+  title: { default: 'TimeCraft', template: '%s · TimeCraft' },
+  description: DESCRIPTION,
+  applicationName: 'TimeCraft',
+  openGraph: {
+    type: 'website',
+    siteName: 'TimeCraft',
+    title: 'TimeCraft · Every task, in motion',
+    description: DESCRIPTION,
+  },
+  twitter: { card: 'summary_large_image' },
+};
 
 // Every page renders per request: the CSP nonce from src/proxy.ts has to be
 // stamped on each script, which a prerendered page can't have.

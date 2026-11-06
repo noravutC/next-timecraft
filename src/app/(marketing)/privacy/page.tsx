@@ -6,7 +6,7 @@ import {
 } from '../_components/legal/privacy-sections';
 
 export const metadata: Metadata = {
-  title: 'Privacy policy · TimeCraft',
+  title: 'Privacy policy',
   description:
     'What TimeCraft stores, which services handle it, and the choices you have.',
 };
