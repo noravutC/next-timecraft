@@ -8,6 +8,7 @@ import { projectServices } from '@/services/projects.service';
 import { AuthHeader } from '@/components/auth/auth-header';
 import { LoaderScreen } from '@/components/ui/loader';
 import { inviteView } from '@/helper/utils/invite-view';
+import { boardUrl } from '@/helper/utils/board-url';
 import type { InvitationPreview } from '@/types';
 import { InviteStateCard } from './_components/invite-state-card';
 
@@ -36,9 +37,10 @@ export default function InvitePage() {
     if (accepting) return;
     setAccepting(true);
     try {
-      await projectServices.acceptInvitation(token);
+      const res = await projectServices.acceptInvitation(token);
       toast.success('Invitation accepted. Welcome aboard!');
-      router.replace('/project');
+      // open the board just joined, not whichever board comes first
+      router.replace(boardUrl({ board: res.created?.projectId ?? null }));
     } catch (error) {
       toast.error(
         (error as { message?: string })?.message ??

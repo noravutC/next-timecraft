@@ -42,6 +42,9 @@ type TaskStore = {
   /** Upper orderFraction bound for "append at end" while the column tail is unloaded. */
   columnEndBound: (columnId: string) => string | null;
   updateTaskFromRealtime: (task: Task) => void;
+  /** a task opened by link or notification: cache it even when it sits past
+   *  the loaded page of its column, so the task sheet can show it */
+  upsertOpenedTask: (task: Task) => void;
   addTasksFromRealtime: (tasks: Task[]) => void;
   removeTasksFromRealtime: (taskIds: string[]) => void;
 };
@@ -306,6 +309,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         },
       };
     });
+  },
+
+  upsertOpenedTask: (task) => {
+    set((state) => ({
+      tasks: {
+        ...state.tasks,
+        [task.id]: { ...state.tasks[task.id], ...task, timestamp: Date.now() },
+      },
+    }));
   },
 
   addTasksFromRealtime: (tasks) => {

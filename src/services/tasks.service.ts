@@ -8,6 +8,7 @@ import {
   APIPost,
   TaskCache,
   TaskFilter,
+  TaskWithBoard,
   TaskPageCursor,
   TaskPageInfo,
   SubtaskProgress,
@@ -60,10 +61,10 @@ class TaskService {
         );
       });
   }
-  async getTasksByIds(taskIds: string[]): Promise<APIGet<TaskCache[]>> {
+  async getTasksByIds(taskIds: string[]): Promise<APIGet<TaskWithBoard>> {
     return this.client
       .get(`/task/${taskIds.join(',')}`)
-      .then((response) => response.data as APIGet<TaskCache[]>)
+      .then((response) => response.data as APIGet<TaskWithBoard>)
       .catch((error) => {
         throw error?.response?.data || new Error('Failed to fetch tasks');
       });
