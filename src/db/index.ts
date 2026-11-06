@@ -1,33 +1,27 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { sslFor } from "./ssl";
 
 type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 
-let _db: DrizzleDB | undefined;
+// Dev hot reload re-runs this module. Without one client per process, every
+// reload opened a new pool and the old one kept its connections until the
+// Supabase pooler ran out of slots.
+const globalForDb = globalThis as { pgClient?: ReturnType<typeof postgres> };
 
-// Supabase is reached over the internet, so the connection must be
-// encrypted (postgres.js defaults to plaintext). Local Postgres (docker
-// compose `db`, localhost) has no TLS and is exempt. `require` = encrypt
-// without CA pinning; Supabase's cert isn't in Node's default CA store.
-const LOCAL_DB_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "db"]);
-const sslFor = (connectionString: string) => {
-  try {
-    const { hostname } = new URL(connectionString);
-    return LOCAL_DB_HOSTS.has(hostname) ? false : "require";
-  } catch {
-    return "require"; // unparsable URL: stay on the safe side
-  }
-};
+let _db: DrizzleDB | undefined;
 
 function getDb(): DrizzleDB {
   if (_db) return _db;
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  const client = postgres(connectionString, {
+  const client = (globalForDb.pgClient ??= postgres(connectionString, {
     prepare: false,
     ssl: sslFor(connectionString),
-  });
+    // hand idle connections back to the pooler, which dev and prod share
+    idle_timeout: 20,
+  }));
   _db = drizzle(client, { schema });
   return _db;
 }

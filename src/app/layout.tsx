@@ -20,6 +20,10 @@ const notoSansThai = Noto_Sans_Thai({
   display: 'swap',
 });
 
+// Every page renders per request: the CSP nonce from src/proxy.ts has to be
+// stamped on each script, which a prerendered page can't have.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {

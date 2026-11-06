@@ -21,6 +21,7 @@ import {
   subtasksTable,
   tasksTable,
 } from "../src/db/schema";
+import { sslFor } from "../src/db/ssl";
 
 const isValidKey = (value: string | null | undefined): boolean => {
   if (!value) return false;
@@ -37,7 +38,10 @@ if (!connectionString) {
   console.error("DATABASE_URL is not set");
   process.exit(1);
 }
-const client = postgres(connectionString, { prepare: false });
+const client = postgres(connectionString, {
+  prepare: false,
+  ssl: sslFor(connectionString),
+});
 const db = drizzle(client, { schema });
 
 type Row = { id: string; orderFraction: string };

@@ -7,8 +7,8 @@ import { db } from "@/db";
 import { membershipsTable, organizationsTable, usersTable } from "@/db/schema";
 import { clientIp } from "@/lib/api/client-ip";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { GUEST_EMAIL } from "@/lib/guest";
 
-const GUEST_EMAIL = "guest@timecraft.demo";
 const GUEST_NAME = "Guest User";
 const GUEST_LOGIN_LIMIT = { limit: 10, windowMs: 60_000 };
 
