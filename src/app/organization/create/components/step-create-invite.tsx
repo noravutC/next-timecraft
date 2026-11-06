@@ -1,16 +1,16 @@
-import { ArrowLeft, Mail, X } from "lucide-react";
+import { Mail, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PreparedOrganizationData } from "../create-organization.types";
+import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { slideVariants } from "../steps-create";
+import { StepHeading } from "./step-heading";
 
 type StepCreateInviteProps = {
   model: {
     emailInput: string;
     emails: string[];
     preparing: boolean;
-    preparedData: PreparedOrganizationData | null;
   };
   actions: {
     setEmailInput: (value: string) => void;
@@ -24,83 +24,92 @@ type StepCreateInviteProps = {
 export function StepCreateInvite({ model, actions }: StepCreateInviteProps) {
   return (
     <motion.div
-      key="step1"
+      key="step2"
       variants={slideVariants}
       initial="enter"
       animate="center"
       exit="exit"
       transition={{ duration: 0.25 }}
+      className="flex flex-col gap-6"
     >
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
-          Invite your team
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Add teammate emails before you start.
-        </p>
-      </div>
+      <StepHeading title="Invite your team">
+        Add teammate emails now, or skip and invite them from a board later.
+      </StepHeading>
 
-      <div className="mb-4">
+      <div className="flex flex-col gap-2.5">
+        <Label htmlFor="ob-email" className="leading-5">
+          Email addresses
+        </Label>
         <div className="flex gap-2">
-          <Input
-            placeholder="teammate@email.com"
-            value={model.emailInput}
-            onChange={(event) => actions.setEmailInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                actions.onAddEmail();
-              }
-            }}
-          />
-          <Button variant="outline" size="icon" onClick={actions.onAddEmail}>
-            <Mail className="h-4 w-4" />
+          <div className="relative flex-1">
+            <Mail className="pointer-events-none absolute top-1/2 left-3 size-3.75 -translate-y-1/2 text-ink-subtle" />
+            <Input
+              id="ob-email"
+              type="email"
+              placeholder="teammate@company.com"
+              value={model.emailInput}
+              onChange={(event) => actions.setEmailInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  actions.onAddEmail();
+                }
+              }}
+              className="h-10.5 rounded-lg pr-3 pl-8.75 text-md"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={actions.onAddEmail}
+            className="h-10.5 px-4"
+          >
+            Add
           </Button>
         </div>
 
         {model.emails.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {model.emails.map((email) => (
               <span
                 key={email}
-                className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground"
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-surface pr-1 pl-2.5 text-sm text-ink"
               >
                 {email}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => actions.onRemoveEmail(email)}
+                  aria-label={`Remove ${email}`}
+                  className="size-5.5 rounded-full text-ink-subtle"
                 >
-                  <X className="h-3 w-3" />
-                </button>
+                  <X className="size-3" />
+                </Button>
               </span>
             ))}
           </div>
         )}
       </div>
 
-      <div className="mb-6 flex gap-3">
-        <Button variant="outline" onClick={actions.onBack} className="flex-1">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
+      <div className="flex items-center gap-2">
         <Button
+          variant="outline"
+          size="lg"
+          onClick={actions.onBack}
+          className="h-10.5 px-4"
+        >
+          Back
+        </Button>
+        <span className="flex-1" />
+        <Button
+          size="lg"
           onClick={actions.onFinish}
           disabled={model.preparing}
-          className="flex-1"
+          className="h-10.5"
         >
-          {model.preparing ? "Preparing..." : "Finish"}
+          {model.preparing ? "Creating…" : "Create workspace"}
         </Button>
       </div>
-
-      {model.preparedData && (
-        <div className="rounded-md border bg-muted/30 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-            Prepared payload
-          </p>
-          <pre className="max-h-44 overflow-auto text-xs">
-            {JSON.stringify(model.preparedData, null, 2)}
-          </pre>
-        </div>
-      )}
     </motion.div>
   );
 }

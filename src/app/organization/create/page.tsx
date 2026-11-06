@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CreateOrganization } from "./steps-create";
 import { LoaderScreen } from "@/components/ui/loader";
+import { signInDestination } from "@/helper/utils/sign-in-destination";
 
 export default function CreateOrganizationPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -20,7 +21,7 @@ export default function CreateOrganizationPage() {
 
     if (
       sessionStatus === "authenticated" &&
-      (organizationId || !canCreateOrg)
+      signInDestination({ organizationId, canCreateOrg }) === "/project"
     ) {
       router.replace("/project");
     }
@@ -30,9 +31,5 @@ export default function CreateOrganizationPage() {
     return <LoaderScreen />;
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8">
-      <CreateOrganization />
-    </div>
-  );
+  return <CreateOrganization />;
 }

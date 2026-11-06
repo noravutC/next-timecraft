@@ -5,12 +5,13 @@ import { CreateOrganizationProgress } from "./components/create-organization-pro
 import { StepCreateInvite } from "./components/step-create-invite";
 import { StepCreateLogo } from "./components/step-create-logo";
 import { StepCreateName } from "./components/step-create-name";
-import { PreparedOrganizationData } from "./create-organization.types";
 import { AnimatePresence } from "framer-motion";
 import { useOrganizationStore } from "@/store/use-organization.store";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { AuthHeader } from "@/components/auth/auth-header";
+import { appendEmail } from "@/helper/utils/email-list";
 
 const STEP_LABELS = ["Name", "Logo", "Invite"];
 export const slideVariants = {
@@ -18,8 +19,6 @@ export const slideVariants = {
   center: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -30 },
 };
-
-const uniqueEmails = (emails: string[]) => Array.from(new Set(emails));
 
 export const CreateOrganization = () => {
   const router = useRouter();
@@ -33,8 +32,6 @@ export const CreateOrganization = () => {
   const [emails, setEmails] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [preparing, setPreparing] = useState(false);
-  const [preparedData, setPreparedData] =
-    useState<PreparedOrganizationData | null>(null);
 
   useEffect(() => {
     if (!logoFile) {
@@ -49,11 +46,9 @@ export const CreateOrganization = () => {
   }, [logoFile]);
 
   const addEmail = () => {
-    const nextEmail = emailInput.trim().toLowerCase();
-    if (!nextEmail || !nextEmail.includes("@") || emails.includes(nextEmail)) {
-      return;
-    }
-    setEmails((previous) => [...previous, nextEmail]);
+    const nextEmails = appendEmail(emails, emailInput);
+    if (!nextEmails) return;
+    setEmails(nextEmails);
     setEmailInput("");
   };
 
@@ -62,100 +57,92 @@ export const CreateOrganization = () => {
   };
 
   const onFinish = async () => {
-    setPreparing(true);
-
-    const payload = {
-      name: orgName.trim(),
-      description: null,
-    };
-
-    setPreparedData({
-      organization: {
-        name: payload.name,
-        logoFileName: logoFile?.name ?? null,
-      },
-      invitations: uniqueEmails(emails).map((email) => ({
-        email,
-        role: "member",
-      })),
-      meta: {
-        preparedAt: new Date().toISOString(),
-      },
-    });
-
-    if (!payload.name) {
-      toast.error("Organization name is required");
-      setPreparing(false);
+    const name = orgName.trim();
+    if (!name) {
+      toast.error("Workspace name is required");
       return;
     }
 
+    setPreparing(true);
     try {
-      const createdOrganization = await createOrganization(payload);
+      const createdOrganization = await createOrganization({
+        name,
+        description: null,
+      });
       if (!createdOrganization) {
-        toast.error("Unable to create organization");
+        toast.error("Unable to create workspace");
         return;
       }
 
       // Payload is ignored server-side: update() just makes the jwt callback
       // re-read org/role from the DB (no argument would only GET the session).
       await update({});
-      toast.success("Organization created successfully");
+      toast.success("Workspace created");
       router.replace("/project");
     } catch (error) {
       console.error("Failed to create organization:", error);
-      toast.error("Unable to create organization");
+      toast.error("Unable to create workspace");
     } finally {
       setPreparing(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md">
-      <CreateOrganizationProgress step={step} labels={STEP_LABELS} />
-      <AnimatePresence mode="wait">
-        {step === 0 && (
-          <StepCreateName
-            model={{ orgName }}
-            actions={{
-              setOrgName,
-              onNext: () => setStep(1),
-            }}
-          />
-        )}
+    <div className="flex min-h-screen flex-col bg-background text-ink">
+      <AuthHeader bordered>
+        <span className="font-mono text-xs text-ink-subtle">
+          Step {step + 1} of {STEP_LABELS.length}
+        </span>
+      </AuthHeader>
 
-        {step === 1 && (
-          <StepCreateLogo
-            model={{ logoPreview }}
-            actions={{
-              onFileChange: setLogoFile,
-              onBack: () => setStep(0),
-              onNext: () => setStep(2),
-              onSkip: () => {
-                setLogoFile(null);
-                setStep(2);
-              },
-            }}
-          />
-        )}
+      <main className="flex flex-1 justify-center px-4 pt-18 pb-16">
+        <div className="flex w-full max-w-110 flex-col gap-8">
+          <CreateOrganizationProgress step={step} labels={STEP_LABELS} />
+          <AnimatePresence mode="wait">
+            {step === 0 && (
+              <StepCreateName
+                model={{ orgName }}
+                actions={{
+                  setOrgName,
+                  onNext: () => setStep(1),
+                }}
+              />
+            )}
 
-        {step === 2 && (
-          <StepCreateInvite
-            model={{
-              emailInput,
-              emails,
-              preparing,
-              preparedData,
-            }}
-            actions={{
-              setEmailInput,
-              onAddEmail: addEmail,
-              onRemoveEmail: removeEmail,
-              onBack: () => setStep(1),
-              onFinish,
-            }}
-          />
-        )}
-      </AnimatePresence>
+            {step === 1 && (
+              <StepCreateLogo
+                model={{ logoPreview }}
+                actions={{
+                  onFileChange: setLogoFile,
+                  onBack: () => setStep(0),
+                  onNext: () => setStep(2),
+                  onSkip: () => {
+                    setLogoFile(null);
+                    setStep(2);
+                  },
+                }}
+              />
+            )}
+
+            {step === 2 && (
+              <StepCreateInvite
+                model={{
+                  emailInput,
+                  emails,
+                  preparing,
+                }}
+                actions={{
+                  setEmailInput,
+                  onAddEmail: addEmail,
+                  onRemoveEmail: removeEmail,
+                  onBack: () => setStep(1),
+                  onFinish,
+                }}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+      </main>
     </div>
   );
 };

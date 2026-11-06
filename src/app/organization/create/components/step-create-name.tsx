@@ -1,8 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { slideVariants } from "../steps-create";
+import { StepHeading } from "./step-heading";
 
 type StepCreateNameProps = {
   model: {
@@ -16,38 +18,46 @@ type StepCreateNameProps = {
 
 export function StepCreateName({ model, actions }: StepCreateNameProps) {
   return (
-    <motion.div
+    <motion.form
       key="step0"
       variants={slideVariants}
       initial="enter"
       animate="center"
       exit="exit"
       transition={{ duration: 0.25 }}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (model.orgName.trim()) actions.onNext();
+      }}
+      className="flex flex-col gap-6"
     >
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
-          Let&apos;s set up your workspace
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          What should we call your organization?
-        </p>
+      <StepHeading title="Name your workspace">
+        Usually your team or company name. Boards and members live inside it.
+      </StepHeading>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="ob-name" className="leading-5">
+          Workspace name
+        </Label>
+        <Input
+          id="ob-name"
+          placeholder="e.g. Northwind Studio"
+          value={model.orgName}
+          onChange={(event) => actions.setOrgName(event.target.value)}
+          autoFocus
+          className="h-10.5 rounded-lg px-3 text-md"
+        />
       </div>
 
-      <Input
-        placeholder="Organization name"
-        value={model.orgName}
-        onChange={(event) => actions.setOrgName(event.target.value)}
-        autoFocus
-        className="mb-6"
-      />
-
       <Button
-        onClick={actions.onNext}
+        type="submit"
+        size="lg"
         disabled={!model.orgName.trim()}
-        className="w-full"
+        className="h-10.5 w-full gap-2"
       >
-        Next <ArrowRight className="ml-2 h-4 w-4" />
+        Continue
+        <ArrowRight className="size-3.75" />
       </Button>
-    </motion.div>
+    </motion.form>
   );
 }
