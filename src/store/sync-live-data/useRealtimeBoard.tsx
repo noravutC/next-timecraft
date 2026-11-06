@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { privateChannel } from '@/helper/utils/realtime-channel';
 import { pusherClient } from '@/lib/pusher-client';
 import { useTaskStore } from '@/store/use-task.store';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
+import { useUnreadStore } from '@/store/use-unread.store';
+import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import type { TaskAssigneeUser } from '@/services/assignee.service';
 import { Task } from '@/types';
 
@@ -15,6 +18,8 @@ export const useRealtimeBoard = (projectId?: string | null) => {
     addTasksFromRealtime,
     removeTasksFromRealtime,
   } = useTaskStore();
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
 
   useEffect(() => {
     if (!projectId) return;
@@ -60,7 +65,24 @@ export const useRealtimeBoard = (projectId?: string | null) => {
 
     channel.bind(
       'task-comment-count',
-      ({ taskId, delta }: { taskId: string; delta: number }) => {
+      ({
+        taskId,
+        delta,
+        authorId,
+      }: {
+        taskId: string;
+        delta: number;
+        authorId?: string;
+      }) => {
+        // a new comment from someone else is unread, unless that task is
+        // open right now (the sheet marks it read)
+        if (
+          delta > 0 &&
+          authorId !== userId &&
+          useTaskDetailStore.getState().openTaskId !== taskId
+        ) {
+          useUnreadStore.getState().bump(taskId, 1);
+        }
         useTaskStore.setState((s) => {
           const t = s.tasks[taskId];
           if (!t) return s;
@@ -83,6 +105,7 @@ export const useRealtimeBoard = (projectId?: string | null) => {
     };
   }, [
     projectId,
+    userId,
     updateTaskFromRealtime,
     addTasksFromRealtime,
     removeTasksFromRealtime,

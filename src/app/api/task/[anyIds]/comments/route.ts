@@ -299,7 +299,8 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         request,
         `project-${link.projectId}`,
         "task-comment-count",
-        { taskId, delta: 1 },
+        // the author's other tabs must not count their own comment as unread
+        { taskId, delta: 1, authorId: userId },
       ).catch((e) => console.error("Pusher count failed:", e));
 
       for (const n of result.notifications) {

@@ -2,6 +2,7 @@ import { db } from "@/db";
 import {
   columnsTable,
   commentReadStateTable,
+  projectMembersTable,
   taskAssigneesTable,
   taskCommentAttachmentsTable,
   taskCommentReactionsTable,
@@ -24,7 +25,9 @@ import {
   inArray,
   isNull,
   lt,
+  ne,
   or,
+  sql,
 } from "drizzle-orm";
 
 type CursorParts = { createdAt: Date; id: string };
@@ -231,6 +234,51 @@ export async function countUnreadComments(args: {
     .from(taskCommentsTable)
     .where(and(...conds));
   return Number(value);
+}
+
+/**
+ * Unread comments per task for the board cards, keyed by task id. A comment
+ * is unread when someone else wrote it after the user last read the task,
+ * or, for tasks they never opened, after they joined the board. Own
+ * comments never count. Tasks with nothing unread are left out.
+ */
+export async function countUnreadByTask(
+  userId: string,
+  taskIds: string[],
+): Promise<Record<string, number>> {
+  if (taskIds.length === 0) return {};
+  const rows = await db
+    .select({ taskId: taskCommentsTable.taskId, value: count() })
+    .from(taskCommentsTable)
+    .innerJoin(tasksTable, eq(tasksTable.id, taskCommentsTable.taskId))
+    .innerJoin(columnsTable, eq(columnsTable.id, tasksTable.columnId))
+    .innerJoin(
+      projectMembersTable,
+      and(
+        eq(projectMembersTable.projectId, columnsTable.projectId),
+        eq(projectMembersTable.userId, userId),
+      ),
+    )
+    .leftJoin(
+      commentReadStateTable,
+      and(
+        eq(commentReadStateTable.taskId, taskCommentsTable.taskId),
+        eq(commentReadStateTable.userId, userId),
+      ),
+    )
+    .where(
+      and(
+        inArray(taskCommentsTable.taskId, taskIds),
+        isNull(taskCommentsTable.deletedAt),
+        ne(taskCommentsTable.userId, userId),
+        gt(
+          taskCommentsTable.createdAt,
+          sql`coalesce(${commentReadStateTable.lastReadAt}, ${projectMembersTable.joinedAt})`,
+        ),
+      ),
+    )
+    .groupBy(taskCommentsTable.taskId);
+  return Object.fromEntries(rows.map((r) => [r.taskId, Number(r.value)]));
 }
 
 // path ไฟล์แนบทั้งหมดใต้ tasks เหล่านี้ (รวม comment ที่ soft-delete แล้ว) —

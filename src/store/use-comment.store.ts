@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { commentServices } from "@/services/comment.service";
 import { useTaskStore } from "./use-task.store";
+import { useUnreadStore } from "./use-unread.store";
 import type {
   AttachmentInput,
   CreateCommentPayload,
@@ -388,6 +389,7 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
 
   markRead: async (taskId, lastReadCommentId) => {
     if (!lastReadCommentId) return;
+    useUnreadStore.getState().clear(taskId);
     set((s) => {
       const prev = s.byTask[taskId];
       if (!prev) return s;
