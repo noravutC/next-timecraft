@@ -18,8 +18,9 @@ import {
   NotFoundError,
 } from '@/lib/api/errors';
 import { createParamHandle, enforceQuota } from '@/lib/api/handle';
-import { DAILY_QUOTAS } from '@/lib/api/quotas';
-import { isGuestSession } from '@/lib/guest';
+import { assertUnderDailyLimit, DAILY_QUOTAS, dayAgo } from '@/lib/api/quotas';
+import { isGuestEmail, isGuestSession } from '@/lib/guest';
+import { countInvitesSentSince } from '@/db/uniq-query/quota/daily-usage';
 import { parseId } from '@/lib/api/params';
 import { sendBoardInviteEmail } from '@/lib/email/send-board-invite';
 import { triggerExclusive } from '@/lib/pusher-server';
@@ -51,8 +52,19 @@ export const POST = createParamHandle<RouteParams, InviteMemberBody>(
       'Daily invite limit reached. Try again tomorrow.',
     );
 
+    assertUnderDailyLimit(
+      await countInvitesSentSince(userId, dayAgo()),
+      DAILY_QUOTAS.invite.limit,
+      'Daily invite limit reached. Try again tomorrow.',
+    );
+
     const projectId = parseId(params.id);
     const email = body.email.trim().toLowerCase();
+    // every guest visitor signs in as this address: inviting it would open
+    // the board to anyone who clicks "Continue as guest"
+    if (isGuestEmail(email)) {
+      throw new BadRequestError("The demo guest account can't be invited");
+    }
 
     const projectName = await getProjectNameById(projectId);
     if (!projectName) throw new NotFoundError('Board not found');

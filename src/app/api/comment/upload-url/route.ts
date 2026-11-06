@@ -1,6 +1,8 @@
 import { getTaskProjectLink } from "@/db/uniq-query/comment/comment-utils";
 import { AppError, BadRequestError, NotFoundError } from "@/lib/api/errors";
-import { createHandle } from "@/lib/api/handle";
+import { createHandle, enforceQuota } from "@/lib/api/handle";
+import { DAILY_QUOTAS, GUEST_DAILY_QUOTAS } from "@/lib/api/quotas";
+import { isGuestSession } from "@/lib/guest";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import {
   buildCommentMediaPath,
@@ -17,10 +19,19 @@ import {
 
 export const POST = createHandle<CommentUploadUrlBody>(
   { body: commentUploadUrlSchema },
-  async ({ body, userId }) => {
+  async ({ body, userId, session, request }) => {
     if (!supabaseAdmin) {
       throw new AppError(500, "Storage is not configured");
     }
+    // each URL lets the holder put one file in public storage
+    enforceQuota(
+      { request, session },
+      "comment-upload",
+      isGuestSession(session)
+        ? GUEST_DAILY_QUOTAS.commentUpload
+        : DAILY_QUOTAS.commentUpload,
+      "Daily upload limit reached. Try again tomorrow.",
+    );
 
     const kind = classifyMime(body.mimeType);
     if (!kind) throw new BadRequestError("Unsupported file type");
