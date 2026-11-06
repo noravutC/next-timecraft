@@ -1,5 +1,6 @@
 import { defineConfig } from "drizzle-kit";
 import { config } from "dotenv";
+import { withSslMode } from "./db/ssl";
 
 config({ path: ".env.local" });
 
@@ -12,6 +13,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    // encrypted like the app's own connection (see db/ssl.ts)
+    url: withSslMode(process.env.DATABASE_URL),
   },
 });
