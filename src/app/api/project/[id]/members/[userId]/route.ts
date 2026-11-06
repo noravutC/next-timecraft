@@ -21,7 +21,7 @@ import {
   changeMemberRoleSchema,
   type ChangeMemberRoleBody,
 } from '@/validations/project.validation';
-import { pusherServer, triggerExclusive } from '@/lib/pusher-server';
+import { pushNotification, pusherServer } from '@/lib/pusher-server';
 import { NextResponse } from 'next/server';
 
 type RouteParams = { id: string; userId: string };
@@ -68,13 +68,7 @@ export const DELETE = createParamHandle<RouteParams>(
         actorName: session.user?.name ?? 'A board admin',
       },
     });
-    triggerExclusive(
-      request,
-      `user-${targetUserId}`,
-      'notification-added',
-      notification,
-    )
-      .catch((e) => console.error('Pusher notif failed:', e))
+    void pushNotification(request, notification)
       // drop their live sockets so they can't keep listening to this board;
       // on reload they can only re-join channels they're still allowed on
       .finally(() =>
@@ -96,7 +90,7 @@ export const PATCH = createParamHandle<RouteParams, ChangeMemberRoleBody>(
     permission: 'member:change_role',
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
-  async ({ params, body, userId }) => {
+  async ({ params, body, userId, session, request }) => {
     const projectId = parseId(params.id);
     const targetUserId = parseId(params.userId);
     if (targetUserId === userId) {
@@ -120,6 +114,18 @@ export const PATCH = createParamHandle<RouteParams, ChangeMemberRoleBody>(
       targetUserId,
       body.role,
     );
+    const notification = await createNotification({
+      recipientId: targetUserId,
+      type: 'role_changed',
+      payload: {
+        projectId,
+        projectName: (await getProjectNameById(projectId)) ?? 'a board',
+        actorUserId: userId,
+        actorName: session.user?.name ?? 'A board admin',
+        role: body.role,
+      },
+    });
+    void pushNotification(request, notification);
     return NextResponse.json(
       { updated, message: 'Role changed', status: 200 },
       { status: 200 },

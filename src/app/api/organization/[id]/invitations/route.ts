@@ -18,7 +18,7 @@ import { parseId } from '@/lib/api/params';
 import { assertUnderDailyLimit, DAILY_QUOTAS, dayAgo } from '@/lib/api/quotas';
 import { sendWorkspaceInviteEmail } from '@/lib/email/send-workspace-invite';
 import { isGuestEmail, isGuestSession } from '@/lib/guest';
-import { triggerExclusive } from '@/lib/pusher-server';
+import { pushNotification } from '@/lib/pusher-server';
 import { authorizeWorkspace } from '@/lib/rbac/authorize-workspace';
 import type { InviteToWorkspaceResult } from '@/types';
 import {
@@ -100,12 +100,7 @@ export const POST = createParamHandle<RouteParams, InviteToWorkspaceBody>(
             token: invitation.token,
           },
         });
-        triggerExclusive(
-          request,
-          `user-${inviteeId}`,
-          'notification-added',
-          notification,
-        ).catch((e) => console.error('Pusher notif failed:', e));
+        void pushNotification(request, notification);
       }
 
       await sendWorkspaceInviteEmail({

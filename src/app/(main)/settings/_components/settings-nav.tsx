@@ -10,7 +10,10 @@ type NavGroup = { label: string; links: { href: string; label: string }[] };
 
 const ACCOUNT: NavGroup = {
   label: 'Account',
-  links: [{ href: '/settings/profile', label: 'Profile' }],
+  links: [
+    { href: '/settings/profile', label: 'Profile' },
+    { href: '/settings/notifications', label: 'Notifications' },
+  ],
 };
 
 const WORKSPACE: NavGroup = {

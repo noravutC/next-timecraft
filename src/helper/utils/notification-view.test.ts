@@ -3,6 +3,8 @@ import type { Notification } from '@/types';
 import {
   filterNotifications,
   formatNotificationTime,
+  groupNotificationsByDay,
+  notificationParts,
   notificationTabCounts,
   notificationTarget,
 } from './notification-view';
@@ -99,5 +101,54 @@ describe('formatNotificationTime', () => {
   });
   it('falls back to a short date after a week', () => {
     expect(formatNotificationTime(ago(10), now)).toMatch(/2026/);
+  });
+});
+
+describe('notificationParts', () => {
+  it('reads a role change with the role in bold', () => {
+    expect(
+      notificationParts({
+        type: 'role_changed',
+        payload: {
+          projectId: 'p',
+          projectName: 'Mobile App v2',
+          actorUserId: 'u',
+          actorName: 'Ploy S.',
+          role: 'admin',
+        },
+      }),
+    ).toEqual({
+      before: 'made you',
+      strong: 'an Admin',
+      after: 'on Mobile App v2',
+    });
+  });
+
+  it('names what an accepted invitation was for', () => {
+    expect(
+      notificationParts({
+        type: 'invite_accepted',
+        payload: {
+          organizationId: 'o',
+          organizationName: 'Northwind',
+          actorUserId: 'u',
+          actorName: 'Mint T.',
+        },
+      }).strong,
+    ).toBe('Northwind');
+  });
+});
+
+describe('groupNotificationsByDay', () => {
+  it('groups into Today, Yesterday, Earlier this week and Older', () => {
+    const now = new Date(2026, 10, 6, 12);
+    const at = (daysAgo: number) => ({
+      createdAt: new Date(2026, 10, 6 - daysAgo, 9),
+    });
+    expect(
+      groupNotificationsByDay([at(0), at(1), at(3), at(9)], now).map(
+        (g) => g.day,
+      ),
+    ).toEqual(['Today', 'Yesterday', 'Earlier this week', 'Older']);
   });
 });

@@ -4,19 +4,10 @@ import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/people/user-avatar';
 import {
   formatNotificationTime,
-  notificationTarget,
+  notificationParts,
 } from '@/helper/utils/notification-view';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@/types';
-
-const ACTION_LABELS: Record<Notification['type'], string> = {
-  comment_mention: 'mentioned you on',
-  comment_reply: 'commented on',
-  board_invite: 'invited you to',
-  workspace_invite: 'invited you to',
-  member_removed: 'removed you from',
-  task_assigned: 'assigned you to',
-};
 
 interface NotificationItemProps {
   notification: Notification;
@@ -30,6 +21,7 @@ export const NotificationItem = ({
   onOpen,
 }: NotificationItemProps) => {
   const unread = !n.readAt;
+  const parts = notificationParts(n);
   return (
     <Button
       variant="ghost"
@@ -48,10 +40,9 @@ export const NotificationItem = ({
           <strong className="font-semibold text-ink">
             {n.payload.actorName}
           </strong>{' '}
-          {ACTION_LABELS[n.type]}{' '}
-          <strong className="font-medium text-ink">
-            {notificationTarget(n)}
-          </strong>
+          {parts.before}{' '}
+          <strong className="font-medium text-ink">{parts.strong}</strong>
+          {parts.after && ` ${parts.after}`}
         </span>
         <span className="text-xs leading-5 text-ink-subtle">
           {formatNotificationTime(new Date(n.createdAt))}

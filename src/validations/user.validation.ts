@@ -22,3 +22,28 @@ export const deleteAccountSchema = z.object({
 });
 
 export type DeleteAccountBody = z.infer<typeof deleteAccountSchema>;
+
+const channels = z
+  .object({ app: z.boolean().optional(), email: z.boolean().optional() })
+  .strict();
+
+export const updateNotificationPrefsSchema = z
+  .object({
+    email: z.boolean().optional(),
+    kinds: z
+      .object({
+        mentions: channels.optional(),
+        replies: channels.optional(),
+        assigned: channels.optional(),
+        due: channels.optional(),
+        roles: channels.optional(),
+        accepted: channels.optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export type UpdateNotificationPrefsBody = z.infer<
+  typeof updateNotificationPrefsSchema
+>;

@@ -120,6 +120,13 @@
       "when": 1793978077969,
       "tag": "0017_archive_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793979150977,
+      "tag": "0018_notification_prefs",
+      "breakpoints": true
     }
   ]
 }

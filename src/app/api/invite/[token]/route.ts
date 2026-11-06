@@ -20,6 +20,8 @@ import { authorizeOrThrow } from '@/lib/rbac/authorize';
 import type { InvitationPreview } from '@/types';
 import { NextResponse } from 'next/server';
 import { isGuestSession } from '@/lib/guest';
+import { createNotification } from '@/db/uniq-query/notification/notification-utils';
+import { pushNotification } from '@/lib/pusher-server';
 
 type RouteParams = { token: string };
 
@@ -51,7 +53,7 @@ export const GET = createParamHandle<RouteParams>(
 // สิทธิ์คือ "ถือ token + login ด้วยอีเมลที่ถูกเชิญ"
 export const POST = createParamHandle<RouteParams>(
   {},
-  async ({ params, userId, session }) => {
+  async ({ params, userId, session, request }) => {
     if (isGuestSession(session)) {
       throw new ForbiddenError('Sign in with Google to join a board');
     }
@@ -89,6 +91,20 @@ export const POST = createParamHandle<RouteParams>(
 
     if (!(await acceptInvitation(invitation, userId))) {
       throw new BadRequestError('This invitation is no longer valid');
+    }
+    if (invitation.invitedBy && invitation.invitedBy !== userId) {
+      const notification = await createNotification({
+        recipientId: invitation.invitedBy,
+        type: 'invite_accepted',
+        payload: {
+          projectId: invitation.projectId,
+          projectName:
+            (await getProjectNameById(invitation.projectId)) ?? 'a board',
+          actorUserId: userId,
+          actorName: session.user?.name ?? 'Someone',
+        },
+      });
+      void pushNotification(request, notification);
     }
 
     return NextResponse.json(

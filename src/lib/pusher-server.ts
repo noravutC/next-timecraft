@@ -24,3 +24,17 @@ export const triggerExclusive = (
   pusherServer.trigger(privateChannel(channel), event, data, {
     socket_id: socketIdFromRequest(req),
   });
+
+/** Shows a new notification in its recipient's bell; nothing if there's none. */
+export const pushNotification = (
+  req: Request,
+  notification: { userId: string } | null,
+): Promise<unknown> =>
+  notification
+    ? triggerExclusive(
+        req,
+        `user-${notification.userId}`,
+        'notification-added',
+        notification,
+      ).catch((e) => console.error('Pusher notif failed:', e))
+    : Promise.resolve();
