@@ -134,6 +134,13 @@
       "when": 1793979939883,
       "tag": "0019_due_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793985839648,
+      "tag": "0020_calendar_feeds",
+      "breakpoints": true
     }
   ]
 }

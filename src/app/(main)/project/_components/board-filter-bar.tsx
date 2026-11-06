@@ -1,21 +1,19 @@
 'use client';
 
-import { Plus, Search, Settings2, Tag } from 'lucide-react';
+import { Plus, Search, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
 import { BOARD_SEARCH_ID } from '@/helper/utils/shortcuts';
-import { PriorityBars } from '@/components/task-meta/priority-bars';
-import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
-import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { useNavStore } from '@/store';
 import { useBoardAccess } from '@/components/project/use-board-access';
 import {
-  FilterCheckItem,
-  FilterDropdown,
-  FilterEmpty,
-} from './board-filter-controls';
-import { AssigneeFilterMenu, DueFilterMenu } from './board-filter-menus';
+  AssigneeFilterMenu,
+  DueFilterMenu,
+  LabelFilterMenu,
+  PriorityFilterMenu,
+} from './board-filter-menus';
+import { BoardViewSwitch } from './board-view-switch';
 import { BoardFilterChips } from './board-filter-chips';
 import { useBoardFilterBar } from './use-board-filter-bar';
 import { AiBreakdown } from './ai-breakdown';
@@ -25,18 +23,7 @@ import type { TColumn } from './data';
 // แถวล่าง (เมื่อมี filter) = Showing X of Y + chips ของค่าที่เลือกไว้ + Clear all
 export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   const filter = useBoardFilterBar(columns);
-  const {
-    draft,
-    setDraft,
-    priorities,
-    tags,
-    togglePriority,
-    toggleTag,
-    tagColors,
-    tagOptions,
-    activeCount,
-    priorityCounts,
-  } = filter;
+  const { draft, setDraft, activeCount } = filter;
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const requestNewTask = useNavStore((s) => s.requestNewTask);
   const access = useBoardAccess();
@@ -50,6 +37,8 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
       {/* wraps on narrow screens: search gets its own row on phones;
           at desktop width it is the same single 52px row */}
       <div className="flex min-h-13 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-2.25">
+        <BoardViewSwitch />
+        <span aria-hidden className="mx-1 hidden h-5 w-px bg-line sm:block" />
         <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
@@ -70,62 +59,11 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
           )}
         </div>
 
-        <FilterDropdown
-          icon={
-            <PriorityBars
-              priority="high"
-              color="var(--ink-subtle)"
-              decorative
-            />
-          }
-          label="Priority"
-          title="Filter by priority"
-          activeCount={priorities.length}
-        >
-          {[...PRIORITY_ORDER].reverse().map((priority) => (
-            <FilterCheckItem
-              key={priority}
-              checked={priorities.includes(priority)}
-              onToggle={() => togglePriority(priority)}
-            >
-              <PriorityBars priority={priority} decorative />
-              <span className="flex-1">{PRIORITY_STYLES[priority].label}</span>
-              <span className="font-mono text-xs text-ink-subtle">
-                {priorityCounts[priority] ?? 0}
-              </span>
-            </FilterCheckItem>
-          ))}
-        </FilterDropdown>
+        <PriorityFilterMenu filter={filter} withCounts />
 
         <DueFilterMenu filter={filter} />
 
-        <FilterDropdown
-          icon={<Tag className="size-3.5" />}
-          label="Labels"
-          title="Filter by label"
-          activeCount={tags.length}
-        >
-          {tagOptions.length === 0 && (
-            <FilterEmpty>No labels on this board yet</FilterEmpty>
-          )}
-          {tagOptions.map((tag) => (
-            <FilterCheckItem
-              key={tag}
-              checked={tags.includes(tag)}
-              onToggle={() => toggleTag(tag)}
-            >
-              <span
-                className="size-1.5 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: paletteFor(
-                    tagColors[tag] ?? hashTagColor(tag),
-                  ).value,
-                }}
-              />
-              {tag}
-            </FilterCheckItem>
-          ))}
-        </FilterDropdown>
+        <LabelFilterMenu filter={filter} />
 
         <AssigneeFilterMenu filter={filter} />
 

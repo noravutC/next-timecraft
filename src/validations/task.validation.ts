@@ -73,7 +73,7 @@ const dueBoundsSchema = z.object({
   weekEnd: z.iso.datetime(),
 });
 
-const filterSchema = z
+export const taskFilterSchema = z
   .object({
     q: z.string().trim().min(1).max(200).optional(),
     priorities: z
@@ -103,7 +103,7 @@ export const getTasksByColumnsSchema = z.object({
       'Too many cursors',
     )
     .optional(),
-  filter: filterSchema,
+  filter: taskFilterSchema,
 });
 
 export type GetTasksByColumnsBody = z.infer<typeof getTasksByColumnsSchema>;
@@ -124,3 +124,23 @@ export type UpdateAssigneesBody = z.infer<typeof updateAssigneesSchema>;
 export const moveTaskToBoardSchema = z.object({ projectId: z.guid() });
 
 export type MoveTaskToBoardBody = z.infer<typeof moveTaskToBoardSchema>;
+
+// a month view asks for at most six weeks
+const CALENDAR_MAX_DAYS = 45;
+
+export const calendarRangeSchema = z
+  .object({
+    from: z.iso.datetime(),
+    to: z.iso.datetime(),
+    filter: taskFilterSchema,
+    hideUndatedIn: z.guid().optional(),
+  })
+  .refine(
+    ({ from, to }) => {
+      const days = (Date.parse(to) - Date.parse(from)) / 86_400_000;
+      return days > 0 && days <= CALENDAR_MAX_DAYS;
+    },
+    { message: 'The range must be between 1 and 45 days' },
+  );
+
+export type CalendarRangeBody = z.infer<typeof calendarRangeSchema>;
