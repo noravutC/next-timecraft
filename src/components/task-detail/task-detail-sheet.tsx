@@ -10,6 +10,8 @@ import { SubtaskList } from './parts/subtask-list';
 import { TaskSheetHeader } from './parts/task-sheet-header';
 import { TaskProperties } from './parts/task-properties';
 import { useTaskDetail } from './use-task-detail';
+import { useTaskActions } from './use-task-actions';
+import { TaskSheetMenu } from './parts/task-sheet-menu';
 
 const Divider = () => <div aria-hidden className="my-5 h-px bg-line-soft" />;
 
@@ -44,6 +46,7 @@ export const TaskDetailSheet = () => {
     canManageOwnComments,
     commentBlockedNote,
   } = useTaskDetail();
+  const taskActions = useTaskActions(task);
 
   return (
     <Sheet
@@ -72,6 +75,7 @@ export const TaskDetailSheet = () => {
               onStatusChange={handleStatusChange}
               onCopyLink={handleCopyLink}
               readOnly={readOnly}
+              menu={<TaskSheetMenu actions={taskActions} />}
             />
 
             <div className="scrollbar-thin-y scrollbar-light min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-6 [overflow-anchor:none] sm:px-8 sm:pt-7">

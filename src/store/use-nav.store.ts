@@ -4,7 +4,12 @@ import { create } from 'zustand';
 // จากหลายที่ (ชื่อบอร์ดบน header, แถบเครื่องมือ, ⌘K)
 export type BoardDialog = 'switch' | 'create' | 'settings' | null;
 
-export type BoardSettingsTab = 'general' | 'tags' | 'members' | 'danger';
+export type BoardSettingsTab =
+  | 'general'
+  | 'tags'
+  | 'members'
+  | 'archive'
+  | 'danger';
 
 interface NavState {
   boardDialog: BoardDialog;

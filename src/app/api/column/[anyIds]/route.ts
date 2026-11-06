@@ -118,6 +118,7 @@ export const DELETE = createParamHandle<RouteParams>(
       .set({
         isDeleted: true,
         deletedAt: new Date(),
+        deletedBy: userId,
         purgeAt: sql`now() + interval '30 days'`,
       })
       .where(

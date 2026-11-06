@@ -42,6 +42,7 @@ export async function restoreColumns(columnIds: string[]) {
     .set({
       isDeleted: false,
       deletedAt: null,
+      deletedBy: null,
       purgeAt: null,
       updatedAt: new Date(),
     })

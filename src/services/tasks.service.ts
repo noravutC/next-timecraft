@@ -6,6 +6,8 @@ import {
   APIGet,
   APIPatch,
   APIPost,
+  APISingleGet,
+  BoardArchive,
   TaskCache,
   TaskFilter,
   TaskWithBoard,
@@ -18,6 +20,12 @@ import {
 } from '@/types';
 
 import type { TaskAssigneeUser } from './assignee.service';
+
+/** A copy of a task, with what its card shows besides the task row. */
+export type DuplicatedTask = APIPost<TaskCache> & {
+  assignees: TaskAssigneeUser[];
+  subtasks: Record<string, SubtaskProgress>;
+};
 
 /** alias เดิม — shape เดียวกับ TaskAssigneeUser ของ assignee.service */
 export type TaskAssigneeLite = TaskAssigneeUser;
@@ -93,6 +101,37 @@ class TaskService {
       .then((response) => response.data as APIPatch<TaskCache[]>)
       .catch((error) => {
         throw error?.response?.data || new Error('Failed to update tasks');
+      });
+  }
+  async duplicateTask(taskId: string): Promise<DuplicatedTask> {
+    return this.client
+      .post(`/task/${taskId}/duplicate`)
+      .then((response) => response.data as DuplicatedTask)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error('Failed to duplicate the task')
+        );
+      });
+  }
+  async moveTaskToBoard(
+    taskId: string,
+    projectId: string,
+  ): Promise<APIPatch<TaskWithBoard>> {
+    return this.client
+      .post(`/task/${taskId}/move`, { projectId })
+      .then((response) => response.data as APIPatch<TaskWithBoard>)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to move the task');
+      });
+  }
+  async getBoardArchive(
+    projectId: string,
+  ): Promise<APISingleGet<BoardArchive>> {
+    return this.client
+      .get(`/project/${projectId}/archive`)
+      .then((response) => response.data as APISingleGet<BoardArchive>)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to load the archive');
       });
   }
   async deleteTasks(colIds: string[]): Promise<APIDelete<boolean>> {

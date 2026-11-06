@@ -113,6 +113,13 @@
       "when": 1793975883101,
       "tag": "0016_workspace_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793978077969,
+      "tag": "0017_archive_metadata",
+      "breakpoints": true
     }
   ]
 }

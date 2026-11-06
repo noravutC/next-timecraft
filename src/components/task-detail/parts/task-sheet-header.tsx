@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Link, X } from 'lucide-react';
 import { SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,11 @@ interface TaskSheetHeaderProps {
   onStatusChange: (columnId: string) => void;
   onCopyLink: () => void;
   readOnly?: boolean;
+  /** the ⋯ menu, beside copy link */
+  menu?: ReactNode;
 }
 
-/** Board / status breadcrumb, copy link and close. */
+/** Board / status breadcrumb, copy link, ⋯ and close. */
 export const TaskSheetHeader = ({
   project,
   columns,
@@ -26,6 +28,7 @@ export const TaskSheetHeader = ({
   onStatusChange,
   onCopyLink,
   readOnly = false,
+  menu,
 }: TaskSheetHeaderProps) => (
   <header className="flex h-13 shrink-0 items-center gap-2 border-b border-line pr-2.5 pl-5">
     {project && (
@@ -58,6 +61,7 @@ export const TaskSheetHeader = ({
     >
       <Link />
     </Button>
+    {menu}
     <SheetClose asChild>
       <Button variant="ghost" size="icon" aria-label="Close">
         <X />
