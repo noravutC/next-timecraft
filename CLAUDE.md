@@ -16,6 +16,8 @@ pnpm db:generate  # Generate migration files
 pnpm db:migrate   # Apply migrations
 pnpm db:push      # Push schema directly (dev only)
 pnpm db:studio    # Open Drizzle Studio
+
+pnpm demo:reset   # Rebuild the shared guest workspace (uses DATABASE_URL; runs nightly in CI)
 ```
 
 Do not run `pnpm format` repo-wide from a feature branch: `.prettierrc` enforces

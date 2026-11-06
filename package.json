@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate --config src/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config src/drizzle.config.ts",
     "db:push": "drizzle-kit push --config src/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config src/drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config src/drizzle.config.ts",
+    "demo:reset": "pnpm dlx tsx@4.23.15 scripts/reset-guest-demo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
