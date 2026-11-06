@@ -1,39 +1,23 @@
 import { db } from "@/db";
-import { columnsTable, tasksTable } from "@/db/schema";
+import { tasksTable } from "@/db/schema";
+import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
 import { createHandle } from "@/lib/api/handle";
 import { NotFoundError } from "@/lib/api/errors";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { NewTaskRow } from "@/types";
-import { inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const createTaskSchema = z
-  .array(
-    z.object({
-      columnId: z.string().trim().min(1),
-      title: z.string().trim().min(1),
-      description: z.string().trim().nullable().optional(),
-      orderFraction: z.string().trim().optional(),
-      tags: z.array(z.string()).optional(),
-      priority: z.enum(["low", "medium", "high"]).optional(),
-      dueDate: z.string().nullable().optional(),
-    }),
-  )
-  .min(1, "Payload must be a non-empty array");
-
-type CreateTaskBody = z.infer<typeof createTaskSchema>;
+import {
+  createTaskSchema,
+  type CreateTaskBody,
+} from "@/validations/task.validation";
 
 export const POST = createHandle<CreateTaskBody>(
   { body: createTaskSchema },
   async ({ request, userId, body }) => {
     const columnIds = [...new Set(body.map((item) => item.columnId))];
 
-    const columnLinks = await db
-      .select({ columnId: columnsTable.id, projectId: columnsTable.projectId })
-      .from(columnsTable)
-      .where(inArray(columnsTable.id, columnIds));
+    const columnLinks = await getActiveColumnLinks(columnIds);
 
     if (columnLinks.length !== columnIds.length) {
       throw new NotFoundError("Some columns not found");

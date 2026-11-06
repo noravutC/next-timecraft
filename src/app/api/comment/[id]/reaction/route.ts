@@ -10,21 +10,20 @@ import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseId } from "@/lib/api/params";
+import {
+  commentReactionSchema,
+  type CommentReactionBody,
+} from "@/validations/comment.validation";
 
 const ALLOWED_EMOJIS = new Set(["👍", "❤️", "😂", "😮", "😢", "🎉"]);
 
-const schema = z.object({
-  emoji: z.string().min(1).max(16),
-});
-
-type Body = z.infer<typeof schema>;
 type RouteParams = { id: string };
 
-export const POST = createParamHandle<RouteParams, Body>(
-  { body: schema },
+export const POST = createParamHandle<RouteParams, CommentReactionBody>(
+  { body: commentReactionSchema },
   async ({ request, params, body, userId }) => {
-    const commentId = params.id;
+    const commentId = parseId(params.id);
     const emoji = body.emoji;
 
     if (!ALLOWED_EMOJIS.has(emoji)) {

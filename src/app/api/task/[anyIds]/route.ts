@@ -1,43 +1,23 @@
 import { db } from "@/db";
 import { columnsTable, tasksTable } from "@/db/schema";
+import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
 import { getAttachmentStoragePathsByTaskIds } from "@/db/uniq-query/comment/comment-utils";
+import { removeNonMemberAssignees } from "@/db/uniq-query/task/assignee-utils";
 import { getTasksByIds } from "@/db/uniq-query/task/task-utils";
 import { BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
+import { parseIdList } from "@/lib/api/params";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { removeStorageObjects } from "@/lib/supabase-storage";
 import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import {
+  updateTaskSchema,
+  type UpdateTaskBody,
+} from "@/validations/task.validation";
 
 type RouteParams = { anyIds: string };
-
-const updateTaskSchema = z
-  .array(
-    z.object({
-      id: z.string().min(1),
-      columnId: z.string().optional(),
-      title: z.string().optional(),
-      description: z.string().nullable().optional(),
-      orderFraction: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      priority: z.enum(["low", "medium", "high"]).optional(),
-      dueDate: z.union([z.string(), z.null()]).optional(),
-      archived: z.boolean().optional(),
-      estimatedHours: z.number().optional(),
-    }),
-  )
-  .min(1, "Payload must be a non-empty array");
-
-type UpdateTaskBody = z.infer<typeof updateTaskSchema>;
-
-const parseIds = (anyIds: string): string[] =>
-  anyIds
-    .trim()
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id);
 
 const getTaskProjectLinks = async (taskIds: string[]) =>
   db
@@ -52,8 +32,7 @@ const getTaskProjectLinks = async (taskIds: string[]) =>
 export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
   { body: updateTaskSchema },
   async ({ request, params, body, userId }) => {
-    const taskIds = parseIds(params.anyIds);
-    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
+    const taskIds = parseIdList(params.anyIds);
 
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
     if (existingTaskLinks.length === 0) {
@@ -77,16 +56,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
           .filter((columnId): columnId is string => Boolean(columnId)),
       ),
     ];
-    const destinationLinks =
-      destinationColumnIds.length > 0
-        ? await db
-            .select({
-              columnId: columnsTable.id,
-              projectId: columnsTable.projectId,
-            })
-            .from(columnsTable)
-            .where(inArray(columnsTable.id, destinationColumnIds))
-        : [];
+    const destinationLinks = await getActiveColumnLinks(destinationColumnIds);
     if (destinationLinks.length !== destinationColumnIds.length) {
       throw new BadRequestError("Some destination columns not found");
     }
@@ -142,6 +112,16 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
     const projectByColumn = new Map(
       destinationLinks.map((l) => [l.columnId, l.projectId]),
     );
+
+    const movedAcrossProjects = new Map<string, string[]>();
+    for (const task of updatedTasks) {
+      const to = projectByColumn.get(task.columnId);
+      if (!to || to === projectByTask.get(task.id)) continue;
+      movedAcrossProjects.set(to, [...(movedAcrossProjects.get(to) ?? []), task.id]);
+    }
+    for (const [projectId, ids] of movedAcrossProjects) {
+      await removeNonMemberAssignees(ids, projectId);
+    }
     const groupedByProject = new Map<string, typeof updatedTasks>();
     for (const task of updatedTasks) {
       const pid =
@@ -167,8 +147,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
 export const GET = createParamHandle<RouteParams>(
   {},
   async ({ params, userId }) => {
-    const taskIds = parseIds(params.anyIds);
-    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
+    const taskIds = parseIdList(params.anyIds);
 
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
     if (existingTaskLinks.length === 0) {
@@ -192,8 +171,7 @@ export const GET = createParamHandle<RouteParams>(
 export const DELETE = createParamHandle<RouteParams>(
   {},
   async ({ request, params, userId }) => {
-    const taskIds = parseIds(params.anyIds);
-    if (taskIds.length === 0) throw new BadRequestError("taskIds are required");
+    const taskIds = parseIdList(params.anyIds);
 
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
     if (existingTaskLinks.length === 0) {

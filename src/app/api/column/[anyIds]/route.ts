@@ -1,31 +1,26 @@
 import { db } from "@/db";
 import { columnsTable } from "@/db/schema";
-import { BadRequestError } from "@/lib/api/errors";
+import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
+import { BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
+import { parseIdList } from "@/lib/api/params";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
+import {
+  updateColumnSchema,
+  type UpdateColumnBody,
+} from "@/validations/column.validation";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 type RouteParams = { anyIds: string };
-
-const parseIds = (anyIds: string): string[] =>
-  anyIds
-    .trim()
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id);
 
 export const GET = createParamHandle<RouteParams>(
   {
     permission: "project:view",
-    resolveProjectIds: ({ params }) => parseIds(params.anyIds),
+    resolveProjectIds: ({ params }) => parseIdList(params.anyIds),
   },
   async ({ params }) => {
-    const projectIds = parseIds(params.anyIds);
-    if (projectIds.length === 0) {
-      throw new BadRequestError("projectId is required");
-    }
+    const projectIds = parseIdList(params.anyIds);
 
     const columns = await db
       .select()
@@ -45,35 +40,21 @@ export const GET = createParamHandle<RouteParams>(
   },
 );
 
-const updateColumnSchema = z
-  .array(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().optional(),
-      color: z.string().optional(),
-      wipLimit: z.number().optional(),
-      orderFraction: z.string().optional(),
-    }),
-  )
-  .min(1, "Payload must be a non-empty array");
-
-type UpdateColumnBody = z.infer<typeof updateColumnSchema>;
-
 export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
   { body: updateColumnSchema },
   async ({ params, body, userId }) => {
-    const columnIds = parseIds(params.anyIds);
-    if (columnIds.length === 0) {
-      throw new BadRequestError("columnIds are required");
+    const columnIds = parseIdList(params.anyIds);
+
+    // Authorization covers the URL ids, so the body may only touch those.
+    const allowedIds = new Set(columnIds);
+    if (body.some((item) => !allowedIds.has(item.id))) {
+      throw new BadRequestError("Payload ids must match the ids in the URL");
     }
 
-    const existingColumnsList = await db
-      .select({
-        columnId: columnsTable.id,
-        projectId: columnsTable.projectId,
-      })
-      .from(columnsTable)
-      .where(inArray(columnsTable.id, columnIds));
+    const existingColumnsList = await getActiveColumnLinks(columnIds);
+    if (existingColumnsList.length !== columnIds.length) {
+      throw new NotFoundError("Some columns not found");
+    }
 
     const uniqProjectIds = [
       ...new Set(existingColumnsList.map((col) => col.projectId)),
@@ -94,7 +75,12 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
               orderFraction: item.orderFraction,
               updatedAt: new Date(),
             })
-            .where(eq(columnsTable.id, item.id))
+            .where(
+              and(
+                eq(columnsTable.id, item.id),
+                eq(columnsTable.isDeleted, false),
+              ),
+            )
             .returning();
 
           if (updated) rowsUpdated.push(updated);
@@ -119,24 +105,19 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
 export const DELETE = createParamHandle<RouteParams>(
   {},
   async ({ params, userId }) => {
-    const columnIds = parseIds(params.anyIds);
-    if (columnIds.length === 0) {
-      throw new BadRequestError("columnIds are required");
-    }
+    const columnIds = parseIdList(params.anyIds);
 
-    const existingColumnsList = await db
-      .select({
-        columnId: columnsTable.id,
-        projectId: columnsTable.projectId,
-      })
-      .from(columnsTable)
-      .where(inArray(columnsTable.id, columnIds));
+    const existingColumnsList = await getActiveColumnLinks(columnIds);
+    if (existingColumnsList.length === 0) {
+      throw new NotFoundError("Columns not found");
+    }
 
     const uniqProjectIds = [
       ...new Set(existingColumnsList.map((col) => col.projectId)),
     ];
-    await authorizeOrThrow(userId, uniqProjectIds, "column:update");
+    await authorizeOrThrow(userId, uniqProjectIds, "column:delete");
 
+    // Only active columns: re-deleting must not push purgeAt further out.
     const deletedRows = await db
       .update(columnsTable)
       .set({
@@ -144,7 +125,12 @@ export const DELETE = createParamHandle<RouteParams>(
         deletedAt: new Date(),
         purgeAt: sql`now() + interval '30 days'`,
       })
-      .where(inArray(columnsTable.id, columnIds))
+      .where(
+        inArray(
+          columnsTable.id,
+          existingColumnsList.map((col) => col.columnId),
+        ),
+      )
       .returning({ id: columnsTable.id });
 
     return NextResponse.json(

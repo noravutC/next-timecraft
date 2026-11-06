@@ -1,11 +1,12 @@
 import { db } from "@/db";
 import {
   columnsTable,
+  projectMembersTable,
   taskAssigneesTable,
   tasksTable,
   usersTable,
 } from "@/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, notExists } from "drizzle-orm";
 
 export async function getTaskColumnLink(taskId: string) {
   const [row] = await db
@@ -111,4 +112,31 @@ export async function setAssignees(
 
     return { assignees, added: toAdd };
   });
+}
+
+// After a task moves to another board, drop assignees who are not members
+// there — otherwise that board would see users (and emails) it never invited.
+export async function removeNonMemberAssignees(
+  taskIds: string[],
+  projectId: string,
+): Promise<void> {
+  if (taskIds.length === 0) return;
+  await db
+    .delete(taskAssigneesTable)
+    .where(
+      and(
+        inArray(taskAssigneesTable.taskId, taskIds),
+        notExists(
+          db
+            .select({ id: projectMembersTable.id })
+            .from(projectMembersTable)
+            .where(
+              and(
+                eq(projectMembersTable.projectId, projectId),
+                eq(projectMembersTable.userId, taskAssigneesTable.userId),
+              ),
+            ),
+        ),
+      ),
+    );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { can, canAll, canAny } from './can';
+import { can, canAll, canAny, outranks } from './can';
 import { ROLE_PERMISSIONS, type ProjectRole } from './permissions';
 
 describe('can', () => {
@@ -67,5 +67,15 @@ describe('canAll / canAny (multi-permission)', () => {
 
   it('empty permission lists fail closed for canAny', () => {
     expect(canAny('owner', [])).toBe(false);
+  });
+});
+
+describe('outranks (member management)', () => {
+  it('only a strictly higher role wins', () => {
+    expect(outranks('owner', 'admin')).toBe(true);
+    expect(outranks('admin', 'editor')).toBe(true);
+    expect(outranks('admin', 'admin')).toBe(false);
+    expect(outranks('editor', 'admin')).toBe(false);
+    expect(outranks('admin', 'owner')).toBe(false);
   });
 });

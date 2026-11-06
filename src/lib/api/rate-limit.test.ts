@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { checkRateLimit, resetRateLimits } from "./rate-limit";
+import {
+  checkRateLimit,
+  rateLimitKeyCount,
+  resetRateLimits,
+} from "./rate-limit";
 
 const CONFIG = { limit: 3, windowMs: 60_000 };
 
@@ -53,5 +57,10 @@ describe("checkRateLimit", () => {
     vi.advanceTimersByTime(31_000); // t=61s — first hit expired, 2 remain
     expect(checkRateLimit("u1", CONFIG).ok).toBe(true); // now 3 in window
     expect(checkRateLimit("u1", CONFIG).ok).toBe(false);
+  });
+
+  it("stays bounded when flooded with one-off keys", () => {
+    for (let i = 0; i < 10_050; i++) checkRateLimit(`k${i}`, CONFIG);
+    expect(rateLimitKeyCount()).toBe(10_000);
   });
 });

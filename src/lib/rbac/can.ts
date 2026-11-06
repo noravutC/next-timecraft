@@ -13,3 +13,15 @@ export function canAll(role: ProjectRole, permissions: Permission[]): boolean {
 export function canAny(role: ProjectRole, permissions: Permission[]): boolean {
   return permissions.some((permission) => can(role, permission));
 }
+
+const ROLE_RANK: Record<ProjectRole, number> = {
+  viewer: 0,
+  editor: 1,
+  admin: 2,
+  owner: 3,
+};
+
+/** true เมื่อ actor อยู่สูงกว่า target จริงๆ (admin เหนือ editor ได้ แต่ admin เหนือ admin ไม่ได้) */
+export function outranks(actor: ProjectRole, target: ProjectRole): boolean {
+  return ROLE_RANK[actor] > ROLE_RANK[target];
+}

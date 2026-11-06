@@ -12,8 +12,15 @@ import {
   isProjectMember,
 } from '@/db/uniq-query/project/project-utils';
 import { getUserIdByEmail } from '@/db/uniq-query/user/user-utils';
-import { BadRequestError, NotFoundError } from '@/lib/api/errors';
-import { createParamHandle } from '@/lib/api/handle';
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '@/lib/api/errors';
+import { createParamHandle, enforceQuota } from '@/lib/api/handle';
+import { DAILY_QUOTAS } from '@/lib/api/quotas';
+import { isGuestSession } from '@/lib/guest';
+import { parseId } from '@/lib/api/params';
 import { sendBoardInviteEmail } from '@/lib/email/send-board-invite';
 import { triggerExclusive } from '@/lib/pusher-server';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
@@ -29,10 +36,22 @@ export const POST = createParamHandle<RouteParams, InviteMemberBody>(
   {
     body: inviteMemberSchema,
     permission: 'member:invite',
-    resolveProjectIds: ({ params }) => [params.id],
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params, body, userId, session, request }) => {
-    const projectId = params.id;
+    // guests share one account: an invite would pull a real user's data into
+    // a board every visitor can open, and lets anyone send mail as us
+    if (isGuestSession(session)) {
+      throw new ForbiddenError('Sign in with Google to invite people');
+    }
+    enforceQuota(
+      { request, session },
+      'invite',
+      DAILY_QUOTAS.invite,
+      'Daily invite limit reached. Try again tomorrow.',
+    );
+
+    const projectId = parseId(params.id);
     const email = body.email.trim().toLowerCase();
 
     const projectName = await getProjectNameById(projectId);
@@ -100,10 +119,10 @@ export const POST = createParamHandle<RouteParams, InviteMemberBody>(
 export const GET = createParamHandle<RouteParams>(
   {
     permission: 'member:invite',
-    resolveProjectIds: ({ params }) => [params.id],
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params }) => {
-    const data = await listPendingInvitations(params.id);
+    const data = await listPendingInvitations(parseId(params.id));
     return NextResponse.json(
       { data, message: 'Get invitations success', status: 200 },
       { status: 200 },

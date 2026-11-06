@@ -20,9 +20,10 @@ import {
   ALLOWED_IMAGE_MIME,
   ALLOWED_VIDEO_MIME,
   COMMENT_MEDIA_BUCKET,
-  MAX_FILES_PER_COMMENT,
+  isCommentMediaPath,
   maxBytesFor,
   supabaseAdmin,
+  verifyUploadedObject,
 } from "@/lib/supabase-storage";
 import { AppError, BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
@@ -31,9 +32,12 @@ import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import type { NotificationPayload } from "@/types";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseId } from "@/lib/api/params";
+import {
+  createCommentSchema,
+  type CreateCommentBody,
+} from "@/validations/comment.validation";
 
-const MAX_BODY_LEN = 5000;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 
@@ -42,7 +46,7 @@ type RouteParams = { anyIds: string };
 export const GET = createParamHandle<RouteParams>(
   {},
   async ({ request, params, userId }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const url = new URL(request.url);
     const cursor = url.searchParams.get("cursor");
     const rawLimit = Number(url.searchParams.get("limit") ?? DEFAULT_LIMIT);
@@ -72,39 +76,10 @@ export const GET = createParamHandle<RouteParams>(
   },
 );
 
-const attachmentSchema = z.object({
-  type: z.enum(["image", "video"]),
-  storagePath: z.string().min(1).max(512),
-  url: z.string().url().max(1024),
-  mimeType: z.string().min(1).max(120),
-  sizeBytes: z.number().int().positive(),
-  width: z.number().int().positive().nullable().optional(),
-  height: z.number().int().positive().nullable().optional(),
-  durationMs: z.number().int().positive().nullable().optional(),
-});
-
-const createCommentSchema = z
-  .object({
-    body: z.string().trim().max(MAX_BODY_LEN).default(""),
-    mentions: z.array(z.string()).optional().default([]),
-    clientId: z.string().trim().min(1, "clientId is required"),
-    attachments: z
-      .array(attachmentSchema)
-      .max(MAX_FILES_PER_COMMENT)
-      .optional()
-      .default([]),
-  })
-  .refine((d) => d.body.trim().length > 0 || d.attachments.length > 0, {
-    message: "Comment must have body or at least one attachment",
-    path: ["body"],
-  });
-
-type CreateCommentBody = z.infer<typeof createCommentSchema>;
-
 export const POST = createParamHandle<RouteParams, CreateCommentBody>(
   { body: createCommentSchema },
   async ({ request, params, body, userId, session }) => {
-    const taskId = params.anyIds;
+    const taskId = parseId(params.anyIds);
     const sessionUserName = session.user?.name ?? "Someone";
     const text = body.body.trim();
     const clientId = body.clientId;
@@ -133,7 +108,7 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         if (a.sizeBytes > maxBytesFor(a.type)) {
           throw new BadRequestError("Attachment exceeds size limit");
         }
-        if (!a.storagePath.startsWith(`${link.projectId}/${taskId}/`)) {
+        if (!isCommentMediaPath(a.storagePath, link.projectId, taskId)) {
           throw new BadRequestError("Invalid attachment path");
         }
         // Derive the public URL server-side from the validated path; never
@@ -141,6 +116,12 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         return storage.from(COMMENT_MEDIA_BUCKET).getPublicUrl(a.storagePath)
           .data.publicUrl;
       });
+      const verified = await Promise.all(
+        attachmentsInput.map((a) => verifyUploadedObject(a.storagePath, a.type)),
+      );
+      if (verified.includes(false)) {
+        throw new BadRequestError("Attachment upload is missing or invalid");
+      }
     }
 
     let validMentions: string[] = [];
@@ -165,7 +146,15 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
       const existing = await tx
         .select()
         .from(taskCommentsTable)
-        .where(eq(taskCommentsTable.clientId, clientId))
+        // retry de-dup is per author + task, so a known clientId never
+        // returns someone else's comment
+        .where(
+          and(
+            eq(taskCommentsTable.clientId, clientId),
+            eq(taskCommentsTable.taskId, taskId),
+            eq(taskCommentsTable.userId, userId),
+          ),
+        )
         .limit(1);
       if (existing.length > 0) {
         return { comment: existing[0], notifications: [], dedup: true };

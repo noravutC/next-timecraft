@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { projectsTable } from "@/db/schema";
 import { BadRequestError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
+import { parseId } from "@/lib/api/params";
 import { projectSettingsSchema } from "@/types/project-settings";
 import {
   isValidProjectCoverImage,
@@ -20,13 +21,10 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
   {
     body: updateProjectSchema,
     permission: "project:update",
-    resolveProjectIds: ({ params }) => [params.id],
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params, body }) => {
-    const projectId = params.id;
-    if (!projectId?.trim()) {
-      throw new BadRequestError("Project ID is required");
-    }
+    const projectId = parseId(params.id);
 
     const name = body.name?.trim();
     if (name !== undefined && name.length === 0) {
@@ -84,13 +82,10 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
 export const DELETE = createParamHandle<RouteParams>(
   {
     permission: "project:delete",
-    resolveProjectIds: ({ params }) => [params.id],
+    resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params }) => {
-    const projectId = params.id;
-    if (!projectId?.trim()) {
-      throw new BadRequestError("Project ID is required");
-    }
+    const projectId = parseId(params.id);
 
     const [deleted] = await db
       .delete(projectsTable)

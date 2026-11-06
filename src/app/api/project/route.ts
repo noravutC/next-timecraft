@@ -10,7 +10,9 @@ import {
   ForbiddenError,
   UnauthorizedError,
 } from "@/lib/api/errors";
-import { createHandle } from "@/lib/api/handle";
+import { createHandle, enforceQuota } from "@/lib/api/handle";
+import { DAILY_QUOTAS } from "@/lib/api/quotas";
+import { parseIdList } from "@/lib/api/params";
 import {
   isValidProjectCoverImage,
   normalizeCoverImage,
@@ -21,8 +23,14 @@ import { NextResponse } from "next/server";
 
 export const POST = createHandle<ProjectRequestBody>(
   { body: projectRequestSchema },
-  async ({ body, userId, session }) => {
+  async ({ request, body, userId, session }) => {
     if ("mode" in body && body.mode === "create") {
+      enforceQuota(
+        { request, session },
+        "project-create",
+        DAILY_QUOTAS.projectCreate,
+        "Daily board limit reached. Try again tomorrow.",
+      );
       // สร้างบอร์ดต้องมี org (บอร์ดสังกัด org) — แต่ fetch ไม่ต้อง:
       // สมาชิกข้ามองค์กร/ยังไม่มี org ต้องเห็นบอร์ดที่ตัวเองถูกเชิญ
       const organizationId = session.user?.organizationId;
@@ -77,10 +85,10 @@ export const POST = createHandle<ProjectRequestBody>(
     const rawProjectIds = "projectIds" in body ? body.projectIds : undefined;
     const projectIds =
       typeof rawProjectIds === "string"
-        ? rawProjectIds.split(",").map((id) => id.trim()).filter(Boolean)
-        : Array.isArray(rawProjectIds)
-          ? rawProjectIds.map((id) => id.trim()).filter(Boolean)
-          : [];
+        ? rawProjectIds.trim()
+          ? parseIdList(rawProjectIds)
+          : []
+        : (rawProjectIds ?? []);
 
     const projects = await fetchProjectsWithMembers(
       userId,
