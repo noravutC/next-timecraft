@@ -1,12 +1,10 @@
 'use client';
 
-import { Lock } from 'lucide-react';
 import { CommandItem } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { Kbd } from '@/components/ui/kbd';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { memberCountLabel } from '@/helper/utils/board-switcher';
-import { withSettingsDefaults } from '@/types/project-settings';
 import type { ProjectCache } from '@/types';
 
 /** One board row in the ⌘K palette: tile, name, state chips, member count. */
@@ -36,13 +34,6 @@ export const SwitcherBoardItem = ({
         <span className="size-1.5 rounded-full bg-success" />
         Current
       </Badge>
-    )}
-    {withSettingsDefaults(project.settings).isPrivate && (
-      <Lock
-        role="img"
-        aria-label="Private board"
-        className="size-3.25 text-ink-subtle"
-      />
     )}
     {project.archived && (
       <Badge variant="secondary" className="h-5 px-1.75 text-2xs">

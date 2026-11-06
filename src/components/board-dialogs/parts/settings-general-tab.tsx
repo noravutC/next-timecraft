@@ -1,16 +1,14 @@
 'use client';
 
-import { Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import type { ProjectSettings } from '@/types/project-settings';
 import type { BoardSettingsDraft } from '../use-board-settings-draft';
 import { BoardColorSwatches } from './board-color-swatches';
 
-/** General tab: tile + name, color, description, private toggle. */
+/** General tab: tile + name, color, description. */
 export const SettingsGeneralTab = ({
   draft,
   coverImage,
@@ -68,20 +66,5 @@ export const SettingsGeneralTab = ({
         className="field-sizing-fixed min-h-0 resize-none px-3 py-2.5"
       />
     </div>
-
-    <label className="flex cursor-pointer items-center gap-4 rounded-popover border border-line px-4 py-3.5">
-      <Lock className="size-4 shrink-0 text-ink-subtle" />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-base font-medium text-ink">Private board</span>
-        <span className="text-sm leading-5 text-ink-subtle">
-          Only invited members can see this board.
-        </span>
-      </span>
-      <Switch
-        aria-label="Private board"
-        checked={draft.settings.isPrivate}
-        onCheckedChange={(isPrivate) => onSettingsChange({ isPrivate })}
-      />
-    </label>
   </div>
 );

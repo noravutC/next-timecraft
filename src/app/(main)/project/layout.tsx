@@ -5,7 +5,7 @@ import { useProjectStore, useUserStore } from '@/store';
 import { Loader } from '@/components/ui/loader';
 import { CreateFirstProject } from './moveout/create-first-project';
 import { ProjectHeader } from './project-header';
-import { BoardDialogs } from '@/components/bottom-menu/board-dialogs';
+import { BoardDialogs } from '@/components/board-dialogs/board-dialogs';
 import { TaskDetailSheet } from '@/components/task-detail/task-detail-sheet';
 
 export default function ProjectLayout({

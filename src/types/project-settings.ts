@@ -8,6 +8,8 @@ export const projectSettingsSchema = z
   .object({
     icon: z.string().min(1).max(32).optional(),
     color: hexColor.optional(),
+    // kept so stored settings still validate; it has no effect: every
+    // board is already visible to its members only
     isPrivate: z.boolean().optional(),
     tagColors: z.record(z.string(), hexColor).optional(),
     nextTagColor: hexColor.optional(),
