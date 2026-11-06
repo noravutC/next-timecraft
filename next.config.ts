@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
   poweredByHeader: false,
+  // don't write AGENTS.md into the repo on `next dev`
+  agentRules: false,
   turbopack: {},
   images: {
     remotePatterns: [

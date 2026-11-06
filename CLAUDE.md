@@ -44,7 +44,11 @@ a full run rewrites ~230 files. Format only the files you touched.
 
 ### Authentication
 
-**File:** `src/auth.ts` — NextAuth 4 config, Google OAuth only, JWT strategy, 48h session.
+**File:** `src/auth.ts` — Auth.js v5 (`next-auth` beta) config, JWT strategy, 48h session. Two providers:
+- **Google** — the email must be verified by Google.
+- **Guest** (Credentials) — every "Continue as guest" visitor signs in as one shared account (`GUEST_EMAIL` in `src/lib/guest.ts`), throttled per IP. Use `isGuestSession(session)` to branch: guests can't store AI keys, invite people or join boards by invitation, and get smaller daily quotas.
+
+The session `update()` payload is never trusted: `trigger === "update"` only re-reads the user from the DB.
 
 JWT callback (`hydrateTokenFromDb`) upserts the user into the DB on sign-in, then enriches the token with:
 - `organizationId` (owner org or first membership org)
@@ -90,6 +94,14 @@ Four stores in `src/store/`:
 
 Always use `authorize` / `authorizeOrThrow`. Never re-implement role/permission logic in routes. Add new permissions to the union + each role's set in `permissions.ts`.
 
+### Security
+
+- **CSP** is set per request in `src/proxy.ts` (Next 16's middleware): scripts run only with that request's nonce (`'strict-dynamic'`). Pages render dynamically for this (`dynamic` in `src/app/layout.tsx`); a prerendered page would lose its scripts. Allowed origins live in `src/lib/security/csp.ts`. The other security headers are static in `next.config.ts`.
+- **Quotas**: per-minute limits and daily quotas (`enforceQuota`, `src/lib/api/quotas.ts`) are in memory, keyed by user or by IP for guests. Daily ceilings that must survive a restart are counted from the DB (`src/db/uniq-query/quota/daily-usage.ts`, `assertUnderDailyLimit`).
+- **Database TLS**: `src/db/ssl.ts` decides it for the app, drizzle-kit and scripts: `require` for any non-local host.
+- **Storage**: the comment-media bucket is public but limited to 50MB and image/video types (`scripts/harden-storage-bucket.ts`); upload URLs are quota-limited.
+- **Realtime**: every Pusher channel is private and authorized in `/api/pusher/auth`.
+
 ### API Handler Wrappers (Standard pattern — use this for every route)
 
 **Location:** `src/lib/api/`
@@ -115,7 +127,7 @@ The wrapper handles: session 401, Zod body validation → 400, permission check 
 
 **Example route:** `src/app/api/task/route.ts` (POST) — uses `createHandle` + Zod + inline `authorizeOrThrow` after column lookup.
 
-**Migration status:** only `api/task/route.ts` migrated so far. Older routes still use `getServerSession` + `hasPermission` + manual try/catch. When touching an old route, migrate it to the wrapper.
+**Migration status:** every route uses the wrappers (except the Auth.js handler). Keep it that way for new routes.
 
 ### Existing helpers — always check before writing new utilities
 
@@ -167,7 +179,7 @@ Uses `@atlaskit/pragmatic-drag-and-drop` with auto-scroll. Column and card move 
 ## Required Environment Variables
 
 ```
-DATABASE_URL=                    # Supabase PostgreSQL connection string
+DATABASE_URL=                    # Supabase PostgreSQL connection string (TLS is added for non-local hosts)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 NEXTAUTH_SECRET=
@@ -181,6 +193,13 @@ ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns
 RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
 EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
 APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
+NEXTAUTH_URL=                    # public site URL (OAuth callbacks)
+NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
+SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only
+AI_ENCRYPTION_KEY=               # encrypts AI keys users save in AI settings
+SENTRY_DSN=                      # optional — server error reporting
+NEXT_PUBLIC_SENTRY_DSN=          # optional — browser error reporting
+LOG_LEVEL=                       # optional — pino level, defaults to info
 ```
 
 ## Skills system
