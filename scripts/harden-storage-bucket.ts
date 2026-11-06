@@ -14,13 +14,10 @@ loadEnv({ path: path.resolve(process.cwd(), '.env.local') });
 loadEnv({ path: path.resolve(process.cwd(), '.env') });
 
 async function main() {
-  const {
-    ALLOWED_IMAGE_MIME,
-    ALLOWED_VIDEO_MIME,
-    COMMENT_MEDIA_BUCKET,
-    MAX_VIDEO_BYTES,
-    supabaseAdmin,
-  } = await import('../src/lib/supabase-storage');
+  const { COMMENT_MEDIA_BUCKET, MAX_VIDEO_BYTES, supabaseAdmin } =
+    await import('../src/lib/supabase-storage');
+  const { ALL_ALLOWED_MIME } =
+    await import('../src/helper/utils/attachment-kinds');
   if (!supabaseAdmin) throw new Error('Supabase env is missing');
 
   const { error } = await supabaseAdmin.storage.updateBucket(
@@ -29,7 +26,8 @@ async function main() {
       // attachment URLs are rendered directly, so the bucket stays public
       public: true,
       fileSizeLimit: MAX_VIDEO_BYTES,
-      allowedMimeTypes: [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME],
+      // images, videos and documents (see attachment-kinds.ts)
+      allowedMimeTypes: [...ALL_ALLOWED_MIME],
     },
   );
   if (error) throw error;

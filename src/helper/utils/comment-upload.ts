@@ -1,38 +1,33 @@
 import { commentServices } from "@/services/comment.service";
 import type { AttachmentInput } from "@/types";
+import {
+  classifyMime,
+  maxBytesFor,
+  type AttachmentKind,
+} from "./attachment-kinds";
 
-const ALLOWED_IMAGE_MIME = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
-const ALLOWED_VIDEO_MIME = new Set([
-  "video/mp4",
-  "video/webm",
-  "video/quicktime",
-]);
+export { MAX_FILES_PER_COMMENT } from "./attachment-kinds";
 
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-export const MAX_FILES_PER_COMMENT = 10;
+const KIND_LABEL = { image: "Image", video: "Video", file: "File" } as const;
 
 export const classifyFile = (
   file: File,
-): { kind: "image" | "video"; ok: true } | { ok: false; reason: string } => {
-  if (ALLOWED_IMAGE_MIME.has(file.type)) {
-    if (file.size > MAX_IMAGE_BYTES) {
-      return { ok: false, reason: "Image exceeds 10MB" };
-    }
-    return { kind: "image", ok: true };
+): { kind: AttachmentKind; ok: true } | { ok: false; reason: string } => {
+  const kind = classifyMime(file.type);
+  if (!kind) {
+    return {
+      ok: false,
+      reason: `${file.name} isn’t a supported file type`,
+    };
   }
-  if (ALLOWED_VIDEO_MIME.has(file.type)) {
-    if (file.size > MAX_VIDEO_BYTES) {
-      return { ok: false, reason: "Video exceeds 50MB" };
-    }
-    return { kind: "video", ok: true };
+  const max = maxBytesFor(kind);
+  if (file.size > max) {
+    return {
+      ok: false,
+      reason: `${KIND_LABEL[kind]} is over ${Math.round(max / 1024 / 1024)} MB`,
+    };
   }
-  return { ok: false, reason: `Unsupported type: ${file.type || "unknown"}` };
+  return { kind, ok: true };
 };
 
 const probeImageDimensions = (
@@ -88,10 +83,13 @@ export const uploadCommentFile = async (
   if (!classified.ok) throw new Error(classified.reason);
   const kind = classified.kind;
 
+  // documents have no pixel size or duration to read
   const meta =
     kind === "image"
       ? await probeImageDimensions(file)
-      : await probeVideoMetadata(file);
+      : kind === "video"
+        ? await probeVideoMetadata(file)
+        : null;
 
   const res = await commentServices.createUploadUrl({
     taskId,
@@ -114,6 +112,7 @@ export const uploadCommentFile = async (
   return {
     attachment: {
       type: kind,
+      fileName: file.name.slice(0, 200),
       storagePath: path,
       url: publicUrl,
       mimeType: file.type,

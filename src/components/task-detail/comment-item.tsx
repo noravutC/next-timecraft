@@ -22,6 +22,8 @@ import { useUserStore } from '@/store/use-user.store';
 import { useShallow } from 'zustand/react/shallow';
 import { MarkdownView } from './parts/markdown-view';
 import { CommentReactions, ReactionPicker } from './parts/comment-reactions';
+import { FileChip } from './parts/file-chip';
+import { splitAttachments } from '@/helper/utils/attachment-kinds';
 
 interface CommentItemProps {
   comment: TaskCommentWithAuthor;
@@ -55,6 +57,7 @@ export const CommentItem = ({
 
   const isPending = comment.id.startsWith('temp-');
   const hasReactions = comment.reactions.length > 0;
+  const { media, files } = splitAttachments(comment.attachments);
 
   // a comment you just posted lands at the bottom: bring it into view once
   const ref = useRef<HTMLElement>(null);
@@ -188,9 +191,9 @@ export const CommentItem = ({
                 />
               </div>
             )}
-            {comment.attachments.length > 0 && (
+            {media.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {comment.attachments.map((a) => (
+                {media.map((a) => (
                   <a
                     key={a.id}
                     href={a.url}
@@ -214,6 +217,19 @@ export const CommentItem = ({
                       />
                     )}
                   </a>
+                ))}
+              </div>
+            )}
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {files.map((a) => (
+                  <FileChip
+                    key={a.id}
+                    url={a.url}
+                    fileName={a.fileName}
+                    mimeType={a.mimeType}
+                    sizeBytes={a.sizeBytes}
+                  />
                 ))}
               </div>
             )}

@@ -1,4 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { AttachmentKind } from "@/helper/utils/attachment-kinds";
 import type {
   commentReadStateTable,
   taskCommentAttachmentsTable,
@@ -37,7 +38,9 @@ export interface TaskCommentWithAuthor extends TaskComment {
 }
 
 export interface AttachmentInput {
-  type: "image" | "video";
+  type: AttachmentKind;
+  /** original name, shown on file chips */
+  fileName?: string | null;
   storagePath: string;
   url: string;
   mimeType: string;

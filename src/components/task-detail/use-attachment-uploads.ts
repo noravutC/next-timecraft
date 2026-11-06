@@ -6,12 +6,13 @@ import {
   uploadCommentFile,
 } from "@/helper/utils/comment-upload";
 import type { AttachmentInput } from "@/types";
+import type { AttachmentKind } from "@/helper/utils/attachment-kinds";
 
 export type PendingFile = {
   id: string;
   file: File;
   previewUrl: string;
-  kind: "image" | "video";
+  kind: AttachmentKind;
   status: "uploading" | "ready" | "error";
   attachment?: AttachmentInput;
   error?: string;

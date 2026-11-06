@@ -18,6 +18,11 @@ import { MarkdownView } from "./parts/markdown-view";
 import { HiddenFileInput } from "./parts/hidden-file-input";
 import { ComposerToolbar } from "./parts/composer-toolbar";
 import { useAttachmentUploads } from "./use-attachment-uploads";
+import {
+  ATTACH_ANY_ACCEPT,
+  IMAGE_ACCEPT,
+  VIDEO_ACCEPT,
+} from "@/helper/utils/attachment-kinds";
 import { useMentionPicker } from "./use-mention-picker";
 
 interface CommentComposerProps {
@@ -149,17 +154,17 @@ export const CommentComposer = ({
     <div className="shrink-0">
       <HiddenFileInput
         ref={imageInputRef}
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        accept={IMAGE_ACCEPT}
         onFiles={upload.addFiles}
       />
       <HiddenFileInput
         ref={videoInputRef}
-        accept="video/mp4,video/webm,video/quicktime"
+        accept={VIDEO_ACCEPT}
         onFiles={upload.addFiles}
       />
       <HiddenFileInput
         ref={anyInputRef}
-        accept="image/*,video/*"
+        accept={ATTACH_ANY_ACCEPT}
         onFiles={upload.addFiles}
       />
 

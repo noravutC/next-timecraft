@@ -18,33 +18,24 @@ export const supabaseAdmin =
       })
     : null;
 
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-export const MAX_FILES_PER_COMMENT = 10;
-
-export const ALLOWED_IMAGE_MIME = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
-
-export const ALLOWED_VIDEO_MIME = new Set([
-  "video/mp4",
-  "video/webm",
-  "video/quicktime",
-]);
-
-export type AttachmentKind = "image" | "video";
-
-export const classifyMime = (mime: string): AttachmentKind | null => {
-  if (ALLOWED_IMAGE_MIME.has(mime)) return "image";
-  if (ALLOWED_VIDEO_MIME.has(mime)) return "video";
-  return null;
-};
-
-export const maxBytesFor = (kind: AttachmentKind): number =>
-  kind === "image" ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+// what may be uploaded lives with the client-side rules, so they can't drift
+export {
+  ALLOWED_FILE_MIME,
+  ALLOWED_IMAGE_MIME,
+  ALLOWED_VIDEO_MIME,
+  classifyMime,
+  MAX_FILE_BYTES,
+  MAX_FILES_PER_COMMENT,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  maxBytesFor,
+  type AttachmentKind,
+} from "@/helper/utils/attachment-kinds";
+import {
+  classifyMime,
+  maxBytesFor,
+  type AttachmentKind,
+} from "@/helper/utils/attachment-kinds";
 
 const sanitizeFileName = (name: string): string =>
   name
