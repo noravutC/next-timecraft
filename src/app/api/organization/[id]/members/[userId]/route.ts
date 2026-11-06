@@ -3,6 +3,7 @@
 
 import {
   changeWorkspaceRole,
+  listWorkspaceBoardIds,
   removeWorkspaceMember,
 } from '@/db/uniq-query/organization/workspace-member-utils';
 import { BadRequestError, NotFoundError } from '@/lib/api/errors';
@@ -15,6 +16,7 @@ import {
   type ChangeWorkspaceRoleBody,
 } from '@/validations/organization.validation';
 import { NextResponse } from 'next/server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
 
 type RouteParams = { id: string; userId: string };
 
@@ -22,7 +24,7 @@ const NOT_A_MEMBER = 'No such member, or it’s the owner';
 
 export const PATCH = createParamHandle<RouteParams, ChangeWorkspaceRoleBody>(
   { body: changeWorkspaceRoleSchema },
-  async ({ params, body, userId }) => {
+  async ({ request, params, body, userId }) => {
     const organizationId = parseId(params.id);
     const targetUserId = parseId(params.userId);
     await authorizeWorkspace(userId, organizationId, 'manage');
@@ -32,6 +34,10 @@ export const PATCH = createParamHandle<RouteParams, ChangeWorkspaceRoleBody>(
     if (!(await changeWorkspaceRole(organizationId, targetUserId, body.role))) {
       throw new NotFoundError(NOT_A_MEMBER);
     }
+    broadcastBoardsChanged(
+      request,
+      await listWorkspaceBoardIds(organizationId),
+    );
     return NextResponse.json(
       {
         updated: { userId: targetUserId, role: body.role },
@@ -45,7 +51,7 @@ export const PATCH = createParamHandle<RouteParams, ChangeWorkspaceRoleBody>(
 
 export const DELETE = createParamHandle<RouteParams>(
   {},
-  async ({ params, userId }) => {
+  async ({ request, params, userId }) => {
     const organizationId = parseId(params.id);
     const targetUserId = parseId(params.userId);
     await authorizeWorkspace(userId, organizationId, 'manage');
@@ -55,6 +61,10 @@ export const DELETE = createParamHandle<RouteParams>(
     if (!(await removeWorkspaceMember(organizationId, targetUserId))) {
       throw new NotFoundError(NOT_A_MEMBER);
     }
+    broadcastBoardsChanged(
+      request,
+      await listWorkspaceBoardIds(organizationId),
+    );
     // they lost boards: drop live sockets so they stop hearing about them
     pusherServer
       .terminateUserConnections(targetUserId)

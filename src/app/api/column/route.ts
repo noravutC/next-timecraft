@@ -8,6 +8,7 @@ import {
 import { NewColumnRow } from "@/types";
 import { and, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { broadcastColumns } from "@/lib/realtime/board-events";
 import {
   createColumnSchema,
   type CreateColumnBody,
@@ -31,7 +32,7 @@ export const POST = createHandle<CreateColumnBody>(
       ...new Set(body.map((item) => item.projectId)),
     ],
   },
-  async ({ body }) => {
+  async ({ request, body }) => {
     const normalized = body.map((item) => ({
       projectId: item.projectId,
       name: item.name,
@@ -89,6 +90,7 @@ export const POST = createHandle<CreateColumnBody>(
       .insert(columnsTable)
       .values(rowsToInsert)
       .returning();
+    broadcastColumns(request, createdColumns);
 
     return NextResponse.json(
       {

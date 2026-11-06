@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import { CreateColumnPayload, ColumnCache, UpdateColumnPayload } from "@/types";
+import {
+  CreateColumnPayload,
+  ColumnCache,
+  ColumnRow,
+  UpdateColumnPayload,
+} from "@/types";
 import { LoaderStatus } from "@/types/global/types";
 import { columnServices } from "@/services/columns.service";
 import { toRecord } from "@/helper/utils/object";
@@ -32,6 +37,10 @@ type ColumnStore = {
     projectId: string,
     limitTasks?: number,
   ) => Promise<ColumnCache[]>;
+  /** columns someone else added, changed or restored */
+  ingestColumns: (columns: ColumnRow[]) => void;
+  /** columns someone else deleted */
+  removeColumnsFromRealtime: (colIds: string[]) => void;
 };
 
 export const useColumnStore = create<ColumnStore>((set, get) => ({
@@ -162,6 +171,19 @@ export const useColumnStore = create<ColumnStore>((set, get) => ({
       columns: { ...state.columns, ...toRecord(restored, "id") },
     }));
     return restored;
+  },
+  ingestColumns: (columns) => {
+    const fresh = columns.map((c) => ({ ...c, timestamp: Date.now() }));
+    set((state) => ({
+      columns: { ...state.columns, ...toRecord(fresh, "id") },
+    }));
+  },
+  removeColumnsFromRealtime: (colIds) => {
+    set((state) => {
+      const next = { ...state.columns };
+      colIds.forEach((id) => delete next[id]);
+      return { columns: next };
+    });
   },
   fetchColumns: async (projectId, limitTasks = 50) => {
     if (!projectId) {

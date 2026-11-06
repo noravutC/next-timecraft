@@ -18,6 +18,8 @@ import { createNotification } from '@/db/uniq-query/notification/notification-ut
 import { pushNotification } from '@/lib/pusher-server';
 import type { WorkspaceInvitationPreview } from '@/types';
 import { NextResponse } from 'next/server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
+import { listWorkspaceBoardIds } from '@/db/uniq-query/organization/workspace-member-utils';
 
 type RouteParams = { token: string };
 
@@ -90,6 +92,10 @@ export const POST = createParamHandle<RouteParams>(
     if (!(await acceptWorkspaceInvitation(invitation, userId))) {
       throw new BadRequestError('This invitation is no longer valid');
     }
+    broadcastBoardsChanged(
+      request,
+      await listWorkspaceBoardIds(invitation.organizationId),
+    );
     if (invitation.invitedBy && invitation.invitedBy !== userId) {
       const workspace = await getWorkspaceSummary(invitation.organizationId);
       const notification = await createNotification({

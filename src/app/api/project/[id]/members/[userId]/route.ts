@@ -23,6 +23,7 @@ import {
 } from '@/validations/project.validation';
 import { pushNotification, pusherServer } from '@/lib/pusher-server';
 import { NextResponse } from 'next/server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
 
 type RouteParams = { id: string; userId: string };
 
@@ -56,6 +57,7 @@ export const DELETE = createParamHandle<RouteParams>(
 
     const deleted = await removeProjectMember(projectId, targetUserId);
     await revokePendingInvitationsBy(projectId, targetUserId);
+    broadcastBoardsChanged(request, [projectId]);
 
     // แจ้งคนถูกลบ — กด notification แล้ว client จะเอาบอร์ดออกจาก list ตัวเอง
     const notification = await createNotification({
@@ -114,6 +116,7 @@ export const PATCH = createParamHandle<RouteParams, ChangeMemberRoleBody>(
       targetUserId,
       body.role,
     );
+    broadcastBoardsChanged(request, [projectId]);
     const notification = await createNotification({
       recipientId: targetUserId,
       type: 'role_changed',

@@ -9,6 +9,7 @@ import {
   type TransferOwnershipBody,
 } from '@/validations/project.validation';
 import { NextResponse } from 'next/server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
 
 type RouteParams = { id: string };
 
@@ -18,7 +19,7 @@ export const POST = createParamHandle<RouteParams, TransferOwnershipBody>(
     permission: 'project:transfer_ownership',
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
-  async ({ params, body, userId }) => {
+  async ({ request, params, body, userId }) => {
     const projectId = parseId(params.id);
     if (body.userId === userId) {
       throw new BadRequestError('You already own this board');
@@ -26,6 +27,7 @@ export const POST = createParamHandle<RouteParams, TransferOwnershipBody>(
     if (!(await transferProjectOwnership(projectId, userId, body.userId))) {
       throw new BadRequestError('The new owner has to be on the board');
     }
+    broadcastBoardsChanged(request, [projectId]);
     return NextResponse.json(
       {
         updated: { projectId, ownerId: body.userId },
