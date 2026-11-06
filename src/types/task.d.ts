@@ -67,6 +67,22 @@ export type BlockerRef = { id: string; columnId: string; archived: boolean };
 /** A linked task as the task sheet lists it. */
 export type DependencyTask = BlockerRef & { title: string };
 
+/** A task assigned to you, as My tasks lists it across boards. */
+export type MyTask = {
+  id: string;
+  title: string;
+  priority: TaskPriority;
+  dueDate: Date | string | null;
+  projectId: string;
+  columnId: string;
+  columnName: string;
+  columnColor: string | null;
+  /** in its board's last column */
+  finished: boolean;
+  blocked: boolean;
+  assignees: { userId: string; fullName: string; avatar: string | null }[];
+};
+
 /** Where a due date falls, as the board's Due date filter groups them. */
 export type DueBucket = 'overdue' | 'this_week' | 'later' | 'none';
 

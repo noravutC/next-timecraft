@@ -53,6 +53,9 @@ export const UserMenu = () => {
           )}
         </div>
         <DropdownMenuItem className="h-8 px-2.5" asChild>
+          <Link href="/my-tasks">My tasks</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="h-8 px-2.5" asChild>
           <Link href="/settings/profile">My account</Link>
         </DropdownMenuItem>
         {onBoard && (

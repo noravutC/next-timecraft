@@ -12,6 +12,7 @@ import {
   TaskFilter,
   BlockerRef,
   DependencyTask,
+  MyTask,
   DueBounds,
   DueBucket,
   TaskWithBoard,
@@ -38,6 +39,16 @@ export type TaskAssigneeLite = TaskAssigneeUser;
 
 class TaskService {
   private client = apiClient;
+
+  /** Everything assigned to you, on every board you're on. */
+  async getMyTasks(): Promise<MyTask[]> {
+    return this.client
+      .get('/my-tasks')
+      .then((response) => response.data.data as MyTask[])
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to load your tasks');
+      });
+  }
 
   /** Adds time spent; answers with the task as it is now. */
   async logTime(
