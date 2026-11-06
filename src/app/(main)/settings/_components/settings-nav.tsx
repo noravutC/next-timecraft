@@ -15,7 +15,10 @@ const ACCOUNT: NavGroup = {
 
 const WORKSPACE: NavGroup = {
   label: 'Workspace',
-  links: [{ href: '/settings/workspace', label: 'General' }],
+  links: [
+    { href: '/settings/workspace', label: 'General' },
+    { href: '/settings/members', label: 'Members' },
+  ],
 };
 
 /** Settings sections, grouped by account and workspace. */

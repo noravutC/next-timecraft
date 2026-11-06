@@ -50,3 +50,13 @@ export const inviteToWorkspaceSchema = z.object({
 });
 
 export type InviteToWorkspaceBody = z.infer<typeof inviteToWorkspaceSchema>;
+
+export const changeWorkspaceRoleSchema = z.object({
+  role: z.enum(WORKSPACE_INVITABLE_ROLES),
+});
+
+export type ChangeWorkspaceRoleBody = z.infer<typeof changeWorkspaceRoleSchema>;
+
+export const addWorkspaceGuestSchema = z.object({ userId: z.guid() });
+
+export type AddWorkspaceGuestBody = z.infer<typeof addWorkspaceGuestSchema>;

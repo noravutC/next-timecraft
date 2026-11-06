@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
+  boardInvitationMeta,
   invitationExpiryLabel,
   invitationStatus,
   inviteeInitials,
+  workspaceInvitationMeta,
 } from './invitation-status';
 
 const NOW = new Date('2026-07-07T12:00:00Z');
@@ -66,5 +68,29 @@ describe('inviteeInitials', () => {
   it('reads initials from the address before the @', () => {
     expect(inviteeInitials('jane.lee@example.com')).toBe('JL');
     expect(inviteeInitials('ploy@example.com')).toBe('P');
+  });
+});
+
+describe('invitation meta lines', () => {
+  it('describes a board invitation', () => {
+    expect(boardInvitationMeta('Editor', FUTURE, NOW)).toBe(
+      'Invited as Editor · expires in 7 days',
+    );
+  });
+
+  it('describes a workspace invitation and who sent it', () => {
+    const base = { roleLabel: 'Member', expiresAt: FUTURE };
+    expect(
+      workspaceInvitationMeta(
+        { ...base, invitedByName: 'Me', invitedByYou: true },
+        NOW,
+      ),
+    ).toBe('Member · invited by you · expires in 7 days');
+    expect(
+      workspaceInvitationMeta(
+        { ...base, invitedByName: 'Ploy Srisuk', invitedByYou: false },
+        NOW,
+      ),
+    ).toBe('Member · invited by Ploy S. · expires in 7 days');
   });
 });

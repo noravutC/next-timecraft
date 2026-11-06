@@ -1,13 +1,18 @@
 import { randomBytes } from 'crypto';
 import { db } from '@/db';
-import { membershipsTable, organizationInvitationsTable } from '@/db/schema';
+import {
+  membershipsTable,
+  organizationInvitationsTable,
+  usersTable,
+} from '@/db/schema';
 import { INVITE_TTL_MS } from '@/db/uniq-query/invitation/invitation-utils';
 import type { WorkspaceInvitableRole } from '@/lib/rbac/workspace-permissions';
 import type {
   OrganizationInvitationRow,
   PendingWorkspaceInvitation,
+  PendingWorkspaceInvitationWithInviter,
 } from '@/types';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull } from 'drizzle-orm';
 import { grantWorkspaceBoards } from './organization-utils';
 
 // pending = not accepted or revoked, and not expired (invitationStatus() in
@@ -127,4 +132,68 @@ export async function acceptWorkspaceInvitation(
     });
     return true;
   });
+}
+
+/** Invitations still waiting for an answer, newest first. */
+export async function listPendingWorkspaceInvitations(
+  organizationId: string,
+): Promise<PendingWorkspaceInvitationWithInviter[]> {
+  const rows = await db
+    .select({
+      invitation: organizationInvitationsTable,
+      invitedByName: usersTable.fullName,
+    })
+    .from(organizationInvitationsTable)
+    .leftJoin(
+      usersTable,
+      eq(usersTable.id, organizationInvitationsTable.invitedBy),
+    )
+    .where(
+      and(
+        eq(organizationInvitationsTable.organizationId, organizationId),
+        pendingCondition(),
+      ),
+    )
+    .orderBy(desc(organizationInvitationsTable.createdAt));
+  return rows.map(({ invitation, invitedByName }) => ({
+    ...toPendingWorkspaceInvitation(invitation),
+    invitedBy: invitation.invitedBy,
+    invitedByName,
+  }));
+}
+
+const pendingIn = (organizationId: string, invitationId: string) =>
+  and(
+    eq(organizationInvitationsTable.id, invitationId),
+    eq(organizationInvitationsTable.organizationId, organizationId),
+    pendingCondition(),
+  );
+
+/** Withdraws a pending invitation. False when there's no such pending one. */
+export async function revokeWorkspaceInvitation(
+  organizationId: string,
+  invitationId: string,
+): Promise<boolean> {
+  const [revoked] = await db
+    .update(organizationInvitationsTable)
+    .set({ revokedAt: new Date(), updatedAt: new Date() })
+    .where(pendingIn(organizationId, invitationId))
+    .returning({ id: organizationInvitationsTable.id });
+  return Boolean(revoked);
+}
+
+/** Gives a pending invitation another 7 days, for sending it again. */
+export async function renewWorkspaceInvitation(
+  organizationId: string,
+  invitationId: string,
+): Promise<OrganizationInvitationRow | undefined> {
+  const [renewed] = await db
+    .update(organizationInvitationsTable)
+    .set({
+      expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+      updatedAt: new Date(),
+    })
+    .where(pendingIn(organizationId, invitationId))
+    .returning();
+  return renewed;
 }

@@ -53,3 +53,12 @@ export const YOUR_WORKSPACE_ROLE: Record<WorkspaceRole, string> = {
   member: 'You’re a member',
   guest: 'You’re a guest',
 };
+
+/** What each workspace role can do, for the legend on the Members page. */
+export const WORKSPACE_ROLE_HINTS: Record<WorkspaceRole, string> = {
+  owner: 'Everything, including members, roles and workspace settings.',
+  admin:
+    'Creates boards, invites people, changes roles and workspace settings.',
+  member: 'Works on every board in the workspace.',
+  guest: 'Sees only the boards they’re invited to.',
+};
