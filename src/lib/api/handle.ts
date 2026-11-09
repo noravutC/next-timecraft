@@ -10,7 +10,7 @@ import { DrizzleQueryError } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { ZodType } from 'zod';
 import { clientIp } from './client-ip';
-import { checkRateLimit, RateLimitConfig } from './rate-limit';
+import { checkRateLimit, peekRateLimit, RateLimitConfig } from './rate-limit';
 import {
   AppError,
   BadRequestError,
@@ -68,6 +68,17 @@ const enforceRateLimit = (
   consume(
     `${rateLimitIdentity(request, session)}:${toRouteKey(new URL(request.url).pathname)}`,
     config ?? DEFAULT_RATE_LIMIT,
+  );
+
+/** How much of a named budget the caller has used, for showing it. */
+export const quotaUsed = (
+  ctx: { request: Request; session: Session },
+  name: string,
+  config: RateLimitConfig,
+) =>
+  peekRateLimit(
+    `${rateLimitIdentity(ctx.request, ctx.session)}:quota:${name}`,
+    config,
   );
 
 /**
