@@ -94,3 +94,20 @@ export type DeletedColumn = {
 };
 
 export type BoardArchive = { tasks: ArchivedTask[]; columns: DeletedColumn[] };
+
+// ⌘K search
+export type TaskSearchHit = {
+  taskId: string;
+  title: string;
+  description: string | null;
+  projectId: string;
+  projectName: string;
+  coverImage: string | null;
+  settings: import('@/types/project-settings').ProjectSettings;
+  columnName: string;
+  columnColor: string;
+  /** where the words were found */
+  match: 'title' | 'description' | 'comment';
+  /** the words around the match, for descriptions and comments */
+  snippet: string | null;
+};
