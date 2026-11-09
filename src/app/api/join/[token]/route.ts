@@ -14,6 +14,8 @@ import {
 } from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
 import { isGuestSession } from '@/lib/guest';
+import { createNotification } from '@/db/uniq-query/notification/notification-utils';
+import { pushNotification } from '@/lib/pusher-server';
 import type { WorkspaceInvitationPreview } from '@/types';
 import { NextResponse } from 'next/server';
 
@@ -48,7 +50,7 @@ export const GET = createParamHandle<RouteParams>(
 // invited address is what allows it
 export const POST = createParamHandle<RouteParams>(
   {},
-  async ({ params, userId, session }) => {
+  async ({ params, userId, session, request }) => {
     if (isGuestSession(session)) {
       throw new ForbiddenError('Sign in with Google to join a workspace');
     }
@@ -87,6 +89,20 @@ export const POST = createParamHandle<RouteParams>(
 
     if (!(await acceptWorkspaceInvitation(invitation, userId))) {
       throw new BadRequestError('This invitation is no longer valid');
+    }
+    if (invitation.invitedBy && invitation.invitedBy !== userId) {
+      const workspace = await getWorkspaceSummary(invitation.organizationId);
+      const notification = await createNotification({
+        recipientId: invitation.invitedBy,
+        type: 'invite_accepted',
+        payload: {
+          organizationId: invitation.organizationId,
+          organizationName: workspace?.name ?? 'your workspace',
+          actorUserId: userId,
+          actorName: session.user?.name ?? 'Someone',
+        },
+      });
+      void pushNotification(request, notification);
     }
 
     return NextResponse.json(

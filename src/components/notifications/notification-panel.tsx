@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCheck } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, CheckCheck, Settings } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,16 @@ export const NotificationPanel = ({
           <CheckCheck className="size-3.5" />
           Mark all read
         </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          asChild
+          aria-label="Notification settings"
+        >
+          <Link href="/settings/notifications" onClick={onNavigate}>
+            <Settings className="size-3.75" />
+          </Link>
+        </Button>
       </div>
 
       <TabsList
@@ -103,6 +114,15 @@ export const NotificationPanel = ({
           />
         </TabsContent>
       ))}
+
+      <Link
+        href="/notifications"
+        onClick={onNavigate}
+        className="flex h-11 shrink-0 items-center justify-center gap-1.5 border-t border-line bg-surface text-sm font-medium text-ink hover:bg-surface-hover"
+      >
+        View all notifications
+        <ArrowRight className="size-3.5" />
+      </Link>
     </Tabs>
   );
 };

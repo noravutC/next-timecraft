@@ -27,6 +27,7 @@ import {
 import { AppError, BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { triggerExclusive } from "@/lib/pusher-server";
+import { filterByInAppPrefs } from "@/db/uniq-query/notification/notification-utils";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import type { NotificationPayload } from "@/types";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -216,11 +217,23 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           snippet: text.slice(0, 200),
         };
 
-        if (recipients.length > 0) {
+        // the bell only for people who want it; email is decided later
+        const mentionInbox = await filterByInAppPrefs(
+          recipients,
+          "comment_mention",
+          tx,
+        );
+        const replyInbox = await filterByInAppPrefs(
+          replyRecipients,
+          "comment_reply",
+          tx,
+        );
+
+        if (mentionInbox.length > 0) {
           notifications = await tx
             .insert(notificationsTable)
             .values(
-              recipients.map((uid) => ({
+              mentionInbox.map((uid) => ({
                 userId: uid,
                 type: "comment_mention" as const,
                 payload,
@@ -230,7 +243,9 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
               id: notificationsTable.id,
               userId: notificationsTable.userId,
             });
+        }
 
+        if (recipients.length > 0) {
           await tx.insert(jobQueueTable).values(
             recipients.map((uid) => ({
               jobType: "send_notification" as const,
@@ -246,11 +261,11 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           );
         }
 
-        if (replyRecipients.length > 0) {
+        if (replyInbox.length > 0) {
           const replyRows = await tx
             .insert(notificationsTable)
             .values(
-              replyRecipients.map((uid) => ({
+              replyInbox.map((uid) => ({
                 userId: uid,
                 type: "comment_reply" as const,
                 payload,

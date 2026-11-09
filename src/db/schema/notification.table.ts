@@ -16,6 +16,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "workspace_invite",
   "member_removed",
   "task_assigned",
+  "role_changed",
+  "invite_accepted",
 ]);
 
 export type CommentNotificationPayload = {
@@ -63,12 +65,32 @@ export type TaskAssignedNotificationPayload = {
   actorName: string;
 };
 
+export type RoleChangedNotificationPayload = {
+  projectId: string;
+  projectName: string;
+  actorUserId: string;
+  actorName: string;
+  role: string;
+};
+
+// someone joined through an invitation you sent: to a board or a workspace
+export type InviteAcceptedNotificationPayload = {
+  projectId?: string;
+  projectName?: string;
+  organizationId?: string;
+  organizationName?: string;
+  actorUserId: string;
+  actorName: string;
+};
+
 export type NotificationPayload =
   | CommentNotificationPayload
   | BoardInviteNotificationPayload
   | WorkspaceInviteNotificationPayload
   | MemberRemovedNotificationPayload
-  | TaskAssignedNotificationPayload;
+  | TaskAssignedNotificationPayload
+  | RoleChangedNotificationPayload
+  | InviteAcceptedNotificationPayload;
 
 export const notificationsTable = pgTable(
   "notifications",

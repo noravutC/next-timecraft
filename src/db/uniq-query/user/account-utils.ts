@@ -16,6 +16,12 @@ import {
 } from '@/db/schema';
 import { getAttachmentStoragePathsByProjectIds } from '@/db/uniq-query/comment/comment-utils';
 import { pickHeir } from '@/helper/utils/heir';
+import {
+  mergePrefs,
+  withPrefDefaults,
+  type NotificationPrefs,
+  type StoredNotificationPrefs,
+} from '@/helper/utils/notification-prefs';
 import { FORMER_MEMBER } from '@/helper/utils/person-name';
 import type { AccountDeletionPlan, DeletionChoice } from '@/types';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
@@ -264,4 +270,34 @@ export async function updateDisplayName(userId: string, fullName: string) {
     .where(and(eq(usersTable.id, userId), isNull(usersTable.deletedAt)))
     .returning({ id: usersTable.id, fullName: usersTable.fullName });
   return user;
+}
+
+/** Saved notification settings, with the defaults filled in. */
+export async function getNotificationPrefs(
+  userId: string,
+): Promise<NotificationPrefs> {
+  const [row] = await db
+    .select({ prefs: usersTable.notificationPrefs })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+  return withPrefDefaults(row?.prefs);
+}
+
+/** Merges a change into the saved settings and returns the result. */
+export async function updateNotificationPrefs(
+  userId: string,
+  patch: StoredNotificationPrefs,
+): Promise<NotificationPrefs> {
+  const [row] = await db
+    .select({ prefs: usersTable.notificationPrefs })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+  const merged = mergePrefs(row?.prefs ?? {}, patch);
+  await db
+    .update(usersTable)
+    .set({ notificationPrefs: merged, updatedAt: new Date() })
+    .where(eq(usersTable.id, userId));
+  return withPrefDefaults(merged);
 }

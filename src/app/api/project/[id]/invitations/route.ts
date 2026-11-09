@@ -23,7 +23,7 @@ import { isGuestEmail, isGuestSession } from '@/lib/guest';
 import { countInvitesSentSince } from '@/db/uniq-query/quota/daily-usage';
 import { parseId } from '@/lib/api/params';
 import { sendBoardInviteEmail } from '@/lib/email/send-board-invite';
-import { triggerExclusive } from '@/lib/pusher-server';
+import { pushNotification } from '@/lib/pusher-server';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import {
   inviteMemberSchema,
@@ -100,12 +100,7 @@ export const POST = createParamHandle<RouteParams, InviteMemberBody>(
           token: invitation.token,
         },
       });
-      triggerExclusive(
-        request,
-        `user-${inviteeId}`,
-        'notification-added',
-        notification,
-      ).catch((e) => console.error('Pusher notif failed:', e));
+      void pushNotification(request, notification);
     }
 
     // helper จัดการ error/ไม่มี key เอง — ไม่ทำให้ invite ล้ม

@@ -1,9 +1,13 @@
 import type {
   BoardInviteNotificationPayload,
   CommentNotificationPayload,
+  InviteAcceptedNotificationPayload,
   Notification,
+  RoleChangedNotificationPayload,
   WorkspaceInviteNotificationPayload,
 } from '@/types';
+import { ROLE_LABELS } from '@/lib/rbac/role-labels';
+import type { ProjectRole } from '@/lib/rbac/permissions';
 import { formatDateShort, formatRelativePast } from './date-format';
 
 export type NotificationTab = 'all' | 'unread' | 'mentions';
@@ -65,4 +69,133 @@ export const formatNotificationTime = (
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days} days ago`;
   return formatDateShort(date);
+};
+
+/** The chips on the notifications page, and the types each one shows. */
+export const NOTIFICATION_KINDS = {
+  all: null,
+  unread: null,
+  mentions: ['comment_mention'],
+  assigned: ['task_assigned'],
+  invites: ['board_invite', 'workspace_invite'],
+} as const satisfies Record<string, readonly Notification['type'][] | null>;
+
+export type NotificationKind = keyof typeof NOTIFICATION_KINDS;
+
+/** Chip counts from per-type totals: All and Unread count everything. */
+export const kindCounts = (
+  rows: { type: Notification['type']; unread: number; total: number }[],
+): Record<NotificationKind, number> => {
+  const totalOf = (types: readonly Notification['type'][]) =>
+    rows
+      .filter((r) => types.includes(r.type))
+      .reduce((sum, r) => sum + r.total, 0);
+  return {
+    all: rows.reduce((sum, r) => sum + r.total, 0),
+    unread: rows.reduce((sum, r) => sum + r.unread, 0),
+    mentions: totalOf(NOTIFICATION_KINDS.mentions),
+    assigned: totalOf(NOTIFICATION_KINDS.assigned),
+    invites: totalOf(NOTIFICATION_KINDS.invites),
+  };
+};
+
+/**
+ * The sentence after the actor's name, in three parts: "mentioned you on"
+ * **Migrate sign-in** "", or "made you" **an Admin** "on Mobile App v2".
+ */
+export const notificationParts = (
+  n: Pick<Notification, 'type' | 'payload'>,
+): { before: string; strong: string; after: string } => {
+  switch (n.type) {
+    case 'comment_mention':
+      return {
+        before: 'mentioned you on',
+        strong: notificationTarget(n),
+        after: '',
+      };
+    case 'comment_reply':
+      return {
+        before: 'commented on',
+        strong: notificationTarget(n),
+        after: '',
+      };
+    case 'task_assigned':
+      return {
+        before: 'assigned you to',
+        strong: notificationTarget(n),
+        after: '',
+      };
+    case 'board_invite':
+    case 'workspace_invite':
+      return {
+        before: 'invited you to',
+        strong: notificationTarget(n),
+        after: '',
+      };
+    case 'member_removed':
+      return {
+        before: 'removed you from',
+        strong: notificationTarget(n),
+        after: '',
+      };
+    case 'role_changed': {
+      const p = n.payload as RoleChangedNotificationPayload;
+      const label = ROLE_LABELS[p.role as ProjectRole] ?? p.role;
+      const article = /^[aeiou]/i.test(label) ? 'an' : 'a';
+      return {
+        before: 'made you',
+        strong: `${article} ${label}`,
+        after: `on ${p.projectName}`,
+      };
+    }
+    case 'invite_accepted': {
+      const p = n.payload as InviteAcceptedNotificationPayload;
+      return {
+        before: 'accepted your invitation to',
+        strong: p.projectName ?? p.organizationName ?? 'your workspace',
+        after: '',
+      };
+    }
+  }
+};
+
+/** The board a notification is about, for its chip; null for workspaces. */
+export const notificationBoard = (
+  n: Pick<Notification, 'payload'>,
+): { id: string; name: string } | null => {
+  const p = n.payload as { projectId?: string; projectName?: string };
+  return p.projectId && p.projectName
+    ? { id: p.projectId, name: p.projectName }
+    : null;
+};
+
+export type NotificationDay =
+  | 'Today'
+  | 'Yesterday'
+  | 'Earlier this week'
+  | 'Older';
+
+/** Today, Yesterday, Earlier this week (the last 7 days), Older. */
+export const groupNotificationsByDay = <T extends { createdAt: Date | string }>(
+  items: T[],
+  now: Date = new Date(),
+): { day: NotificationDay; items: T[] }[] => {
+  const startOf = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const today = startOf(now);
+  const dayOf = (createdAt: Date | string): NotificationDay => {
+    const diff = (today - startOf(new Date(createdAt))) / MS_PER_DAY;
+    if (diff <= 0) return 'Today';
+    if (diff <= 1) return 'Yesterday';
+    if (diff < 7) return 'Earlier this week';
+    return 'Older';
+  };
+  const groups: { day: NotificationDay; items: T[] }[] = [];
+  for (const item of items) {
+    const day = dayOf(item.createdAt);
+    const last = groups.at(-1);
+    if (last?.day === day) last.items.push(item);
+    else groups.push({ day, items: [item] });
+  }
+  return groups;
 };

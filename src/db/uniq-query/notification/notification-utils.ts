@@ -1,7 +1,11 @@
 import { db } from "@/db";
-import { notificationsTable } from "@/db/schema";
+import { notificationsTable, usersTable } from "@/db/schema";
+import {
+  wantsInApp,
+  withPrefDefaults,
+} from "@/helper/utils/notification-prefs";
 import type { Notification, NotificationPayload } from "@/types";
-import { and, count, desc, eq, inArray, isNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 
 type CursorParts = { createdAt: Date; id: string };
 
@@ -23,11 +27,18 @@ export function decodeNotifCursor(raw: string | null): CursorParts | null {
   }
 }
 
+const onBoard = (projectId: string) =>
+  sql`${notificationsTable.payload}->>'projectId' = ${projectId}`;
+
 export async function fetchNotificationsPage(args: {
   userId: string;
   cursor: string | null;
   limit: number;
   unreadOnly: boolean;
+  /** only these kinds (the page's chips) */
+  types?: Notification["type"][];
+  /** only about this board */
+  projectId?: string | null;
 }): Promise<{
   items: Notification[];
   nextCursor: string | null;
@@ -38,6 +49,8 @@ export async function fetchNotificationsPage(args: {
 
   const conds = [eq(notificationsTable.userId, userId)];
   if (unreadOnly) conds.push(isNull(notificationsTable.readAt));
+  if (args.types) conds.push(inArray(notificationsTable.type, args.types));
+  if (args.projectId) conds.push(onBoard(args.projectId));
   if (cur) conds.push(lt(notificationsTable.createdAt, cur.createdAt));
 
   const rows = await db
@@ -71,20 +84,37 @@ export async function countUnreadNotifications(userId: string): Promise<number> 
   return Number(value);
 }
 
+/** Of these people, the ones who want this kind of notification in the app. */
+export async function filterByInAppPrefs(
+  userIds: string[],
+  type: Notification["type"],
+  executor: Pick<typeof db, "select"> = db,
+): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  const rows = await executor
+    .select({ id: usersTable.id, prefs: usersTable.notificationPrefs })
+    .from(usersTable)
+    .where(inArray(usersTable.id, userIds));
+  const wanting = new Set(
+    rows
+      .filter((row) => wantsInApp(withPrefDefaults(row.prefs), type))
+      .map((row) => row.id),
+  );
+  return userIds.filter((id) => wanting.has(id));
+}
+
+/** Null when they turned this kind off in Settings › Notifications. */
 export async function createNotification(args: {
   recipientId: string;
   type: Notification["type"];
   payload: NotificationPayload;
-}): Promise<Notification> {
-  const [notification] = await db
-    .insert(notificationsTable)
-    .values({
-      userId: args.recipientId,
-      type: args.type,
-      payload: args.payload,
-    })
-    .returning();
-  return notification;
+}): Promise<Notification | null> {
+  const [created] = await createNotifications({
+    recipientIds: [args.recipientId],
+    type: args.type,
+    payload: args.payload,
+  });
+  return created ?? null;
 }
 
 export async function createNotifications(args: {
@@ -92,11 +122,12 @@ export async function createNotifications(args: {
   type: Notification["type"];
   payload: NotificationPayload;
 }): Promise<Notification[]> {
-  if (args.recipientIds.length === 0) return [];
+  const recipients = await filterByInAppPrefs(args.recipientIds, args.type);
+  if (recipients.length === 0) return [];
   return db
     .insert(notificationsTable)
     .values(
-      args.recipientIds.map((userId) => ({
+      recipients.map((userId) => ({
         userId,
         type: args.type,
         payload: args.payload,
@@ -119,6 +150,69 @@ export async function markNotificationsRead(
         eq(notificationsTable.userId, userId),
         isNull(notificationsTable.readAt),
         ids === "all" ? undefined : inArray(notificationsTable.id, ids),
+      ),
+    )
+    .returning({ id: notificationsTable.id });
+  return rows.length;
+}
+
+/** How many of each kind the chips on the notifications page show. */
+export async function countNotificationKinds(
+  userId: string,
+  projectId: string | null,
+): Promise<{ type: Notification["type"]; unread: number; total: number }[]> {
+  const rows = await db
+    .select({
+      type: notificationsTable.type,
+      total: count(),
+      unread: sql<number>`count(*) filter (where ${notificationsTable.readAt} is null)`,
+    })
+    .from(notificationsTable)
+    .where(
+      and(
+        eq(notificationsTable.userId, userId),
+        projectId ? onBoard(projectId) : undefined,
+      ),
+    )
+    .groupBy(notificationsTable.type);
+  return rows.map((r) => ({
+    type: r.type,
+    total: Number(r.total),
+    unread: Number(r.unread),
+  }));
+}
+
+/** Puts the user's own notifications back to unread. */
+export async function markNotificationsUnread(
+  userId: string,
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const rows = await db
+    .update(notificationsTable)
+    .set({ readAt: null })
+    .where(
+      and(
+        eq(notificationsTable.userId, userId),
+        inArray(notificationsTable.id, ids),
+      ),
+    )
+    .returning({ id: notificationsTable.id });
+  return rows.length;
+}
+
+/** Dismisses the user's own notifications. */
+export async function deleteNotifications(
+  userId: string,
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const rows = await db
+    .delete(notificationsTable)
+    .where(
+      and(
+        eq(notificationsTable.userId, userId),
+        inArray(notificationsTable.id, ids),
       ),
     )
     .returning({ id: notificationsTable.id });

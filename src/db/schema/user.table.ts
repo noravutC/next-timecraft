@@ -1,10 +1,13 @@
+import { sql } from "drizzle-orm";
 import {
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { StoredNotificationPrefs } from "@/helper/utils/notification-prefs";
 
 export const usersTable = pgTable(
   "users",
@@ -18,6 +21,11 @@ export const usersTable = pgTable(
     // set when the account is deleted: the row stays, scrubbed, so comments
     // and history keep an author shown as "Former member"
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // what reaches them, and where: see helper/utils/notification-prefs
+    notificationPrefs: jsonb("notification_prefs")
+      .$type<StoredNotificationPrefs>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
