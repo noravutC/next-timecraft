@@ -23,9 +23,10 @@ export const ensureBoard = async (page: Page) => {
 };
 
 /**
- * Delete a card through its menu and wait for the server to confirm. The card
- * hides optimistically, so without waiting the test can end (and close the
- * page) before the PATCH lands, leaving e2e cards on the shared guest board.
+ * Clear a card away through its menu (Archive task) and wait for the server
+ * to confirm. The card hides optimistically, so without waiting the test can
+ * end (and close the page) before the PATCH lands, leaving e2e cards on the
+ * shared guest board.
  */
 export const deleteCard = async (page: Page, card: Locator) => {
   await card.hover();
@@ -37,7 +38,7 @@ export const deleteCard = async (page: Page, card: Locator) => {
       r.ok(),
     { timeout: 15_000 },
   );
-  await page.getByRole('menuitem', { name: /delete task/i }).click();
+  await page.getByRole('menuitem', { name: /archive task/i }).click();
   await deleted;
   await expect(card).not.toBeVisible({ timeout: 15_000 });
 };
