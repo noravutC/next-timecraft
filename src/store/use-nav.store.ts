@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 // dialog ของบอร์ด (switch/create/settings) — อยู่ใน store เพราะเปิดได้
 // จากหลายที่ (ชื่อบอร์ดบน header, แถบเครื่องมือ, ⌘K)
-export type BoardDialog = 'switch' | 'create' | 'settings' | null;
+export type BoardDialog = 'switch' | 'create' | 'settings' | 'shortcuts' | null;
 
 export type BoardSettingsTab =
   | 'general'
