@@ -43,7 +43,7 @@ export function StepCreateLogo({ model, actions }: StepCreateLogoProps) {
         className="relative flex cursor-pointer flex-col items-center gap-2.5 rounded-popover border border-dashed border-line-strong px-4 py-8 text-center transition-colors hover:border-neutral-400 hover:bg-surface"
       >
         {model.logoPreview ? (
-          // eslint-disable-next-line @next/next/no-img-element -- local blob preview
+          // eslint-disable-next-line @next/next/no-img-element -- local data URL preview
           <img
             src={model.logoPreview}
             alt="Logo preview"

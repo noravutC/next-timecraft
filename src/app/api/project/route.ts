@@ -81,11 +81,7 @@ export const POST = createHandle<ProjectRequestBody>(
 
       return NextResponse.json(
         {
-          created: {
-            ...createdProject,
-            members: [{ userId, role: "owner", joinedAt: new Date() }],
-            timestamp: Date.now(),
-          },
+          created: { ...createdProject, timestamp: Date.now() },
           message: "Create project success",
           status: 201,
         },

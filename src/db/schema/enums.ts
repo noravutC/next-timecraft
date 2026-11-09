@@ -14,6 +14,13 @@ export const projectMembershipRoleEnum = pgEnum("project_member_role", [
   "viewer",
 ]);
 
+// direct = invited to the board itself; workspace = has it because they're a
+// member of the board's workspace (added and removed with that membership)
+export const projectMemberSourceEnum = pgEnum("project_member_source", [
+  "direct",
+  "workspace",
+]);
+
 export const taskPriorityLevelEnum = pgEnum("task_priority", [
   "low",
   "medium",

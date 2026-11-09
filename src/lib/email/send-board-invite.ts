@@ -1,10 +1,5 @@
-import { render } from '@react-email/components';
-import { Resend } from 'resend';
-import { logger } from '@/lib/logger';
+import { appUrl, sendEmail } from './send-email';
 import { BoardInviteEmail } from './templates/board-invite';
-
-export const appUrl = () =>
-  process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
 
 // ไม่ throw เด็ดขาด — อีเมลเป็นแค่ท่อส่งลิงก์ ถ้าส่งไม่ได้ invite ยังใช้งานได้
 // ผ่าน copy invite link ใน dialog
@@ -15,37 +10,15 @@ export async function sendBoardInviteEmail(input: {
   roleLabel: string;
   token: string;
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    logger.warn(
-      { to: input.to },
-      'RESEND_API_KEY not set — invite email skipped, share the invite link from the dialog instead',
-    );
-    return;
-  }
-
-  try {
-    const acceptUrl = `${appUrl()}/invite/${input.token}`;
-    const html = await render(
-      BoardInviteEmail({
-        inviterName: input.inviterName,
-        boardName: input.boardName,
-        roleLabel: input.roleLabel,
-        acceptUrl,
-      }),
-    );
-
-    const resend = new Resend(apiKey);
-    await resend.emails.send({
-      // Resend rejects sending from a plain gmail address; fall back to its
-      // shared test sender (only delivers to your own Resend account email).
-      // Set EMAIL_FROM to a verified-domain address to send to anyone.
-      from: process.env.EMAIL_FROM ?? 'onboarding@resend.dev',
-      to: input.to,
-      subject: `${input.inviterName} invited you to "${input.boardName}" on TimeCraft`,
-      html,
-    });
-  } catch (err) {
-    logger.error({ err, to: input.to }, 'Failed to send board invite email');
-  }
+  await sendEmail({
+    to: input.to,
+    subject: `${input.inviterName} invited you to "${input.boardName}" on TimeCraft`,
+    email: BoardInviteEmail({
+      inviterName: input.inviterName,
+      boardName: input.boardName,
+      roleLabel: input.roleLabel,
+      acceptUrl: `${appUrl()}/invite/${input.token}`,
+    }),
+    kind: 'board-invite',
+  });
 }

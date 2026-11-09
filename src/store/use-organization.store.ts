@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import { CreateOrganizationPayload, OrganizationCache } from "@/types";
+import {
+  CreateOrganizationPayload,
+  InviteToWorkspacePayload,
+  InviteToWorkspaceResult,
+  OrganizationCache,
+} from "@/types";
 import { LoaderStatus } from "@/types/global/types";
 import { organizationServices } from "@/services/organization.service";
 
@@ -12,6 +17,10 @@ type OrganizationStore = {
   createOrganization: (
     payload: CreateOrganizationPayload,
   ) => Promise<OrganizationCache | null>;
+  inviteToWorkspace: (
+    organizationId: string,
+    payload: InviteToWorkspacePayload,
+  ) => Promise<InviteToWorkspaceResult>;
 };
 
 // one request at a time per org: header, switcher and first-board page all
@@ -63,5 +72,14 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
       set({ status: "error" });
       throw error;
     }
+  },
+  // leaves `status` alone: it tracks loading the workspace, and an "error"
+  // there would stop the header from ever loading its name
+  inviteToWorkspace: async (organizationId, payload) => {
+    const response = await organizationServices.inviteToWorkspace(
+      organizationId,
+      payload,
+    );
+    return response.created ?? { invited: [], skipped: [] };
   },
 }));

@@ -85,6 +85,20 @@
       "when": 1793972882591,
       "tag": "0012_comment_file_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793973308583,
+      "tag": "0013_workspace_logo",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793973704975,
+      "tag": "0014_workspace_invitations",
+      "breakpoints": true
     }
   ]
 }

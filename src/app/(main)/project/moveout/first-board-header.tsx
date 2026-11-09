@@ -2,16 +2,17 @@
 
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
+import { WorkspaceLogo } from '@/components/workspace/workspace-logo';
 
 /** Slim header for an empty workspace: logo / workspace, account menu. */
 export const FirstBoardHeader = ({
-  workspaceName,
+  workspace,
 }: {
-  workspaceName: string | null;
+  workspace: { name: string; logo: string | null } | null;
 }) => (
   <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line px-5">
     <Logo size={24} textSize="md" />
-    {workspaceName && (
+    {workspace && (
       <>
         <svg
           viewBox="0 0 24 24"
@@ -20,8 +21,11 @@ export const FirstBoardHeader = ({
         >
           <path d="M15 4 9 20" />
         </svg>
-        <span className="truncate text-base font-medium text-ink-muted">
-          {workspaceName}
+        <span className="flex min-w-0 items-center gap-2">
+          <WorkspaceLogo workspace={workspace} />
+          <span className="truncate text-base font-medium text-ink-muted">
+            {workspace.name}
+          </span>
         </span>
       </>
     )}

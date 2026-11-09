@@ -7,7 +7,8 @@ import {
 } from "@/db/schema";
 import { authorize } from "@/lib/rbac/authorize";
 import { Permission } from "@/lib/rbac/permissions";
-import type { Member, NewProjectRow, ProjectRow } from "@/types";
+import type { Member, NewProjectRow, Project, ProjectRow } from "@/types";
+import { shareBoardWithWorkspace } from "@/db/uniq-query/organization/organization-utils";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 /**
@@ -104,18 +105,33 @@ export async function getOrgRole(
 }
 
 // สร้างบอร์ด + สมัครผู้สร้างเป็น owner member ใน transaction เดียว
+// แล้วให้สมาชิก workspace ทุกคนเข้าบอร์ดใหม่ได้ด้วย
 export async function createProjectWithOwner(
   values: NewProjectRow & { ownerId: string },
-): Promise<ProjectRow> {
+): Promise<Project> {
   return db.transaction(async (tx) => {
     const [project] = await tx.insert(projectsTable).values(values).returning();
-    await tx.insert(projectMembersTable).values({
-      projectId: project.id,
-      userId: values.ownerId,
-      role: "owner",
-      joinedAt: new Date(),
-    });
-    return project;
+    const [owner] = await tx
+      .insert(projectMembersTable)
+      .values({
+        projectId: project.id,
+        userId: values.ownerId,
+        role: "owner",
+        joinedAt: new Date(),
+      })
+      .returning({
+        userId: projectMembersTable.userId,
+        role: projectMembersTable.role,
+        joinedAt: projectMembersTable.joinedAt,
+      });
+    const shared = values.organizationId
+      ? await shareBoardWithWorkspace(tx, {
+          projectId: project.id,
+          organizationId: values.organizationId,
+          creatorId: values.ownerId,
+        })
+      : [];
+    return { ...project, members: [owner, ...shared] };
   });
 }
 

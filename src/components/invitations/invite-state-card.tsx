@@ -1,21 +1,33 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { CalendarX, Mail, MailQuestion, UserPlus } from 'lucide-react';
 import { GoogleIcon } from '@/components/auth/google-icon';
-import { ProjectAvatar } from '@/components/project/project-avatar';
 import { Button } from '@/components/ui/button';
 import type { InviteView } from '@/helper/utils/invite-view';
-import { ROLE_LABELS } from '@/lib/rbac/role-labels';
-import type { InvitationPreview } from '@/types';
 import { InviteCard } from './invite-card';
-import { ROLE_JOIN_COPY } from './invite-copy';
 import { InviteTile } from './invite-tile';
 
 type CardView = Exclude<InviteView, 'checking-session' | 'loading-preview'>;
 
+/** What the invitation is for: a board or a workspace. */
+export interface InviteTarget {
+  kind: 'board' | 'workspace';
+  /** null until the preview has loaded */
+  name: string | null;
+  /** 44px tile for the board or workspace */
+  tile: ReactNode;
+  /** the role offered and what it allows */
+  roleLine: ReactNode;
+  /** the button after joining, e.g. "Go to board" */
+  openLabel: string;
+}
+
 interface InviteStateCardProps {
   view: CardView;
-  preview: InvitationPreview | null;
+  target: InviteTarget;
+  /** the address the invitation was sent to */
+  invitedEmail: string | null;
   sessionEmail: string;
   accepting: boolean;
   onAccept: () => void;
@@ -27,7 +39,8 @@ interface InviteStateCardProps {
 /** The one card for the current invitation state. */
 export const InviteStateCard = ({
   view,
-  preview,
+  target,
+  invitedEmail,
   sessionEmail,
   accepting,
   onAccept,
@@ -35,7 +48,7 @@ export const InviteStateCard = ({
   onSwitchAccount,
   onGoToBoards,
 }: InviteStateCardProps) => {
-  const boardName = preview?.projectName ?? 'this board';
+  const name = target.name ?? `this ${target.kind}`;
   const goToBoards = (
     <Button
       variant="outline"
@@ -45,14 +58,6 @@ export const InviteStateCard = ({
     >
       Go to my boards
     </Button>
-  );
-  const boardTile = (
-    <ProjectAvatar
-      project={{ name: boardName, coverImage: null, settings: null }}
-      size="size-11"
-      rounded="rounded-popover"
-      textSize="text-lg"
-    />
   );
 
   switch (view) {
@@ -64,7 +69,7 @@ export const InviteStateCard = ({
               <UserPlus />
             </InviteTile>
           }
-          title="You’ve been invited to a board"
+          title={`You’ve been invited to a ${target.kind}`}
           action={
             <Button
               variant="outline"
@@ -92,8 +97,8 @@ export const InviteStateCard = ({
           title="Invitation not found"
           action={goToBoards}
         >
-          Check the link in your email, or ask a board admin to send a new
-          invitation.
+          Check the link in your email, or ask a {target.kind} admin to send a
+          new invitation.
         </InviteCard>
       );
 
@@ -117,7 +122,7 @@ export const InviteStateCard = ({
             </Button>
           }
         >
-          This invitation was sent to <strong>{preview?.email}</strong>, but
+          This invitation was sent to <strong>{invitedEmail}</strong>, but
           you’re signed in as <strong>{sessionEmail}</strong>.
         </InviteCard>
       );
@@ -138,7 +143,7 @@ export const InviteStateCard = ({
           }
           action={goToBoards}
         >
-          Ask a board admin of <strong>{boardName}</strong> to send you a new
+          Ask a {target.kind} admin of <strong>{name}</strong> to send you a new
           invitation.
         </InviteCard>
       );
@@ -146,11 +151,11 @@ export const InviteStateCard = ({
     case 'accepted':
       return (
         <InviteCard
-          tile={boardTile}
-          title={`Join ${boardName}`}
+          tile={target.tile}
+          title={`Join ${name}`}
           action={
             <Button size="lg" onClick={onGoToBoards} className="w-full">
-              Go to board
+              {target.openLabel}
             </Button>
           }
         >
@@ -158,12 +163,11 @@ export const InviteStateCard = ({
         </InviteCard>
       );
 
-    case 'valid': {
-      const role = preview?.role ?? 'viewer';
+    case 'valid':
       return (
         <InviteCard
-          tile={boardTile}
-          title={`Join ${boardName}`}
+          tile={target.tile}
+          title={`Join ${name}`}
           action={
             <Button
               size="lg"
@@ -175,10 +179,8 @@ export const InviteStateCard = ({
             </Button>
           }
         >
-          You’ve been invited to this board as {ROLE_JOIN_COPY[role].article}{' '}
-          <strong>{ROLE_LABELS[role]}</strong>. {ROLE_JOIN_COPY[role].hint}
+          {target.roleLine}
         </InviteCard>
       );
-    }
   }
 };

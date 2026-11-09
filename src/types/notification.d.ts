@@ -6,6 +6,7 @@ export type {
   MemberRemovedNotificationPayload,
   NotificationPayload,
   TaskAssignedNotificationPayload,
+  WorkspaceInviteNotificationPayload,
 } from "@/db/schema/notification.table";
 
 export type NotificationRow = InferSelectModel<typeof notificationsTable>;

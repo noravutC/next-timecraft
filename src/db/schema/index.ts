@@ -5,6 +5,7 @@ export * from "./membership.table";
 export * from "./project.table";
 export * from "./project-member.table";
 export * from "./project-invitation.table";
+export * from "./organization-invitation.table";
 export * from "./column.table";
 export * from "./task.table";
 export * from "./task-assignee.table";

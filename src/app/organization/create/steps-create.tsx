@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { CreateOrganizationProgress } from "./components/create-organization-progress";
 import { StepCreateInvite } from "./components/step-create-invite";
 import { StepCreateLogo } from "./components/step-create-logo";
@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { appendEmail } from "@/helper/utils/email-list";
+import { useWorkspaceLogoPicker } from "@/components/workspace/use-workspace-logo-picker";
+import { invitesSummary } from "@/helper/utils/invite-result";
 
 const STEP_LABELS = ["Name", "Logo", "Invite"];
 export const slideVariants = {
@@ -23,26 +25,15 @@ export const slideVariants = {
 export const CreateOrganization = () => {
   const router = useRouter();
   const { update } = useSession();
-  const { createOrganization } = useOrganizationStore();
+  const { createOrganization, inviteToWorkspace } = useOrganizationStore();
 
   const [step, setStep] = useState(0);
   const [orgName, setOrgName] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [emails, setEmails] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [preparing, setPreparing] = useState(false);
 
-  // object URL for the picked logo; revoked when the file changes or on unmount
-  const logoPreview = useMemo(
-    () => (logoFile ? URL.createObjectURL(logoFile) : null),
-    [logoFile],
-  );
-  useEffect(
-    () => () => {
-      if (logoPreview) URL.revokeObjectURL(logoPreview);
-    },
-    [logoPreview],
-  );
+  const logo = useWorkspaceLogoPicker();
 
   const addEmail = () => {
     const nextEmails = appendEmail(emails, emailInput);
@@ -67,16 +58,32 @@ export const CreateOrganization = () => {
       const createdOrganization = await createOrganization({
         name,
         description: null,
+        logo: logo.logo,
       });
       if (!createdOrganization) {
         toast.error("Unable to create workspace");
         return;
       }
 
+      // the workspace exists either way: invitations are best effort
+      let invites: string | null = null;
+      if (emails.length > 0) {
+        try {
+          invites = invitesSummary(
+            await inviteToWorkspace(createdOrganization.id, {
+              emails,
+              role: "member",
+            }),
+          );
+        } catch {
+          toast.error("The workspace is ready, but the invitations didn’t go out");
+        }
+      }
+
       // Payload is ignored server-side: update() just makes the jwt callback
       // re-read org/role from the DB (no argument would only GET the session).
       await update({});
-      toast.success("Workspace created");
+      toast.success("Workspace created", { description: invites ?? undefined });
       router.replace("/project");
     } catch (error) {
       console.error("Failed to create organization:", error);
@@ -110,13 +117,13 @@ export const CreateOrganization = () => {
 
             {step === 1 && (
               <StepCreateLogo
-                model={{ logoPreview }}
+                model={{ logoPreview: logo.logo }}
                 actions={{
-                  onFileChange: setLogoFile,
+                  onFileChange: (file) => void logo.pick(file),
                   onBack: () => setStep(0),
                   onNext: () => setStep(2),
                   onSkip: () => {
-                    setLogoFile(null);
+                    logo.clear();
                     setStep(2);
                   },
                 }}

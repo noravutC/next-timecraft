@@ -3,13 +3,14 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useOrganizationStore } from '@/store/use-organization.store';
+import type { OrganizationCache } from '@/types';
 
 /**
- * ชื่อ workspace (organization) ของคนที่ล็อกอินอยู่ — โหลดครั้งเดียวจาก
+ * workspace (organization) ของคนที่ล็อกอินอยู่ — โหลดครั้งเดียวจาก
  * organizationId ใน session แล้วเก็บใน useOrganizationStore
  * คืน null ระหว่างโหลดหรือโหลดไม่สำเร็จ (ห้ามเดาชื่อ)
  */
-export function useWorkspaceName(): string | null {
+export function useWorkspace(): OrganizationCache | null {
   const { data: session } = useSession();
   const orgId = session?.user?.organizationId ?? null;
   const organization = useOrganizationStore((s) => s.organization);
@@ -26,5 +27,10 @@ export function useWorkspaceName(): string | null {
     fetchUserOrganization(orgId).catch(() => {});
   }, [orgId, loaded, status, fetchUserOrganization]);
 
-  return loaded ? organization.name : null;
+  return loaded ? organization : null;
+}
+
+/** ชื่อ workspace หรือ null ระหว่างโหลด */
+export function useWorkspaceName(): string | null {
+  return useWorkspace()?.name ?? null;
 }
