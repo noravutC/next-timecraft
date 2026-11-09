@@ -144,3 +144,7 @@ export const calendarRangeSchema = z
   );
 
 export type CalendarRangeBody = z.infer<typeof calendarRangeSchema>;
+
+export const addDependencySchema = z.object({ dependsOnTaskId: z.guid() });
+
+export type AddDependencyBody = z.infer<typeof addDependencySchema>;

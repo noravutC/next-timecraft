@@ -61,6 +61,12 @@ export interface PayloadMoveTask {
   columnDestination: string;
 }
 
+/** A blocker as a card needs it: where it sits, to tell if it's finished. */
+export type BlockerRef = { id: string; columnId: string; archived: boolean };
+
+/** A linked task as the task sheet lists it. */
+export type DependencyTask = BlockerRef & { title: string };
+
 /** Where a due date falls, as the board's Due date filter groups them. */
 export type DueBucket = 'overdue' | 'this_week' | 'later' | 'none';
 

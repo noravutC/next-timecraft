@@ -15,6 +15,7 @@ import {
   ProjectRow,
   TaskCache,
   TaskFilter,
+  BlockerRef,
 } from "@/types";
 import type { ProjectSettings } from "@/types/project-settings";
 import type { TagRenames } from "@/helper/utils/tag-rename";
@@ -38,6 +39,8 @@ export type CalendarData = {
   undated: TaskCache[];
   /** all undated tasks; `undated` holds the first ones */
   undatedTotal: number;
+  /** blockers of the tasks that have any */
+  blockers?: Record<string, BlockerRef[]>;
 };
 
 export type UpdateProjectPayload = {

@@ -10,6 +10,8 @@ import {
   BoardArchive,
   TaskCache,
   TaskFilter,
+  BlockerRef,
+  DependencyTask,
   DueBounds,
   DueBucket,
   TaskWithBoard,
@@ -37,6 +39,36 @@ export type TaskAssigneeLite = TaskAssigneeUser;
 class TaskService {
   private client = apiClient;
 
+  /** What blocks a task and what it blocks. */
+  async getDependencies(
+    taskId: string,
+  ): Promise<{ blockedBy: DependencyTask[]; blocking: DependencyTask[] }> {
+    return this.client
+      .get(`/task/${taskId}/dependencies`)
+      .then((response) => response.data.data)
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to load blockers');
+      });
+  }
+
+  /** Adds or removes one blocker; answers with the task's blockers now. */
+  async setBlocker(
+    taskId: string,
+    blockerId: string,
+    on: boolean,
+  ): Promise<BlockerRef[]> {
+    const request = on
+      ? this.client.post(`/task/${taskId}/dependencies`, {
+          dependsOnTaskId: blockerId,
+        })
+      : this.client.delete(`/task/${taskId}/dependencies/${blockerId}`);
+    return request
+      .then((response) => response.data.data as BlockerRef[])
+      .catch((error) => {
+        throw error?.response?.data || new Error('Failed to update blockers');
+      });
+  }
+
   /** How many tasks each Due date option and "Assigned to me" would show. */
   async getFilterCounts(
     colIds: string[],
@@ -61,6 +93,7 @@ class TaskService {
       subtasks: Record<string, SubtaskProgress>;
       /** unread comments for the signed-in user, by task id */
       unread?: Record<string, number>;
+      blockers?: Record<string, BlockerRef[]>;
       priorityCounts: Record<string, PriorityCounts>;
       pageInfo: Record<string, TaskPageInfo>;
     }
@@ -79,6 +112,8 @@ class TaskService {
             subtasks: Record<string, SubtaskProgress>;
             /** unread comments for the signed-in user, by task id */
             unread?: Record<string, number>;
+            /** blockers of the tasks that have any */
+            blockers?: Record<string, BlockerRef[]>;
             priorityCounts: Record<string, PriorityCounts>;
             pageInfo: Record<string, TaskPageInfo>;
           },

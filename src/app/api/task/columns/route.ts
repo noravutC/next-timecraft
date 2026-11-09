@@ -10,6 +10,7 @@ import {
 } from '@/db/uniq-query/task/assignee-utils';
 import { fetchSubtaskProgress } from '@/db/uniq-query/task/subtask-progress';
 import { taskFilterConditions } from '@/db/uniq-query/task/task-filter';
+import { fetchBlockerRefs } from '@/db/uniq-query/task/dependency-utils';
 import { countUnreadByTask } from '@/db/uniq-query/comment/comment-utils';
 import type { PriorityCounts, TaskPageInfo, TaskRow } from '@/types';
 import {
@@ -146,10 +147,11 @@ export const POST = createHandle<GetTasksByColumnsBody>(
     }
 
     const taskIds = tasks.map((t) => t.id);
-    const [assigneeRows, subtasks, unread] = await Promise.all([
+    const [assigneeRows, subtasks, unread, blockers] = await Promise.all([
       fetchAssigneesForTasks(taskIds),
       fetchSubtaskProgress(taskIds),
       countUnreadByTask(userId, taskIds),
+      fetchBlockerRefs(taskIds),
     ]);
     const assignees: Record<string, AssigneeWithUser[]> = {};
     for (const { taskId, ...user } of assigneeRows) {
@@ -162,6 +164,7 @@ export const POST = createHandle<GetTasksByColumnsBody>(
         assignees,
         subtasks,
         unread,
+        blockers,
         priorityCounts,
         pageInfo,
         message: 'Get tasks success',

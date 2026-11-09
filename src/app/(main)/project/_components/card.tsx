@@ -11,8 +11,6 @@ import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
 import { Calendar, MessageSquare, SquareCheck } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
-import { UserAvatar } from '@/components/people/user-avatar';
-import { AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { Loader } from '@/components/ui/loader';
 import {
@@ -23,15 +21,14 @@ import {
 } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
+import { CardTagRow } from './card-tag-row';
+import { useTaskBlocked } from '@/components/project/use-task-blocked';
 import { useBoardAccess } from '@/components/project/use-board-access';
 import { useUnreadStore } from '@/store/use-unread.store';
-import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { withSettingsDefaults } from '@/types/project-settings';
 import { TCardState, useCardDnd } from './use-card-dnd';
 
 const NO_ASSIGNEES: never[] = [];
-const MAX_VISIBLE_TAGS = 2;
-const MAX_VISIBLE_ASSIGNEES = 3;
 
 const innerStyles: Partial<Record<TCardState['type'], string>> = {
   idle: 'cursor-pointer hover:border-line-strong hover:shadow-card-hover',
@@ -93,7 +90,8 @@ export function CardDisplay({
   const subtasks = useSubtaskStore(useShallow((s) => s.progressOf(card.id)));
 
   const tags = card.tags ?? [];
-  const hasTagRow = tags.length > 0 || assignees.length > 0;
+  const blocked = useTaskBlocked(card.id);
+  const hasTagRow = tags.length > 0 || assignees.length > 0 || blocked;
   const dueDate = card.dueDate ? new Date(card.dueDate) : null;
   const dueInDays = dueDate ? daysUntil(dueDate) : null;
 
@@ -144,50 +142,12 @@ export function CardDisplay({
         </div>
 
         {hasTagRow && (
-          <div className="flex items-center gap-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-              {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex h-5.5 items-center gap-1.5 rounded-full border border-line px-2 text-xs text-ink-muted"
-                >
-                  <span
-                    className="size-1.5 rounded-full"
-                    style={{
-                      backgroundColor: paletteFor(
-                        tagColors[tag] ?? hashTagColor(tag),
-                      ).value,
-                    }}
-                  />
-                  {tag}
-                </span>
-              ))}
-              {tags.length > MAX_VISIBLE_TAGS && (
-                <span className="text-xs text-ink-subtle">
-                  +{tags.length - MAX_VISIBLE_TAGS}
-                </span>
-              )}
-            </div>
-            {assignees.length > 0 && (
-              <AvatarGroup className="shrink-0">
-                {assignees.slice(0, MAX_VISIBLE_ASSIGNEES).map((a) => (
-                  <UserAvatar
-                    key={a.userId}
-                    name={a.fullName}
-                    image={a.avatar}
-                    seed={a.userId}
-                    size="sm"
-                    className="ring-2 ring-background"
-                  />
-                ))}
-                {assignees.length > MAX_VISIBLE_ASSIGNEES && (
-                  <AvatarGroupCount className="size-5.5 text-4xs">
-                    +{assignees.length - MAX_VISIBLE_ASSIGNEES}
-                  </AvatarGroupCount>
-                )}
-              </AvatarGroup>
-            )}
-          </div>
+          <CardTagRow
+            tags={tags}
+            tagColors={tagColors}
+            assignees={assignees}
+            blocked={blocked}
+          />
         )}
 
         {/* แถว meta: ฟอนต์/ขนาด/ไอคอนเท่ากันทุกตัว — มีเส้นคั่นเมื่อมีแถว tag ด้านบน */}

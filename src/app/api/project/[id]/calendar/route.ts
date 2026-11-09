@@ -1,4 +1,5 @@
 import { listCalendarTasks } from '@/db/uniq-query/project/calendar-utils';
+import { fetchBlockerRefs } from '@/db/uniq-query/task/dependency-utils';
 import { createParamHandle } from '@/lib/api/handle';
 import { parseId } from '@/lib/api/params';
 import { NextResponse } from 'next/server';
@@ -17,7 +18,7 @@ export const POST = createParamHandle<RouteParams, CalendarRangeBody>(
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
   async ({ params, body, userId }) => {
-    const data = await listCalendarTasks({
+    const tasks = await listCalendarTasks({
       projectId: parseId(params.id),
       userId,
       from: new Date(body.from),
@@ -25,6 +26,14 @@ export const POST = createParamHandle<RouteParams, CalendarRangeBody>(
       filter: body.filter,
       hideUndatedIn: body.hideUndatedIn,
     });
-    return NextResponse.json({ data, message: 'Calendar', status: 200 });
+    // for the Blocked tag on the "No due date" cards
+    const blockers = await fetchBlockerRefs(
+      [...tasks.dated, ...tasks.undated].map((t) => t.id),
+    );
+    return NextResponse.json({
+      data: { ...tasks, blockers },
+      message: 'Calendar',
+      status: 200,
+    });
   },
 );
