@@ -25,6 +25,7 @@ import {
   useBoardFilterStore,
 } from '@/store/use-board-filter.store';
 import { computeCardMove, computeColumnMove } from './board-operations';
+import { offerUndo } from '@/components/undo/offer-undo';
 import { useSpacebarPan } from './use-spacebar-pan';
 import {
   deriveBoardView,
@@ -170,18 +171,34 @@ export function useBoard() {
           if (!originalTask) return;
 
           setPendingMove({ type: 'card', ...result });
-          void updateTasks(
-            [result.taskId],
-            [
-              {
-                ...originalTask,
-                id: result.taskId,
-                columnId: result.toColumnId,
-                orderFraction: result.newOrderFraction,
-              } as UpdateTaskPayload,
-            ],
-          )
-            .then(() => setPendingMove(null))
+          const placeAt = (columnId: string, orderFraction: string) =>
+            updateTasks(
+              [result.taskId],
+              [
+                {
+                  ...originalTask,
+                  id: result.taskId,
+                  columnId,
+                  orderFraction,
+                } as UpdateTaskPayload,
+              ],
+            );
+          void placeAt(result.toColumnId, result.newOrderFraction)
+            .then(() => {
+              setPendingMove(null);
+              const nameOf = (id: string) =>
+                boardRef.current.columns.find((c) => c.id === id)?.title ?? '';
+              const from = originalTask.columnId;
+              offerUndo({
+                icon: 'move',
+                title: 'Moved to',
+                emphasis: nameOf(result.toColumnId),
+                undo: () => placeAt(from, originalTask.orderFraction),
+                undoneTitle: `Back in ${nameOf(from)}`,
+                // reordering inside a column only joins the ⌘Z stack
+                silent: from === result.toColumnId,
+              });
+            })
             .catch(() => {
               toast.error('Failed to move task.');
               setPendingMove(null);

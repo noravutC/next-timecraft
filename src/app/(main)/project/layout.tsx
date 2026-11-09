@@ -8,6 +8,7 @@ import { ProjectHeader } from './project-header';
 import { BoardDialogs } from '@/components/board-dialogs/board-dialogs';
 import { TaskDetailSheet } from '@/components/task-detail/task-detail-sheet';
 import { useBoardUrlSync } from './_components/use-board-url-sync';
+import { useUndoShortcut } from '@/components/undo/use-undo-shortcut';
 
 export default function ProjectLayout({
   children,
@@ -20,6 +21,8 @@ export default function ProjectLayout({
   const fetchUsers = useUserStore((s) => s.fetchUsers);
   // opens the board and task the URL names, and keeps the URL current
   useBoardUrlSync();
+  // ⌘Z takes back the last move, archive or edit
+  useUndoShortcut();
 
   useEffect(() => {
     fetchProjects([], true)

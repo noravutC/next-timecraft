@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chunk, toRecord, toValueRecord } from "./object";
+import { chunk, pickKeys, toRecord, toValueRecord } from "./object";
 
 describe("toValueRecord", () => {
   it("maps every id to the given value", () => {
@@ -51,5 +51,11 @@ describe("chunk", () => {
 
   it("rejects a size below 1", () => {
     expect(() => chunk([1], 0)).toThrow(RangeError);
+  });
+});
+
+describe('pickKeys', () => {
+  it('copies just the keys asked for', () => {
+    expect(pickKeys({ a: 1, b: 2, c: 3 }, ['a', 'c'])).toEqual({ a: 1, c: 3 });
   });
 });

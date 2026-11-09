@@ -3,6 +3,8 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useTaskStore } from '@/store/use-task.store';
+import { offerUndo } from '@/components/undo/offer-undo';
+import { pickKeys } from '@/helper/utils/object';
 import { useColumnStore } from '@/store/use-column.store';
 import { useProjectStore } from '@/store';
 import { useUserStore } from '@/store/use-user.store';
@@ -119,19 +121,43 @@ export function useTaskDetail() {
       })
       .filter(<T>(it: T | null): it is T => it !== null);
 
-  const persist = (payload: Partial<UpdateTaskPayload>) => {
-    if (!task) return;
-    updateTasks(
-      [task.id],
+  // the task as it is when this runs, so an undo never resends stale fields
+  const writeTask = (taskId: string, fields: Partial<UpdateTaskPayload>) => {
+    const current = useTaskStore.getState().tasks[taskId];
+    if (!current) return Promise.resolve(null);
+    return updateTasks(
+      [taskId],
       [
         {
-          id: task.id,
-          columnId: task.columnId,
-          title: task.title,
-          ...payload,
+          id: taskId,
+          columnId: current.columnId,
+          title: current.title,
+          ...fields,
         } as UpdateTaskPayload,
       ],
     );
+  };
+
+  /** Saves fields; ⌘Z puts back what they were (status changes say so). */
+  const persist = (
+    payload: Partial<UpdateTaskPayload>,
+    undoToast?: { title: string; emphasis: string; undoneTitle: string },
+  ) => {
+    if (!task) return;
+    const taskId = task.id;
+    const previous = pickKeys(
+      task as UpdateTaskPayload,
+      Object.keys(payload) as (keyof UpdateTaskPayload)[],
+    );
+    void writeTask(taskId, payload);
+    offerUndo({
+      icon: undoToast ? 'move' : 'edit',
+      title: undoToast?.title ?? 'Edited',
+      emphasis: undoToast?.emphasis,
+      undo: () => writeTask(taskId, previous),
+      undoneTitle: undoToast?.undoneTitle ?? 'Change undone',
+      silent: !undoToast,
+    });
   };
 
   const handleStatusChange = (nextColumnId: string) => {
@@ -145,7 +171,14 @@ export function useTaskDetail() {
       last,
       useTaskStore.getState().columnEndBound(nextColumnId),
     );
-    persist({ columnId: nextColumnId, orderFraction });
+    persist(
+      { columnId: nextColumnId, orderFraction },
+      {
+        title: 'Moved to',
+        emphasis: columnsMap[nextColumnId]?.name ?? '',
+        undoneTitle: `Back in ${columnsMap[task.columnId]?.name ?? 'its column'}`,
+      },
+    );
   };
 
   const handleCopyLink = () => {

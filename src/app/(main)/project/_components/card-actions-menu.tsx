@@ -14,6 +14,7 @@ import { useTaskStore } from '@/store/use-task.store';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { TCard, TColumn } from './data';
 import { toast } from 'sonner';
+import { offerUndo } from '@/components/undo/offer-undo';
 import { Button } from '@/components/ui/button';
 
 interface CardActionsMenuProps {
@@ -30,13 +31,16 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
 
   const handleArchive = () => {
     const base = { id: card.id, columnId: card.columnId, title: card.title };
-    updateTasks([card.id], [{ ...base, archived: true }]);
-    toast('Task archived', {
-      duration: 5000,
-      action: {
-        label: 'Undo',
-        onClick: () => updateTasks([card.id], [{ ...base, archived: false }]),
-      },
+    const setArchived = (archived: boolean) =>
+      updateTasks([card.id], [{ ...base, archived }]);
+    setArchived(true).catch(() => toast.error('Couldn’t archive the task'));
+    offerUndo({
+      icon: 'archive',
+      title: 'Task archived',
+      detail: card.title,
+      undo: () => setArchived(false),
+      undoneTitle: `Back in ${allColumns.find((c) => c.id === card.columnId)?.title ?? 'its column'}`,
+      redo: { label: 'Archive again', run: () => setArchived(true) },
     });
   };
 
@@ -45,17 +49,22 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
       target.cards.at(-1)?.orderFraction ?? null,
       target.nextCursorFraction,
     );
-    updateTasks(
-      [card.id],
-      [
-        {
-          id: card.id,
-          columnId: target.id,
-          title: card.title,
-          orderFraction: newOrderFraction,
-        },
-      ],
+    const placeAt = (columnId: string, orderFraction: string) =>
+      updateTasks(
+        [card.id],
+        [{ id: card.id, columnId, title: card.title, orderFraction }],
+      );
+    const from = allColumns.find((c) => c.id === card.columnId);
+    placeAt(target.id, newOrderFraction).catch(() =>
+      toast.error('Couldn’t move the task'),
     );
+    offerUndo({
+      icon: 'move',
+      title: 'Moved to',
+      emphasis: target.title,
+      undo: () => placeAt(card.columnId, card.orderFraction),
+      undoneTitle: `Back in ${from?.title ?? 'its column'}`,
+    });
   };
 
   const handleToggleFlag = () => {
