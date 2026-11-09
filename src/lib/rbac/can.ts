@@ -42,3 +42,20 @@ const ROLE_RANK: Record<ProjectRole, number> = {
 export function outranks(actor: ProjectRole, target: ProjectRole): boolean {
   return ROLE_RANK[actor] > ROLE_RANK[target];
 }
+
+const INVITABLE: ProjectRole[] = ['admin', 'editor', 'viewer'];
+
+/** Roles this person may give: only ones below their own (owners give admin). */
+export function assignableRoles(actor: ProjectRole): ProjectRole[] {
+  return can(actor, 'member:change_role')
+    ? INVITABLE.filter((role) => outranks(actor, role))
+    : [];
+}
+
+/** Whether this person may change someone's role or remove them. */
+export function canManageMember(
+  actor: ProjectRole,
+  target: ProjectRole,
+): boolean {
+  return can(actor, 'member:change_role') && outranks(actor, target);
+}

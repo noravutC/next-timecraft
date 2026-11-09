@@ -6,6 +6,7 @@ import {
   APIPatch,
   APIPost,
   APISingleGet,
+  InvitableRole,
   InvitationPreview,
   InviteMemberPayload,
   Member,
@@ -124,6 +125,52 @@ class ProjectService {
       .then((response) => response.data as APIDelete<Member>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to remove member");
+      });
+  }
+
+  async changeMemberRole(
+    projectId: string,
+    memberUserId: string,
+    role: InvitableRole,
+  ): Promise<APIPatch<Member>> {
+    return this.client
+      .patch(`/project/${projectId}/members/${memberUserId}`, { role })
+      .then((response) => response.data as APIPatch<Member>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to change role");
+      });
+  }
+
+  async leaveBoard(projectId: string): Promise<APIDelete<{ projectId: string }>> {
+    return this.client
+      .post(`/project/${projectId}/leave`)
+      .then((response) => response.data as APIDelete<{ projectId: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to leave the board");
+      });
+  }
+
+  async transferOwnership(
+    projectId: string,
+    userId: string,
+  ): Promise<APIPatch<{ projectId: string; ownerId: string }>> {
+    return this.client
+      .post(`/project/${projectId}/transfer`, { userId })
+      .then(
+        (response) =>
+          response.data as APIPatch<{ projectId: string; ownerId: string }>,
+      )
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to transfer the board");
+      });
+  }
+
+  async resendInvitation(token: string): Promise<APIPost<PendingInvitation>> {
+    return this.client
+      .post(`/invite/${token}/resend`)
+      .then((response) => response.data as APIPost<PendingInvitation>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to send it again");
       });
   }
 

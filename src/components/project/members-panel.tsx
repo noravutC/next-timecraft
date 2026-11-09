@@ -5,6 +5,8 @@ import { memberCountLabel } from '@/helper/utils/board-switcher';
 import { boardInvitationMeta } from '@/helper/utils/invitation-status';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { InviteForm } from './invite-form';
+import { LeaveBoardDialog } from './leave-board-dialog';
+import { useBoardMemberActions } from './use-board-member-actions';
 import { MemberRow } from './member-row';
 import { InvitationRow } from './invitation-row';
 import { inviteLink, useInviteMembers } from './use-invite-members';
@@ -30,8 +32,10 @@ export const MembersPanel = () => {
     handleInvite,
     handleRevoke,
     copyText,
+    handleResend,
     handleRemoveMember,
   } = useInviteMembers({ open: true });
+  const actions = useBoardMemberActions();
 
   if (!project) return null;
 
@@ -60,13 +64,14 @@ export const MembersPanel = () => {
               member={member}
               user={users[member.userId]}
               isYou={member.userId === currentUserId}
-              removable={
-                canRemove &&
-                member.role !== 'owner' &&
-                member.userId !== currentUserId
+              assignable={canRemove ? actions.assignableFor(member) : []}
+              canLeave={
+                member.userId === currentUserId && member.role !== 'owner'
               }
               bordered={index > 0}
+              onRoleChange={(next) => actions.changeRole(member, next)}
               onRemove={() => setMemberToRemove(member)}
+              onLeave={() => actions.setConfirmLeave(true)}
             />
           ))}
         </ul>
@@ -87,6 +92,7 @@ export const MembersPanel = () => {
                   invitation.expiresAt,
                 )}
                 bordered={index > 0}
+                onResend={() => void handleResend(invitation)}
                 onCopyLink={() =>
                   void copyText(
                     inviteLink(invitation.token),
@@ -112,6 +118,13 @@ export const MembersPanel = () => {
         primaryLabel={removing ? 'Removing…' : 'Remove'}
         onConfirm={handleRemoveMember}
         loading={removing}
+      />
+      <LeaveBoardDialog
+        open={actions.confirmLeave}
+        onOpenChange={actions.setConfirmLeave}
+        boardName={project.name}
+        loading={actions.busy}
+        onConfirm={actions.leave}
       />
     </div>
   );

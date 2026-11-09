@@ -153,3 +153,15 @@ export async function revokeInvitation(
     .returning({ id: projectInvitationsTable.id });
   return revoked;
 }
+
+// ส่งซ้ำ: ต่ออายุอีก 7 วัน (เฉพาะคำเชิญที่ยัง pending)
+export async function renewInvitation(
+  invitationId: string,
+): Promise<ProjectInvitationRow | undefined> {
+  const [renewed] = await db
+    .update(projectInvitationsTable)
+    .set({ expiresAt: new Date(Date.now() + INVITE_TTL_MS), updatedAt: new Date() })
+    .where(and(eq(projectInvitationsTable.id, invitationId), pendingCondition()))
+    .returning();
+  return renewed;
+}

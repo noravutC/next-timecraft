@@ -62,3 +62,10 @@ export const WORKSPACE_ROLE_HINTS: Record<WorkspaceRole, string> = {
   member: 'Works on every board in the workspace.',
   guest: 'Sees only the boards they’re invited to.',
 };
+
+/** What each board role allows, in the role menu (see ROLE_PERMISSIONS). */
+export const BOARD_ROLE_HINTS: Record<InvitableRole, string> = {
+  admin: 'Invite people, change roles, edit columns and board settings',
+  editor: 'Add, edit and move cards, and comment',
+  viewer: 'See the board and react to comments',
+};

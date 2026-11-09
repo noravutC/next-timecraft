@@ -1,29 +1,37 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { shortName } from '@/helper/utils/person-name';
-import type { Member, User } from '@/types';
+import type { InvitableRole, Member, User } from '@/types';
+import { BoardRoleMenu } from './board-role-menu';
 
-/** A board member: avatar, name (you), email, role, remove. */
+/** A board member: avatar, name (you), email, role (a menu when you may change it). */
 export const MemberRow = ({
   member,
   user,
   isYou,
-  removable,
+  assignable,
+  canLeave,
   bordered,
+  onRoleChange,
   onRemove,
+  onLeave,
 }: {
   member: Member;
   user: User | undefined;
   isYou: boolean;
-  removable: boolean;
+  /** roles you may give this member; empty when you can't manage them */
+  assignable: InvitableRole[];
+  /** your own row, when you aren't the owner */
+  canLeave: boolean;
   /** hairline above every row but the first */
   bordered: boolean;
+  onRoleChange: (role: InvitableRole) => void;
   onRemove: () => void;
+  onLeave: () => void;
 }) => (
   <li
     className={cn(
@@ -47,22 +55,23 @@ export const MemberRow = ({
         {user?.email}
       </span>
     </span>
-    <span className="shrink-0 px-2 text-sm text-ink-muted">
-      {ROLE_LABELS[member.role]}
-    </span>
-    {removable ? (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={onRemove}
-        aria-label={`Remove ${user?.fullName ?? 'member'} from board`}
-        className="size-7.5 text-ink-subtle hover:bg-danger-soft hover:text-danger-text"
-      >
-        <Trash2 className="size-3.75" />
-      </Button>
+    {assignable.length > 0 ? (
+      <BoardRoleMenu
+        name={user?.fullName ?? 'member'}
+        role={member.role}
+        options={assignable}
+        onChange={onRoleChange}
+        onRemove={onRemove}
+      />
     ) : (
-      <span aria-hidden="true" className="w-7.5 shrink-0" />
+      <span className="shrink-0 px-2 text-sm text-ink-muted">
+        {ROLE_LABELS[member.role]}
+      </span>
+    )}
+    {canLeave && (
+      <Button variant="outline" size="xs" onClick={onLeave} className="h-7.5">
+        Leave
+      </Button>
     )}
   </li>
 );
