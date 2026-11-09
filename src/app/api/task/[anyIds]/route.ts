@@ -159,7 +159,14 @@ export const GET = createParamHandle<RouteParams>(
     ];
     await authorizeOrThrow(userId, uniqProjectIds, "project:view");
 
-    const data = await getTasksByIds(taskIds);
+    // the board each task is on, so a shared link can open it
+    const projectByTask = new Map(
+      existingTaskLinks.map((link) => [link.taskId, link.projectId]),
+    );
+    const data = (await getTasksByIds(taskIds)).map((task) => ({
+      ...task,
+      projectId: projectByTask.get(task.id) ?? null,
+    }));
 
     return NextResponse.json(
       { data, message: "Get tasks success", status: 200 },

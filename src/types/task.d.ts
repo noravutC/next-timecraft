@@ -36,6 +36,9 @@ export interface TaskCache extends Task {
   timestamp: number;
 }
 
+/** GET /api/task/[ids]: a task plus the board it's on. */
+export type TaskWithBoard = Task & { projectId: string | null };
+
 /** Cursor pointing at the last loaded task of a column (orderFraction + id tiebreak). */
 export interface TaskPageCursor {
   orderFraction: string;

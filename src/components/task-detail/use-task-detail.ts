@@ -12,6 +12,7 @@ import { useTaskComments } from '@/store/sync-live-data/useTaskComments';
 import { useTaskSubtasks } from '@/store/sync-live-data/useTaskSubtasks';
 import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing';
 import { withSettingsDefaults } from '@/types/project-settings';
+import { boardUrl } from '@/helper/utils/board-url';
 import type { UpdateTaskPayload } from '@/types';
 
 /**
@@ -138,8 +139,8 @@ export function useTaskDetail() {
 
   const handleCopyLink = () => {
     if (typeof window === 'undefined' || !task) return;
-    const url = `${window.location.origin}/project?taskId=${task.id}`;
-    navigator.clipboard.writeText(url);
+    const path = boardUrl({ board: project?.id ?? null, task: task.id });
+    navigator.clipboard.writeText(`${window.location.origin}${path}`);
     toast('Link copied');
   };
 
