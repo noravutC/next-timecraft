@@ -61,7 +61,7 @@ export const WorkspaceDetailsForm = ({
           disabled={!canEdit}
         />
         <span className="text-xs text-ink-subtle">
-          The workspace’s local time.
+          Used for due-date reminders.
         </span>
       </div>
 

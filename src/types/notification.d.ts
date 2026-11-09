@@ -9,6 +9,7 @@ export type {
   WorkspaceInviteNotificationPayload,
   RoleChangedNotificationPayload,
   InviteAcceptedNotificationPayload,
+  DueReminderNotificationPayload,
 } from "@/db/schema/notification.table";
 
 export type NotificationRow = InferSelectModel<typeof notificationsTable>;

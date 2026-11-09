@@ -114,6 +114,11 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
                   }
                 : { archivedAt: null, archivedBy: null }),
             estimatedHours: item.estimatedHours,
+            remindDaysBefore: item.remindDaysBefore,
+            // a new date or reminder sends a fresh one
+            ...(item.dueDate !== undefined || item.remindDaysBefore !== undefined
+              ? { remindedAt: null }
+              : {}),
             updatedAt: new Date(),
           })
           .where(eq(tasksTable.id, taskId))

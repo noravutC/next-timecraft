@@ -18,6 +18,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "task_assigned",
   "role_changed",
   "invite_accepted",
+  "due_reminder",
 ]);
 
 export type CommentNotificationPayload = {
@@ -83,6 +84,20 @@ export type InviteAcceptedNotificationPayload = {
   actorName: string;
 };
 
+// sent by TimeCraft itself, so the "actor" is the board
+export type DueReminderNotificationPayload = {
+  taskId: string;
+  taskTitle: string;
+  projectId: string;
+  projectName: string;
+  dueDate: string;
+  daysBefore: number;
+  /** the workspace's zone, to name the due day */
+  timeZone: string;
+  actorUserId: string;
+  actorName: string;
+};
+
 export type NotificationPayload =
   | CommentNotificationPayload
   | BoardInviteNotificationPayload
@@ -90,7 +105,8 @@ export type NotificationPayload =
   | MemberRemovedNotificationPayload
   | TaskAssignedNotificationPayload
   | RoleChangedNotificationPayload
-  | InviteAcceptedNotificationPayload;
+  | InviteAcceptedNotificationPayload
+  | DueReminderNotificationPayload;
 
 export const notificationsTable = pgTable(
   "notifications",

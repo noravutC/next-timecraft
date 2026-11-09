@@ -31,6 +31,10 @@ export const tasksTable = pgTable("tasks", {
   archivedBy: uuid("archived_by").references(() => usersTable.id, {
     onDelete: "set null",
   }),
+  // days before the due date to remind the assignees (0 = on the day);
+  // null = no reminder. remindedAt marks it sent, until the date changes.
+  remindDaysBefore: integer("remind_days_before"),
+  remindedAt: timestamp("reminded_at", { withTimezone: true }),
   estimatedHours: integer("estimated_hours").notNull().default(0),
   loggedHours: integer("logged_hours").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),

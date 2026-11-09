@@ -47,5 +47,20 @@ export function useNotificationPrefs() {
     }
   };
 
-  return { prefs, setChannel };
+  const setEmail = async (on: boolean) => {
+    if (!prefs) return;
+    const before = prefs;
+    setPrefs({ ...prefs, email: on });
+    try {
+      const { updated } = await notificationServices.updatePrefs({ email: on });
+      if (updated) setPrefs(updated);
+    } catch (error) {
+      setPrefs(before);
+      toast.error(
+        (error as { message?: string })?.message ?? 'Couldn’t save that change',
+      );
+    }
+  };
+
+  return { prefs, setChannel, setEmail };
 }

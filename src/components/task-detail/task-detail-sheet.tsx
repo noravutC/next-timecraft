@@ -11,6 +11,7 @@ import { TaskSheetHeader } from './parts/task-sheet-header';
 import { TaskProperties } from './parts/task-properties';
 import { useTaskDetail } from './use-task-detail';
 import { useTaskActions } from './use-task-actions';
+import { useWorkspace } from '@/components/workspace/use-workspace-name';
 import { TaskSheetMenu } from './parts/task-sheet-menu';
 
 const Divider = () => <div aria-hidden className="my-5 h-px bg-line-soft" />;
@@ -47,6 +48,7 @@ export const TaskDetailSheet = () => {
     commentBlockedNote,
   } = useTaskDetail();
   const taskActions = useTaskActions(task);
+  const workspace = useWorkspace();
 
   return (
     <Sheet
@@ -87,6 +89,11 @@ export const TaskDetailSheet = () => {
               />
 
               <TaskProperties
+                reminderTimeZone={
+                  workspace && project?.organizationId === workspace.id
+                    ? workspace.timeZone
+                    : null
+                }
                 task={task}
                 columns={projectColumns}
                 onStatusChange={handleStatusChange}

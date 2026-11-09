@@ -17,14 +17,14 @@ export async function sendEmail(input: {
   email: ReactElement;
   /** what is being sent, for the logs */
   kind: string;
-}): Promise<void> {
+}): Promise<'sent' | 'skipped' | 'failed'> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     logger.warn(
       { to: input.to, kind: input.kind },
       'RESEND_API_KEY not set, email skipped (invite links can still be copied)',
     );
-    return;
+    return 'skipped';
   }
 
   try {
@@ -42,11 +42,14 @@ export async function sendEmail(input: {
         { err: error, to: input.to, kind: input.kind },
         'Resend refused the email',
       );
+      return 'failed';
     }
+    return 'sent';
   } catch (err) {
     logger.error(
       { err, to: input.to, kind: input.kind },
       'Failed to send email',
     );
+    return 'failed';
   }
 }

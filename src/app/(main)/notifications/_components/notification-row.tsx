@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Circle, X } from 'lucide-react';
+import { CalendarClock, Check, Circle, X } from 'lucide-react';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { Button } from '@/components/ui/button';
@@ -35,12 +35,18 @@ export const NotificationRow = ({
 
   return (
     <li className="group flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-surface">
-      <UserAvatar
-        name={n.payload.actorName}
-        image={actorAvatar}
-        seed={n.payload.actorUserId}
-        size="xl"
-      />
+      {parts.system ? (
+        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-warning-line bg-warning-soft text-warning">
+          <CalendarClock className="size-4" />
+        </span>
+      ) : (
+        <UserAvatar
+          name={n.payload.actorName}
+          image={actorAvatar}
+          seed={n.payload.actorUserId}
+          size="xl"
+        />
+      )}
       <Button
         variant="ghost"
         size={null}
@@ -48,10 +54,14 @@ export const NotificationRow = ({
         className="h-auto min-w-0 flex-1 flex-col items-start gap-1.5 p-0 text-left font-normal whitespace-normal hover:bg-transparent"
       >
         <span className="text-base text-ink-muted">
-          <strong className="font-semibold text-ink">
-            {n.payload.actorName}
-          </strong>{' '}
-          {parts.before}{' '}
+          {!parts.system && (
+            <>
+              <strong className="font-semibold text-ink">
+                {n.payload.actorName}
+              </strong>{' '}
+              {parts.before}{' '}
+            </>
+          )}
           <strong className="font-medium text-ink">{parts.strong}</strong>
           {parts.after && ` ${parts.after}`}
         </span>

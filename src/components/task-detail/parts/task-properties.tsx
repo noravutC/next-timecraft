@@ -15,6 +15,7 @@ import { PropertyRow } from './property-row';
 import { StatusPicker } from './status-picker';
 import { PriorityPicker } from './priority-picker';
 import { DueDatePicker } from './due-date-picker';
+import { reminderSummary } from '@/helper/utils/due-reminder';
 import { TagChip } from './tag-chip';
 import { TagPicker } from './tag-picker';
 import { AssigneePicker, type AssigneeCandidate } from './assignee-picker';
@@ -40,6 +41,8 @@ interface TaskPropertiesProps {
   tagColors: Required<ProjectSettings>['tagColors'];
   /** viewer, or an archived board: show the values without editing */
   readOnly?: boolean;
+  /** the board's workspace zone, when known: reminders go out at 9:00 there */
+  reminderTimeZone: string | null;
 }
 
 /** Status · Priority · Assignees · Due date · Labels · Estimate */
@@ -56,6 +59,7 @@ export const TaskProperties = ({
   projectTags,
   tagColors,
   readOnly = false,
+  reminderTimeZone,
 }: TaskPropertiesProps) => (
   <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 sm:grid-cols-[8rem_minmax(0,1fr)]">
     <PropertyRow icon={<CircleDot />} label="Status">
@@ -114,6 +118,19 @@ export const TaskProperties = ({
         value={dueDate}
         onChange={(d) => persist({ dueDate: d })}
         disabled={readOnly}
+        reminder={task.remindDaysBefore}
+        onReminderChange={(days) => persist({ remindDaysBefore: days })}
+        reminderSummary={
+          dueDate
+            ? reminderSummary({
+                dueDate,
+                daysBefore: task.remindDaysBefore,
+                assigneeNames: assignees.map((a) => shortName(a.fullName)),
+                timeZone: reminderTimeZone,
+                remindedAt: task.remindedAt,
+              })
+            : ''
+        }
       />
     </PropertyRow>
 
