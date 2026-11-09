@@ -18,6 +18,7 @@ import { MembersPanel } from '@/components/project/members-panel';
 import { SettingsGeneralTab } from './parts/settings-general-tab';
 import { BoardTagsEditor } from './parts/board-tags-editor';
 import { BoardDangerZone } from './parts/board-danger-zone';
+import { BoardExportRow } from './parts/board-export-row';
 import { BoardArchivePanel } from './parts/board-archive-panel';
 import { useBoardArchive } from './use-board-archive';
 import { useBoardSettingsDraft } from './use-board-settings-draft';
@@ -126,6 +127,10 @@ export const BoardSettingsDialog = ({
                 }
                 onSettingsChange={patchSettings}
               />
+              {/* anyone who can see the board can take a copy */}
+              <div className="mt-5.5">
+                <BoardExportRow projectId={project.id} />
+              </div>
             </TabsContent>
             <TabsContent value="tags" className={TAB_CONTENT}>
               {!canEdit && <ReadOnlySettingsNote />}

@@ -104,6 +104,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
           <LegalLink href="/settings/profile">Settings</LegalLink>.
         </LegalPoint>
         <LegalPoint>
+          Download a board as CSV or JSON from Board settings › General.
+        </LegalPoint>
+        <LegalPoint>
           Delete your account from Settings › Profile. You choose what happens
           to the boards you own first.
         </LegalPoint>
