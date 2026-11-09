@@ -7,6 +7,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { projectsTable } from "./project.table";
+import { usersTable } from "./user.table";
 
 export const columnsTable = pgTable("columns", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -19,6 +20,9 @@ export const columnsTable = pgTable("columns", {
   orderFraction: text("order_fraction").notNull().default("0"),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  deletedBy: uuid("deleted_by").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
   purgeAt: timestamp("purge_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

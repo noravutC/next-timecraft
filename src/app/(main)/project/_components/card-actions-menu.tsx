@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Ellipsis, Trash2 } from 'lucide-react';
+import { Archive, Copy, Ellipsis } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import {
   DropdownMenu,
@@ -23,16 +23,15 @@ interface CardActionsMenuProps {
 
 export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
   const updateTasks = useTaskStore((s) => s.updateTasks);
-  const createTasks = useTaskStore((s) => s.createTasks);
+  const duplicateTask = useTaskStore((s) => s.duplicateTask);
 
-  const currentIndex = allColumns.findIndex((c) => c.id === card.columnId);
   const otherColumns = allColumns.filter((c) => c.id !== card.columnId);
   const isFlagged = card.priority === 'high';
 
-  const handleDelete = () => {
+  const handleArchive = () => {
     const base = { id: card.id, columnId: card.columnId, title: card.title };
     updateTasks([card.id], [{ ...base, archived: true }]);
-    toast('Task deleted', {
+    toast('Task archived', {
       duration: 5000,
       action: {
         label: 'Undo',
@@ -73,26 +72,11 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
     );
   };
 
+  // the server copies subtasks and assignees too, right under the card
   const handleDuplicate = () => {
-    const column = allColumns[currentIndex];
-    if (!column) return;
-    const cardIndex = column.cards.findIndex((c) => c.id === card.id);
-    const nextCard = column.cards[cardIndex + 1];
-    const orderFraction = generateFractionBetween(
-      card.orderFraction,
-      nextCard?.orderFraction ?? null,
+    duplicateTask(card.id).catch(() =>
+      toast.error('Couldn’t duplicate the task'),
     );
-    createTasks([
-      {
-        columnId: card.columnId,
-        title: card.title,
-        description: card.description,
-        tags: card.tags,
-        priority: card.priority,
-        dueDate: card.dueDate,
-        orderFraction,
-      },
-    ]);
   };
 
   return (
@@ -146,9 +130,9 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
           </>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-          <Trash2 />
-          Delete task
+        <DropdownMenuItem onClick={handleArchive}>
+          <Archive />
+          Archive task
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

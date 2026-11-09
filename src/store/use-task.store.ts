@@ -35,6 +35,10 @@ type TaskStore = {
     payload: UpdateTaskPayload[],
   ) => Promise<TaskCache[] | null>;
   deleteTasks: (taskIds: string[]) => Promise<void>;
+  /** a copy right under the task, with its subtasks and assignees */
+  duplicateTask: (taskId: string) => Promise<TaskCache | null>;
+  /** to the end of the first column of another board */
+  moveTaskToBoard: (taskId: string, projectId: string) => Promise<void>;
   fetchTasksByColumns: (
     colIds: string[],
     limitTasks: number,
@@ -204,6 +208,25 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ status: 'error' });
       throw error;
     }
+  },
+
+  duplicateTask: async (taskId) => {
+    const response = await taskServices.duplicateTask(taskId);
+    const copy = response.created;
+    if (!copy) return null;
+    set((state) => ({
+      tasks: { ...state.tasks, [copy.id]: copy },
+      priorityCounts: shiftPriorityCounts(state.priorityCounts, [[null, copy]]),
+    }));
+    useAssigneeStore.getState().ingestMany({ [copy.id]: response.assignees });
+    useSubtaskStore.getState().ingestProgress(response.subtasks);
+    return copy;
+  },
+
+  moveTaskToBoard: async (taskId, projectId) => {
+    await taskServices.moveTaskToBoard(taskId, projectId);
+    // it now lives on a board that isn't open: drop it from this one
+    get().removeTasksFromRealtime([taskId]);
   },
 
   fetchTasksByColumns: async (colIds, limitTasks) => {

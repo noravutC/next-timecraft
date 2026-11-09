@@ -1,3 +1,6 @@
+import { can } from '@/lib/rbac/can';
+import type { ProjectRole } from '@/lib/rbac/permissions';
+
 type SwitcherBoard = { id: string; name: string };
 
 /**
@@ -45,3 +48,24 @@ export const filterSwitcherActions = <T extends { label: string }>(
   const matched = actions.filter((a) => a.label.toLowerCase().includes(q));
   return matched.length > 0 ? matched : actions;
 };
+
+/** Boards a card can move to: other active boards where you add cards. */
+export const boardsToMoveTo = <
+  T extends {
+    id: string;
+    archived?: boolean | null;
+    members: { userId: string; role: ProjectRole }[];
+  },
+>(
+  boards: T[],
+  currentId: string | null,
+  userId: string | null,
+): T[] =>
+  boards.filter(
+    (board) =>
+      board.id !== currentId &&
+      !board.archived &&
+      board.members.some(
+        (m) => m.userId === userId && can(m.role, 'task:create'),
+      ),
+  );

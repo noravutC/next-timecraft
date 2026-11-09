@@ -18,6 +18,8 @@ import { MembersPanel } from '@/components/project/members-panel';
 import { SettingsGeneralTab } from './parts/settings-general-tab';
 import { BoardTagsEditor } from './parts/board-tags-editor';
 import { BoardDangerZone } from './parts/board-danger-zone';
+import { BoardArchivePanel } from './parts/board-archive-panel';
+import { useBoardArchive } from './use-board-archive';
 import { useBoardSettingsDraft } from './use-board-settings-draft';
 import { useBoardAccess } from '@/components/project/use-board-access';
 
@@ -35,7 +37,7 @@ const ReadOnlySettingsNote = () => (
   </p>
 );
 
-/** Board settings: General · Tags · Members · Danger zone. */
+/** Board settings: General · Tags · Members · Archive · Danger zone. */
 export const BoardSettingsDialog = ({
   open,
   onClose,
@@ -62,6 +64,7 @@ export const BoardSettingsDialog = ({
     handleDelete,
   } = useBoardSettingsDraft({ open, onClose });
   const access = useBoardAccess(project?.id);
+  const archive = useBoardArchive(project?.id ?? null, open);
 
   if (!project || !draft) return null;
 
@@ -100,6 +103,12 @@ export const BoardSettingsDialog = ({
                   <Badge variant="count">{project.members.length}</Badge>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="archive">
+                Archive
+                {archive.count > 0 && (
+                  <Badge variant="count">{archive.count}</Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="danger">Danger zone</TabsTrigger>
             </TabsList>
 
@@ -134,6 +143,9 @@ export const BoardSettingsDialog = ({
             </TabsContent>
             <TabsContent value="members" className={TAB_CONTENT}>
               <MembersPanel />
+            </TabsContent>
+            <TabsContent value="archive" className={TAB_CONTENT}>
+              <BoardArchivePanel archive={archive} />
             </TabsContent>
             <TabsContent value="danger" className={TAB_CONTENT}>
               <BoardDangerZone

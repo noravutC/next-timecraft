@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { taskPriorityLevelEnum } from "./enums";
 import { columnsTable } from "./column.table";
+import { usersTable } from "./user.table";
 
 export const tasksTable = pgTable("tasks", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -25,6 +26,11 @@ export const tasksTable = pgTable("tasks", {
     .default(sql`ARRAY[]::text[]`),
   orderFraction: text("order_fraction").notNull().default("0"),
   archived: boolean("archived").notNull().default(false),
+  // when and by whom it went to the archive; null while on the board
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: uuid("archived_by").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
   estimatedHours: integer("estimated_hours").notNull().default(0),
   loggedHours: integer("logged_hours").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),

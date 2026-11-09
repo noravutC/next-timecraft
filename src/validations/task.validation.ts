@@ -99,3 +99,7 @@ export const updateAssigneesSchema = z.object({
 });
 
 export type UpdateAssigneesBody = z.infer<typeof updateAssigneesSchema>;
+
+export const moveTaskToBoardSchema = z.object({ projectId: z.guid() });
+
+export type MoveTaskToBoardBody = z.infer<typeof moveTaskToBoardSchema>;

@@ -15,7 +15,7 @@ import { parseIdList } from "@/lib/api/params";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { removeStorageObjects } from "@/lib/supabase-storage";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import {
   updateTaskSchema,
@@ -104,6 +104,15 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
             priority: item.priority,
             dueDate,
             archived: item.archived,
+            // first archiving keeps its date and person; restoring clears them
+            ...(item.archived === undefined
+              ? {}
+              : item.archived
+                ? {
+                    archivedAt: sql`coalesce(${tasksTable.archivedAt}, now())`,
+                    archivedBy: sql`coalesce(${tasksTable.archivedBy}, ${userId}::uuid)`,
+                  }
+                : { archivedAt: null, archivedBy: null }),
             estimatedHours: item.estimatedHours,
             updatedAt: new Date(),
           })

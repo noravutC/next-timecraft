@@ -70,3 +70,26 @@ export interface TaskFilter {
 
 /** Tasks per priority in one column, ignoring board filters (filter menu counts). */
 export type PriorityCounts = Partial<Record<TaskPriority, number>>;
+
+// Board settings > Archive
+export type ArchivedTask = {
+  id: string;
+  title: string;
+  archivedAt: Date | null;
+  archivedByName: string | null;
+  columnId: string;
+  columnName: string;
+  columnColor: string;
+};
+
+export type DeletedColumn = {
+  id: string;
+  name: string;
+  color: string;
+  deletedAt: Date | null;
+  deletedByName: string | null;
+  purgeAt: Date | null;
+  taskCount: number;
+};
+
+export type BoardArchive = { tasks: ArchivedTask[]; columns: DeletedColumn[] };
