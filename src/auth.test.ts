@@ -68,6 +68,7 @@ const attackerToken = () => ({
   systemRole: 'owner' as const,
   canCreateOrg: false,
   hasBoards: true,
+  orgRole: 'owner' as const,
   organizationId: 'attacker-org',
 });
 

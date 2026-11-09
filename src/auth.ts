@@ -13,6 +13,7 @@ import {
 import { clientIp } from "@/lib/api/client-ip";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { GUEST_EMAIL } from "@/lib/guest";
+import type { WorkspaceRole } from "@/lib/rbac/workspace-permissions";
 
 const GUEST_NAME = "Guest User";
 const GUEST_LOGIN_LIMIT = { limit: 10, windowMs: 60_000 };
@@ -73,6 +74,7 @@ export interface TimeCraftJWT extends Record<string, unknown> {
   systemRole?: "owner" | "admin" | "member" | "guest" | "user";
   canCreateOrg?: boolean;
   hasBoards?: boolean;
+  orgRole?: WorkspaceRole | null;
   email?: string | null;
   name?: string | null;
   picture?: string | null;
@@ -119,7 +121,10 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
     .limit(1);
 
   const [memberShip] = await db
-    .select({ organizationId: membershipsTable.organizationId })
+    .select({
+      organizationId: membershipsTable.organizationId,
+      role: membershipsTable.role,
+    })
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, dbUser.id))
     .orderBy(asc(membershipsTable.createdAt))
@@ -145,6 +150,8 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
   token.systemRole = ownedMembership ? "owner" : "user";
   token.canCreateOrg = !Boolean(ownedMembership);
   token.hasBoards = Boolean(boardMembership);
+  // role in the workspace the session points at (decides board creation)
+  token.orgRole = ownedMembership ? "owner" : (memberShip?.role ?? null);
 
   return token;
 };
@@ -237,6 +244,7 @@ export const authConfig: NextAuthConfig = {
         Boolean(current.systemRole) &&
         typeof current.canCreateOrg === "boolean" &&
         typeof current.hasBoards === "boolean" &&
+        current.orgRole !== undefined &&
         (current.canCreateOrg ? true : Boolean(current.organizationId));
 
       // Avoid hitting DB on every `/api/auth/session` request.
@@ -266,6 +274,7 @@ export const authConfig: NextAuthConfig = {
         session.user.systemRole = tokenTypes.systemRole ?? "user";
         session.user.canCreateOrg = tokenTypes.canCreateOrg ?? false;
         session.user.hasBoards = tokenTypes.hasBoards ?? false;
+        session.user.orgRole = tokenTypes.orgRole ?? null;
         session.user.email = tokenTypes.email ?? session.user.email ?? "";
         session.user.name = tokenTypes.fullName ?? session.user.name ?? "";
         session.user.image = tokenTypes.avatar ?? session.user.image ?? null;

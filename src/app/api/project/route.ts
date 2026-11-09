@@ -27,6 +27,7 @@ import {
   type ProjectRequestBody,
 } from "@/validations/project.validation";
 import { NextResponse } from "next/server";
+import { canCreateBoards } from "@/lib/rbac/workspace-permissions";
 
 export const POST = createHandle<ProjectRequestBody>(
   { body: projectRequestSchema },
@@ -62,7 +63,7 @@ export const POST = createHandle<ProjectRequestBody>(
       }
 
       const orgRole = await getOrgRole(userId, organizationId);
-      if (orgRole !== "owner" && orgRole !== "admin") {
+      if (!canCreateBoards(orgRole)) {
         throw new ForbiddenError(
           "Forbidden — only org owner/admin can create projects",
         );

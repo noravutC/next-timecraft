@@ -19,6 +19,7 @@ export const BoardTagsEditor = ({
   onAddTag,
   onRemoveTag,
   onPickNextColor,
+  readOnly = false,
 }: {
   tags: string[];
   tagColors: Record<string, string>;
@@ -28,6 +29,8 @@ export const BoardTagsEditor = ({
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
   onPickNextColor: (color: string) => void;
+  /** editors and viewers: the list only */
+  readOnly?: boolean;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   // ช่องว่างแล้วกด Add tag → พาไปที่ช่องพิมพ์แทนการเงียบ
@@ -41,35 +44,37 @@ export const BoardTagsEditor = ({
         characters each.
       </p>
 
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
-          <TagColorPicker value={nextTagColor} onChange={onPickNextColor} />
-          <Input
-            ref={inputRef}
-            inputSize="md"
-            aria-label="New tag name"
-            value={draftTag}
-            onChange={(e) => onDraftTagChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            placeholder="Add a tag"
-            maxLength={TAG_LIMIT}
-            className="pl-8.5"
-          />
+      {!readOnly && (
+        <div className="flex gap-2">
+          <div className="relative min-w-0 flex-1">
+            <TagColorPicker value={nextTagColor} onChange={onPickNextColor} />
+            <Input
+              ref={inputRef}
+              inputSize="md"
+              aria-label="New tag name"
+              value={draftTag}
+              onChange={(e) => onDraftTagChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              placeholder="Add a tag"
+              maxLength={TAG_LIMIT}
+              className="pl-8.5"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={submit}
+            className="h-9"
+          >
+            Add tag
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={submit}
-          className="h-9"
-        >
-          Add tag
-        </Button>
-      </div>
+      )}
 
       {tags.length > 0 ? (
         <ul className="flex flex-col overflow-hidden rounded-popover border border-line">
@@ -92,22 +97,24 @@ export const BoardTagsEditor = ({
               <span className="min-w-0 flex-1 truncate text-base text-ink">
                 {tag}
               </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Remove tag ${tag}`}
-                onClick={() => onRemoveTag(tag)}
-                className="text-ink-subtle"
-              >
-                <X className="size-3.5" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Remove tag ${tag}`}
+                  onClick={() => onRemoveTag(tag)}
+                  className="text-ink-subtle"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              )}
             </li>
           ))}
         </ul>
       ) : (
         <p className="rounded-popover border border-dashed border-input px-4 py-6 text-center text-sm text-ink-subtle">
-          No tags yet. Add the first one above.
+          {readOnly ? 'No tags yet.' : 'No tags yet. Add the first one above.'}
         </p>
       )}
     </div>

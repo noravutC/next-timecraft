@@ -15,14 +15,21 @@ export const SettingsGeneralTab = ({
   onNameChange,
   onDescriptionChange,
   onSettingsChange,
+  readOnly = false,
 }: {
   draft: BoardSettingsDraft;
   coverImage: string | null;
   onNameChange: (name: string) => void;
   onDescriptionChange: (description: string) => void;
   onSettingsChange: (next: Partial<ProjectSettings>) => void;
+  /** editors and viewers see the values without changing them */
+  readOnly?: boolean;
 }) => (
-  <div className="flex flex-col gap-5.5">
+  // a disabled fieldset turns every field and swatch inside it read-only
+  <fieldset
+    disabled={readOnly}
+    className="m-0 flex min-w-0 flex-col gap-5.5 border-0 p-0"
+  >
     <div className="flex items-end gap-4">
       <ProjectAvatar
         project={{
@@ -66,5 +73,5 @@ export const SettingsGeneralTab = ({
         className="field-sizing-fixed min-h-0 resize-none px-3 py-2.5"
       />
     </div>
-  </div>
+  </fieldset>
 );
