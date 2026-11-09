@@ -6,6 +6,10 @@ import { createParamHandle } from "@/lib/api/handle";
 import { parseIdList } from "@/lib/api/params";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import {
+  broadcastColumns,
+  broadcastColumnsDeleted,
+} from "@/lib/realtime/board-events";
+import {
   updateColumnSchema,
   type UpdateColumnBody,
 } from "@/validations/column.validation";
@@ -42,7 +46,7 @@ export const GET = createParamHandle<RouteParams>(
 
 export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
   { body: updateColumnSchema },
-  async ({ params, body, userId }) => {
+  async ({ request, params, body, userId }) => {
     const columnIds = parseIdList(params.anyIds);
 
     // Authorization covers the URL ids, so the body may only touch those.
@@ -90,6 +94,8 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
       return rowsUpdated;
     });
 
+    broadcastColumns(request, updatedColumns);
+
     return NextResponse.json(
       { updated: updatedColumns, message: "Update columns success", status: 200 },
       { status: 200 },
@@ -99,7 +105,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
 
 export const DELETE = createParamHandle<RouteParams>(
   {},
-  async ({ params, userId }) => {
+  async ({ request, params, userId }) => {
     const columnIds = parseIdList(params.anyIds);
 
     const existingColumnsList = await getActiveColumnLinks(columnIds);
@@ -128,6 +134,12 @@ export const DELETE = createParamHandle<RouteParams>(
         ),
       )
       .returning({ id: columnsTable.id });
+
+    const deletedIds = new Set(deletedRows.map((r) => r.id));
+    broadcastColumnsDeleted(
+      request,
+      existingColumnsList.filter((col) => deletedIds.has(col.columnId)),
+    );
 
     return NextResponse.json(
       {

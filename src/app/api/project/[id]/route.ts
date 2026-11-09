@@ -8,6 +8,10 @@ import { BadRequestError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { parseId } from "@/lib/api/params";
 import { triggerExclusive } from "@/lib/pusher-server";
+import {
+  broadcastBoardDeleted,
+  broadcastBoardsChanged,
+} from "@/lib/realtime/board-events";
 import { projectSettingsSchema } from "@/types/project-settings";
 import {
   isValidProjectCoverImage,
@@ -98,6 +102,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
       };
     });
 
+    broadcastBoardsChanged(request, [projectId]);
     if (retagged > 0) {
       triggerExclusive(request, `project-${projectId}`, "tags-renamed", {
         renames,
@@ -116,13 +121,14 @@ export const DELETE = createParamHandle<RouteParams>(
     permission: "project:delete",
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
-  async ({ params }) => {
+  async ({ request, params }) => {
     const projectId = parseId(params.id);
 
     const [deleted] = await db
       .delete(projectsTable)
       .where(eq(projectsTable.id, projectId))
       .returning();
+    if (deleted) broadcastBoardDeleted(request, projectId);
 
     return NextResponse.json(
       { deleted, message: "Project deleted successfully", status: 200 },

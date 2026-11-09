@@ -19,6 +19,13 @@ const boardsOf = (organizationId: string) =>
     .from(projectsTable)
     .where(eq(projectsTable.organizationId, organizationId));
 
+/** Every board in the workspace, to tell their members something changed. */
+export async function listWorkspaceBoardIds(
+  organizationId: string,
+): Promise<string[]> {
+  return (await boardsOf(organizationId)).map((board) => board.id);
+}
+
 /** Everyone in the workspace, with how many of its boards they're on. */
 export async function listWorkspaceMembers(
   organizationId: string,

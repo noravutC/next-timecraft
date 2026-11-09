@@ -22,6 +22,7 @@ import { NextResponse } from 'next/server';
 import { isGuestSession } from '@/lib/guest';
 import { createNotification } from '@/db/uniq-query/notification/notification-utils';
 import { pushNotification } from '@/lib/pusher-server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
 
 type RouteParams = { token: string };
 
@@ -92,6 +93,7 @@ export const POST = createParamHandle<RouteParams>(
     if (!(await acceptInvitation(invitation, userId))) {
       throw new BadRequestError('This invitation is no longer valid');
     }
+    broadcastBoardsChanged(request, [invitation.projectId]);
     if (invitation.invitedBy && invitation.invitedBy !== userId) {
       const notification = await createNotification({
         recipientId: invitation.invitedBy,

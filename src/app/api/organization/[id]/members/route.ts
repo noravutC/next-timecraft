@@ -3,6 +3,7 @@
 
 import {
   addGuestToWorkspace,
+  listWorkspaceBoardIds,
   listBoardGuests,
   listWorkspaceMembers,
 } from '@/db/uniq-query/organization/workspace-member-utils';
@@ -17,6 +18,7 @@ import {
   type AddWorkspaceGuestBody,
 } from '@/validations/organization.validation';
 import { NextResponse } from 'next/server';
+import { broadcastBoardsChanged } from '@/lib/realtime/board-events';
 
 type RouteParams = { id: string };
 
@@ -40,7 +42,7 @@ export const GET = createParamHandle<RouteParams>(
 
 export const POST = createParamHandle<RouteParams, AddWorkspaceGuestBody>(
   { body: addWorkspaceGuestSchema },
-  async ({ params, body, userId }) => {
+  async ({ request, params, body, userId }) => {
     const organizationId = parseId(params.id);
     await authorizeWorkspace(userId, organizationId, 'manage');
     if (!(await addGuestToWorkspace(organizationId, body.userId))) {
@@ -48,6 +50,10 @@ export const POST = createParamHandle<RouteParams, AddWorkspaceGuestBody>(
         'They’re not a guest on this workspace’s boards',
       );
     }
+    broadcastBoardsChanged(
+      request,
+      await listWorkspaceBoardIds(organizationId),
+    );
     return NextResponse.json(
       { created: { userId: body.userId }, message: 'Added', status: 201 },
       { status: 201 },

@@ -4,13 +4,16 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { privateChannel } from '@/helper/utils/realtime-channel';
 import { pusherClient } from '@/lib/pusher-client';
+import { toast } from 'sonner';
 import { useTaskStore } from '@/store/use-task.store';
+import { useColumnStore } from '@/store/use-column.store';
+import { useProjectStore } from '@/store/use-project.store';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
 import { useUnreadStore } from '@/store/use-unread.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import type { TaskAssigneeUser } from '@/services/assignee.service';
-import { Task } from '@/types';
+import { ColumnRow, Task } from '@/types';
 import type { TagRenames } from '@/helper/utils/tag-rename';
 
 export const useRealtimeBoard = (projectId?: string | null) => {
@@ -42,6 +45,34 @@ export const useRealtimeBoard = (projectId?: string | null) => {
 
     channel.bind('tags-renamed', ({ renames }: { renames: TagRenames }) => {
       useTaskStore.getState().renameTagsOnBoard(projectId, renames);
+    });
+
+    channel.bind('columns-upserted', (columns: ColumnRow[]) => {
+      useColumnStore.getState().ingestColumns(columns);
+    });
+
+    channel.bind('columns-deleted', (ids: string[]) => {
+      useColumnStore.getState().removeColumnsFromRealtime(ids);
+    });
+
+    // the board, or who's on it, changed: read it again
+    channel.bind('board-changed', () => {
+      const name = useProjectStore.getState().projects[projectId]?.name;
+      void useProjectStore
+        .getState()
+        .refreshProject(projectId)
+        .then((result) => {
+          if (result === 'lost') {
+            toast.message(`You no longer have access to ${name ?? 'a board'}`);
+          }
+        })
+        .catch(() => {});
+    });
+
+    channel.bind('board-deleted', () => {
+      const name = useProjectStore.getState().projects[projectId]?.name;
+      useProjectStore.getState().removeProject(projectId);
+      toast.message(`${name ?? 'A board'} was deleted`);
     });
 
     channel.bind(

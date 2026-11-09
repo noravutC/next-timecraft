@@ -48,6 +48,11 @@ type ProjectStore = {
     projectIds: string[],
     fetchAll?: boolean,
   ) => Promise<ProjectCache[]>;
+  /**
+   * Re-reads one board quietly (no loading state) after someone else
+   * changed it. Gone from the answer means you lost it: it leaves the list.
+   */
+  refreshProject: (projectId: string) => Promise<"kept" | "lost">;
   viewProjectUsing: () => ProjectCache | null;
 };
 
@@ -273,6 +278,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       set({ status: "error" });
       throw error;
     }
+  },
+  refreshProject: async (projectId) => {
+    const response = await projectServices.getProjects([projectId]);
+    const fresh = response.data.find((p) => p.id === projectId);
+    if (!fresh) {
+      get().removeProject(projectId);
+      return "lost";
+    }
+    set((state) => ({
+      projects: {
+        ...state.projects,
+        [projectId]: { ...state.projects[projectId], ...fresh },
+      },
+    }));
+    return "kept";
   },
   viewProjectUsing: () => {
     const { projects, projectIsUsing } = get();
