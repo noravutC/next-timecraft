@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { LogOut } from "lucide-react";
 // components
@@ -7,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { UserAvatar } from "../people/user-avatar";
@@ -44,6 +46,10 @@ export const UserMenu = () => {
             </span>
           )}
         </div>
+        <DropdownMenuItem className="h-8 px-2.5" asChild>
+          <Link href="/settings/profile">My account</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           className="h-8.5 px-2.5"
           onClick={() => signOut({ callbackUrl: "/" })}

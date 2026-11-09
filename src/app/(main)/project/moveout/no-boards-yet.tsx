@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FirstBoardHeader } from './first-board-header';
+import { AppHeader } from '@/components/app-header/app-header';
 
 interface NoBoardsYetProps {
   workspace: { name: string; logo: string | null } | null;
@@ -17,7 +17,7 @@ export const NoBoardsYet = ({
   canStartWorkspace,
 }: NoBoardsYetProps) => (
   <div className="flex h-full flex-col overflow-y-auto bg-background">
-    <FirstBoardHeader workspace={workspace} />
+    <AppHeader workspace={workspace} />
     <main className="flex flex-1 justify-center px-5 py-24">
       <div className="flex w-full max-w-105 flex-col items-center gap-4 text-center">
         <span className="grid size-11 place-items-center rounded-popover border border-line text-ink-muted">

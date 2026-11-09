@@ -298,6 +298,26 @@ export async function getAttachmentStoragePathsByTaskIds(
   return rows.map((r) => r.storagePath);
 }
 
+// the same for whole boards, collected before a board is deleted (pass the
+// transaction that deletes them)
+export async function getAttachmentStoragePathsByProjectIds(
+  projectIds: string[],
+  executor: Pick<typeof db, 'select'> = db,
+): Promise<string[]> {
+  if (projectIds.length === 0) return [];
+  const rows = await executor
+    .select({ storagePath: taskCommentAttachmentsTable.storagePath })
+    .from(taskCommentAttachmentsTable)
+    .innerJoin(
+      taskCommentsTable,
+      eq(taskCommentAttachmentsTable.commentId, taskCommentsTable.id),
+    )
+    .innerJoin(tasksTable, eq(taskCommentsTable.taskId, tasksTable.id))
+    .innerJoin(columnsTable, eq(tasksTable.columnId, columnsTable.id))
+    .where(inArray(columnsTable.projectId, projectIds));
+  return rows.map((r) => r.storagePath);
+}
+
 // ผู้เกี่ยวข้องกับ task = assignees + คนที่เคยคอมเมนต์ (ยังไม่ถูกลบ) —
 // ใช้เลือกผู้รับ notification แบบ comment_reply
 export async function getTaskParticipantIds(taskId: string): Promise<string[]> {

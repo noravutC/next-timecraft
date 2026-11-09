@@ -64,6 +64,8 @@ const provisionGuestAccount = async () => {
   return { id: guestUser.id, name: GUEST_NAME, email: GUEST_EMAIL, image: null };
 };
 
+const RECHECK_MS = 10 * 60 * 1000;
+
 export interface TimeCraftJWT extends Record<string, unknown> {
   id?: string;
   fullName?: string;
@@ -75,6 +77,8 @@ export interface TimeCraftJWT extends Record<string, unknown> {
   canCreateOrg?: boolean;
   hasBoards?: boolean;
   orgRole?: WorkspaceRole | null;
+  /** when the access context was last read from the DB (ms) */
+  checkedAt?: number;
   email?: string | null;
   name?: string | null;
   picture?: string | null;
@@ -84,7 +88,11 @@ export interface TimeCraftJWT extends Record<string, unknown> {
 // at sign-in, or the token's own id afterwards. Never by client input.
 type UserLookup = { email: string } | { id: string };
 
-const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
+// null signs the session out: the account was deleted
+const hydrateTokenFromDb = async (
+  token: TimeCraftJWT,
+  lookup: UserLookup,
+): Promise<TimeCraftJWT | null> => {
   const [dbUser] = await db
     .select({
       id: usersTable.id,
@@ -93,6 +101,7 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
       avatar: usersTable.avatar,
       provider: usersTable.provider,
       providerId: usersTable.providerId,
+      deletedAt: usersTable.deletedAt,
     })
     .from(usersTable)
     .where(
@@ -102,8 +111,8 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
     )
     .limit(1);
 
-  if (!dbUser) {
-    return token;
+  if (!dbUser || dbUser.deletedAt) {
+    return null;
   }
 
   const [ownedMembership] = await db
@@ -152,6 +161,7 @@ const hydrateTokenFromDb = async (token: TimeCraftJWT, lookup: UserLookup) => {
   token.hasBoards = Boolean(boardMembership);
   // role in the workspace the session points at (decides board creation)
   token.orgRole = ownedMembership ? "owner" : (memberShip?.role ?? null);
+  token.checkedAt = Date.now();
 
   return token;
 };
@@ -213,8 +223,8 @@ export const authConfig: NextAuthConfig = {
         })
         .onConflictDoUpdate({
           target: usersTable.email,
+          // the name is theirs to change in Profile: only the photo follows Google
           set: {
-            fullName: user.name ?? user.email,
             avatar: user.image ?? null,
             provider,
             providerId,
@@ -247,9 +257,12 @@ export const authConfig: NextAuthConfig = {
         current.orgRole !== undefined &&
         (current.canCreateOrg ? true : Boolean(current.organizationId));
 
-      // Avoid hitting DB on every `/api/auth/session` request.
+      // Avoid hitting DB on every `/api/auth/session` request, but look again
+      // every few minutes: roles change, and deleted accounts must sign out.
+      const stale =
+        !current.checkedAt || Date.now() - current.checkedAt > RECHECK_MS;
       const shouldHydrate =
-        Boolean(user) || trigger === "update" || !hasAccessContext;
+        Boolean(user) || trigger === "update" || !hasAccessContext || stale;
       if (!shouldHydrate) {
         return token;
       }
