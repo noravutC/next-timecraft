@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         '/project',
         '/settings',
         '/notifications',
+        '/my-tasks',
         '/organization/',
         '/invite/',
         '/join/',
