@@ -6,7 +6,7 @@ import {
 } from '../_components/legal/terms-sections';
 
 export const metadata: Metadata = {
-  title: 'Terms of use · TimeCraft',
+  title: 'Terms of use',
   description:
     'The terms for using TimeCraft: your account, your content, fair use and what’s not guaranteed.',
 };

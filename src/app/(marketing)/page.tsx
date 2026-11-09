@@ -11,7 +11,7 @@ import { HeroBoard } from './_components/case-study/hero-board';
 import { SyncDemoSection } from './_components/case-study/sync-demo-section';
 
 export const metadata: Metadata = {
-  title: 'Noravut Chanthalay · Full-Stack Engineer',
+  title: { absolute: 'Noravut Chanthalay · Full-Stack Engineer' },
   description:
     'Full-stack engineer in Bangkok, Thailand. Next.js / React / TypeScript. A live case study of TimeCraft, a production Kanban SaaS: hand-rolled drag physics, optimistic UI, and the engineering underneath.',
 };
