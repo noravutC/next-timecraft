@@ -4,6 +4,8 @@ import { create } from 'zustand';
 // จากหลายที่ (ชื่อบอร์ดบน header, แถบเครื่องมือ, ⌘K)
 export type BoardDialog = 'switch' | 'create' | 'settings' | 'shortcuts' | null;
 
+export type BoardView = 'board' | 'calendar';
+
 export type BoardSettingsTab =
   | 'general'
   | 'tags'
@@ -23,6 +25,9 @@ interface NavState {
   /** เพิ่มขึ้นทุกครั้งที่กด "New task" — column แรกเห็นค่าเปลี่ยนแล้วเปิด composer บนสุด */
   newTaskSignal: number;
   requestNewTask: () => void;
+  /** the board as columns, or as a month of due dates */
+  boardView: BoardView;
+  setBoardView: (view: BoardView) => void;
 }
 
 export const useNavStore = create<NavState>((set) => ({
@@ -39,4 +44,6 @@ export const useNavStore = create<NavState>((set) => ({
     set({ boardDialog: 'settings', settingsTab }),
   newTaskSignal: 0,
   requestNewTask: () => set((s) => ({ newTaskSignal: s.newTaskSignal + 1 })),
+  boardView: 'board',
+  setBoardView: (boardView) => set({ boardView }),
 }));

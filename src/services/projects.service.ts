@@ -13,6 +13,8 @@ import {
   PendingInvitation,
   ProjectCache,
   ProjectRow,
+  TaskCache,
+  TaskFilter,
 } from "@/types";
 import type { ProjectSettings } from "@/types/project-settings";
 import type { TagRenames } from "@/helper/utils/tag-rename";
@@ -29,6 +31,13 @@ export type CreateProjectPayload = {
   description?: string;
   coverImage?: string | null;
   // templateColumns?: ProjectTemplateColumnInput[];
+};
+
+export type CalendarData = {
+  dated: TaskCache[];
+  undated: TaskCache[];
+  /** all undated tasks; `undated` holds the first ones */
+  undatedTotal: number;
 };
 
 export type UpdateProjectPayload = {
@@ -65,6 +74,34 @@ class ProjectService {
       .then((response) => response.data as APIPatch<ProjectRow>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to update project");
+      });
+  }
+
+  /** Tasks due in [from, to) and the first undated ones, for the calendar. */
+  async getCalendar(
+    projectId: string,
+    body: {
+      from: string;
+      to: string;
+      filter?: TaskFilter;
+      hideUndatedIn?: string;
+    },
+  ): Promise<CalendarData> {
+    return this.client
+      .post(`/project/${projectId}/calendar`, body)
+      .then((response) => response.data.data as CalendarData)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to load the calendar");
+      });
+  }
+
+  /** Your iCal link for the board; `reset` replaces it with a new one. */
+  async getCalendarFeed(projectId: string, reset = false): Promise<string> {
+    return this.client
+      .post(`/project/${projectId}/calendar-feed${reset ? "/reset" : ""}`)
+      .then((response) => response.data.data.url as string)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to get the link");
       });
   }
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { useProjectStore } from '@/store';
+import { useNavStore, useProjectStore } from '@/store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useOpenTask } from '@/components/task-detail/use-open-task';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,12 +14,17 @@ import {
 import {
   boardUrl,
   readBoardUrl,
+  readBoardView,
   type BoardUrlState,
+  type BoardUrlView,
 } from '@/helper/utils/board-url';
 import { readFilterUrl } from '@/helper/utils/filter-url';
 import type { BoardFilterState } from '@/types';
 
-type RequestedState = BoardUrlState & { filter: BoardFilterState };
+type RequestedState = BoardUrlState & {
+  view: BoardUrlView;
+  filter: BoardFilterState;
+};
 
 /**
  * Keeps `/project?board=&task=` (and the board filter) and the open board
@@ -38,21 +43,24 @@ export function useBoardUrlSync() {
   const openTask = useOpenTask();
 
   const filter = useBoardFilterStore(useShallow(selectBoardFilter));
+  const view = useNavStore((s) => s.boardView);
 
   // what the URL asked for when the page loaded; read once
   const requested = useRef<RequestedState | null>(null);
   if (requested.current === null)
     requested.current = {
       ...readBoardUrl(searchParams),
+      view: readBoardView(searchParams),
       filter: readFilterUrl(searchParams),
     };
   const [applied, setApplied] = useState(false);
   const loaded = Object.keys(projects).length > 0;
 
-  // the link's filter, before the first tasks are fetched
+  // the link's filter and view, before the first tasks are fetched
   useEffect(() => {
     if (requested.current) {
       useBoardFilterStore.getState().replace(requested.current.filter);
+      useNavStore.getState().setBoardView(requested.current.view);
     }
   }, []);
 
@@ -79,8 +87,13 @@ export function useBoardUrlSync() {
   // app → URL. replaceState keeps Next's router in sync without a navigation
   useEffect(() => {
     if (!applied) return;
-    const next = boardUrl({ board: projectIsUsing, task: openTaskId, filter });
+    const next = boardUrl({
+      board: projectIsUsing,
+      task: openTaskId,
+      view,
+      filter,
+    });
     const current = `${window.location.pathname}${window.location.search}`;
     if (next !== current) window.history.replaceState(null, '', next);
-  }, [applied, projectIsUsing, openTaskId, filter]);
+  }, [applied, projectIsUsing, openTaskId, view, filter]);
 }

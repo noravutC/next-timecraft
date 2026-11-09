@@ -16,7 +16,9 @@ import type { TColumn } from './data';
  * debounce ช่อง search, รวมตัวเลือก tag/สมาชิก, นับ filter ที่เปิดอยู่,
  * จำนวน task ที่แสดง (Showing X of Y)
  */
-export function useBoardFilterBar(columns: TColumn[]) {
+export function useBoardFilterBar(
+  columns: Pick<TColumn, 'id' | 'totalTasks'>[],
+) {
   const q = useBoardFilterStore((s) => s.q);
   const priorities = useBoardFilterStore((s) => s.priorities);
   const tags = useBoardFilterStore((s) => s.tags);

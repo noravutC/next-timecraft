@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         '/invite/',
         '/join/',
         '/login',
+        '/cal/',
       ],
     },
     sitemap: `${appUrl()}/sitemap.xml`,
