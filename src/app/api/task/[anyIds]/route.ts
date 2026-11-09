@@ -4,6 +4,11 @@ import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
 import { getAttachmentStoragePathsByTaskIds } from "@/db/uniq-query/comment/comment-utils";
 import { removeNonMemberAssignees } from "@/db/uniq-query/task/assignee-utils";
 import { getTasksByIds } from "@/db/uniq-query/task/task-utils";
+import {
+  getColumnRefs,
+  recordTaskActivities,
+} from "@/db/uniq-query/task/activity-utils";
+import { diffTaskActivity } from "@/helper/utils/task-activity";
 import { BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { parseIdList } from "@/lib/api/params";
@@ -69,6 +74,11 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
     ];
     await authorizeOrThrow(userId, uniqProjectIds, "task:update");
 
+    // the state before the change, to record what changed
+    const beforeById = new Map(
+      (await getTasksByIds(targetIds)).map((t) => [t.id, t]),
+    );
+
     const updatedTasks = await db.transaction(async (tx) => {
       const rows = [];
 
@@ -105,6 +115,22 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
 
       return rows;
     });
+
+    const columnRefs = await getColumnRefs([
+      ...updatedTasks.map((t) => t.columnId),
+      ...[...beforeById.values()].map((t) => t.columnId),
+    ]);
+    await recordTaskActivities(
+      userId,
+      updatedTasks.flatMap((after) => {
+        const before = beforeById.get(after.id);
+        if (!before) return [];
+        return diffTaskActivity(before, after, columnRefs).map((entry) => ({
+          taskId: after.id,
+          entry,
+        }));
+      }),
+    );
 
     const projectByTask = new Map(
       existingTaskLinks.map((l) => [l.taskId, l.projectId]),

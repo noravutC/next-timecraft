@@ -8,3 +8,4 @@ export * from "./notification";
 export * from "./global/api";
 export * from "./organization";
 export * from "./template-column";
+export * from "./task-activity";
