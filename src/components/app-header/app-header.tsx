@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { BreadcrumbSlash } from '@/components/breadcrumb/breadcrumb-slash';
+import { ConnectionPill } from '@/components/connection/connection-pill';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -38,6 +39,7 @@ export const AppHeader = ({ workspace, current }: AppHeaderProps) => (
       </>
     )}
     <span className="flex-1" />
+    <ConnectionPill />
     <NotificationBell />
     <UserMenu />
   </header>

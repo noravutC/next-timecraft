@@ -15,3 +15,9 @@ export const signInDestination = ({
   organizationId || hasBoards || !canCreateOrg
     ? '/project'
     : '/organization/create';
+
+/** The sign-in page as "Sign in again" opens it: it closes once you're in. */
+export const SIGN_IN_AGAIN_URL = '/login?then=close';
+
+export const closesAfterSignIn = (search: string): boolean =>
+  new URLSearchParams(search).get('then') === 'close';

@@ -4,11 +4,20 @@ import { useBoardAccess } from '@/components/project/use-board-access';
 import { AddColumnLane } from './_components/add-column-lane';
 import { ArchivedBoardBanner } from './_components/archived-board-banner';
 import { BoardFilterBar } from './_components/board-filter-bar';
+import { BoardLoadError } from './_components/board-load-error';
 import { Column } from './_components/column';
 import { useBoard } from './_components/use-board';
 
 export default function ProjectPage() {
-  const { scrollableRef, board, panCursor, settings } = useBoard();
+  const {
+    scrollableRef,
+    board,
+    panCursor,
+    settings,
+    boardName,
+    loadFailed,
+    retryLoad,
+  } = useBoard();
   const canAddColumns = useBoardAccess().can('column:create');
 
   const boardCls = settings.isBoardMoreObvious ? 'px-32 py-20' : '';
@@ -23,10 +32,20 @@ export default function ProjectPage() {
         className={scrollCls}
         style={{ cursor: panCursor !== 'default' ? panCursor : undefined }}
       >
-        {board.columns.map((column) => (
-          <Column key={column.id} column={column} allColumns={board.columns} />
-        ))}
-        {canAddColumns && <AddColumnLane />}
+        {loadFailed ? (
+          <BoardLoadError name={boardName} onRetry={retryLoad} />
+        ) : (
+          <>
+            {board.columns.map((column) => (
+              <Column
+                key={column.id}
+                column={column}
+                allColumns={board.columns}
+              />
+            ))}
+            {canAddColumns && <AddColumnLane />}
+          </>
+        )}
       </div>
     </div>
   );

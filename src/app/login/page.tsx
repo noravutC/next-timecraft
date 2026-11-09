@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { signIn, useSession } from "next-auth/react";
+import { getSession, signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { LoaderScreen } from "@/components/ui/loader";
-import { signInDestination } from "@/helper/utils/sign-in-destination";
+import {
+  closesAfterSignIn,
+  signInDestination,
+} from "@/helper/utils/sign-in-destination";
 import { SignInOptions } from "./_components/sign-in-options";
 
 export default function Login() {
@@ -19,9 +22,21 @@ export default function Login() {
 
   useEffect(() => {
     if (status !== "authenticated" || !session) return;
-    router.replace(
-      signInDestination({ organizationId, canCreateOrg, hasBoards }),
-    );
+    const destination = signInDestination({
+      organizationId,
+      canCreateOrg,
+      hasBoards,
+    });
+    // opened by "Sign in again": tell the tab that asked, then go away
+    if (closesAfterSignIn(window.location.search)) {
+      void getSession().then(() => {
+        window.close();
+        // a browser that keeps the window open gets a normal sign-in
+        setTimeout(() => router.replace(destination), 300);
+      });
+      return;
+    }
+    router.replace(destination);
   }, [status, session, organizationId, canCreateOrg, hasBoards, router]);
 
   const handleGuestLogin = async () => {

@@ -11,6 +11,7 @@ import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { useBoardAccess } from '@/components/project/use-board-access';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { ConnectionPill } from '@/components/connection/connection-pill';
 import {
   Tooltip,
   TooltipContent,
@@ -96,6 +97,7 @@ export const ProjectHeader = () => {
           <Skeleton className="h-7 w-40 rounded-full" />
         ) : (
           <>
+            <ConnectionPill />
             {members.length > 0 && (
               <AvatarGroup
                 aria-label={`${members.length} members`}
