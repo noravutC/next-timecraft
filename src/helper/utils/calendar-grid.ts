@@ -57,3 +57,23 @@ export const tasksByDay = <T extends { dueDate: Date | string | null }>(
   }
   return days;
 };
+
+/** Today and the days before it, newest first, for picking a recent day. */
+export const recentDays = (
+  count: number,
+  now: Date = new Date(),
+): { key: DayKey; label: string }[] =>
+  Array.from({ length: count }, (_, i) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const label =
+      i === 0
+        ? 'Today'
+        : i === 1
+          ? 'Yesterday'
+          : date.toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            });
+    return { key: dayKey(date), label };
+  });

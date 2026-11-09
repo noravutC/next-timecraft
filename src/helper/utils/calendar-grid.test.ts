@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { dayKey, monthGrid, shiftMonth, tasksByDay } from './calendar-grid';
+import {
+  dayKey,
+  monthGrid,
+  recentDays,
+  shiftMonth,
+  tasksByDay,
+} from './calendar-grid';
 
 describe('calendar grid', () => {
   it('covers November 2026 in five Sunday-first weeks', () => {
@@ -37,5 +43,19 @@ describe('calendar grid', () => {
     ]);
     expect(days.get(dayKey(due))?.map((t) => t.id)).toEqual(['a', 'b']);
     expect(days.size).toBe(1);
+  });
+});
+
+describe('recentDays', () => {
+  it('names today and yesterday, then the date', () => {
+    const days = recentDays(3, new Date(2026, 10, 7, 9));
+    expect(days.map((d) => d.key)).toEqual([
+      '2026-11-07',
+      '2026-11-06',
+      '2026-11-05',
+    ]);
+    expect(days[0].label).toBe('Today');
+    expect(days[1].label).toBe('Yesterday');
+    expect(days[2].label).toBe('Thu, Nov 5');
   });
 });

@@ -7,6 +7,7 @@ import type {
   TaskPriority,
 } from '@/types';
 import { formatMonthDay, formatRelativePast } from './date-format';
+import { formatDuration } from './duration';
 import { shortName } from './person-name';
 
 export type ActivityIcon =
@@ -176,6 +177,17 @@ export function describeActivity(
       return { icon: 'subtask', verb: 'completed', object: entry.data.title };
     case 'subtask_reopened':
       return { icon: 'subtask', verb: 'reopened', object: entry.data.title };
+    case 'time_logged': {
+      const { minutes, day: spentOn, note } = entry.data;
+      const [y, m, d] = spentOn.split('-').map(Number);
+      const when = formatMonthDay(new Date(y, m - 1, d), now);
+      return {
+        icon: 'estimate',
+        verb: 'logged',
+        object: formatDuration(minutes),
+        note: note ? `on ${when} · ${note}` : `on ${when}`,
+      };
+    }
   }
 }
 

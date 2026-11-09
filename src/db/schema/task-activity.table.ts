@@ -42,7 +42,12 @@ export type TaskActivityEntry =
       data: { added: ActivityPersonRef[]; removed: ActivityPersonRef[] };
     }
   | { type: 'subtask_completed'; data: { title: string } }
-  | { type: 'subtask_reopened'; data: { title: string } };
+  | { type: 'subtask_reopened'; data: { title: string } }
+  | {
+      type: 'time_logged';
+      /** `day` is the YYYY-MM-DD the time was spent */
+      data: { minutes: number; day: string; note?: string };
+    };
 
 export type TaskActivityType = TaskActivityEntry['type'];
 
