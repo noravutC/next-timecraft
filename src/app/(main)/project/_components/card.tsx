@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
 import { useBoardAccess } from '@/components/project/use-board-access';
+import { useUnreadStore } from '@/store/use-unread.store';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { withSettingsDefaults } from '@/types/project-settings';
 import { TCardState, useCardDnd } from './use-card-dnd';
@@ -73,6 +74,7 @@ export function CardDisplay({
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
   const openTask = useTaskDetailStore((s) => s.open);
+  const unread = useUnreadStore((s) => s.byTask[card.id] ?? 0);
   const commentCount = useTaskStore(
     useShallow((s) => s.tasks[card.id]?.commentCount ?? 0),
   );
@@ -215,9 +217,24 @@ export function CardDisplay({
             </span>
           )}
           {commentCount > 0 && (
-            <span className="flex items-center gap-1.25">
+            <span
+              className={cn(
+                'flex items-center gap-1.25',
+                unread > 0 && 'text-brand-dark',
+              )}
+            >
               <MessageSquare className="size-3.5" />
               {commentCount}
+              <span className="sr-only">
+                {unread > 0
+                  ? ` comments, ${unread} unread`
+                  : commentCount === 1
+                    ? ' comment'
+                    : ' comments'}
+              </span>
+              {unread > 0 && (
+                <span aria-hidden className="size-1.5 rounded-full bg-brand" />
+              )}
             </span>
           )}
           {isLoading && <Loader size="xs" className="ml-auto" />}

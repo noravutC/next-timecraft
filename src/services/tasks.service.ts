@@ -34,6 +34,8 @@ class TaskService {
     APIGet<TaskCache> & {
       assignees: Record<string, TaskAssigneeLite[]>;
       subtasks: Record<string, SubtaskProgress>;
+      /** unread comments for the signed-in user, by task id */
+      unread?: Record<string, number>;
       priorityCounts: Record<string, PriorityCounts>;
       pageInfo: Record<string, TaskPageInfo>;
     }
@@ -50,6 +52,8 @@ class TaskService {
           response.data as APIGet<TaskCache> & {
             assignees: Record<string, TaskAssigneeLite[]>;
             subtasks: Record<string, SubtaskProgress>;
+            /** unread comments for the signed-in user, by task id */
+            unread?: Record<string, number>;
             priorityCounts: Record<string, PriorityCounts>;
             pageInfo: Record<string, TaskPageInfo>;
           },
