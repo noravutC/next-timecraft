@@ -2,14 +2,19 @@ import type { ReactNode } from 'react';
 import {
   Body,
   Button,
+  Column,
   Container,
   Head,
   Heading,
   Hr,
   Html,
+  Img,
   Preview,
+  Row,
+  Section,
   Text,
 } from '@react-email/components';
+import { appUrl } from '@/lib/app-url';
 
 // Inline styles only: email clients drop <style> blocks and CSS variables.
 const main = {
@@ -29,12 +34,17 @@ const card = {
   margin: '0 auto',
 };
 
-const brand = {
-  color: '#5145cd',
+const brandRow = { margin: '0 0 20px' };
+
+const brandMark = { display: 'block' };
+
+const brandName = {
+  color: '#171717',
   fontSize: '14px',
   fontWeight: 600,
   letterSpacing: '-0.01em',
-  margin: '0 0 20px',
+  margin: 0,
+  paddingLeft: '8px',
 };
 
 const heading = {
@@ -74,6 +84,7 @@ export const emailText = {
   },
   link: { color: '#171717', fontSize: '13px', wordBreak: 'break-all' as const },
   footer: { color: '#707070', fontSize: '12px', lineHeight: '18px', margin: 0 },
+  footerLink: { color: '#4d4d4d', textDecoration: 'underline' },
 };
 
 interface EmailLayoutProps {
@@ -102,7 +113,23 @@ export const EmailLayout = ({
     <Preview>{preview}</Preview>
     <Body style={main}>
       <Container style={card}>
-        <Text style={brand}>TimeCraft</Text>
+        {/* a PNG: email clients don't show SVG */}
+        <Section style={brandRow}>
+          <Row>
+            <Column width={20}>
+              <Img
+                src={`${appUrl()}/email/logo-mark.png`}
+                width={20}
+                height={20}
+                alt=""
+                style={brandMark}
+              />
+            </Column>
+            <Column>
+              <Text style={brandName}>TimeCraft</Text>
+            </Column>
+          </Row>
+        </Section>
         <Heading style={heading}>{title}</Heading>
         {children}
         <Button href={cta.href} style={button}>

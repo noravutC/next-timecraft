@@ -46,7 +46,7 @@ export const NotificationEmail = ({
     footer={
       <>
         {why}{' '}
-        <Link href={settingsUrl} style={{ color: '#4d4d4d' }}>
+        <Link href={settingsUrl} style={emailText.footerLink}>
           Notification settings
         </Link>
       </>

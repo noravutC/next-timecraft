@@ -12,7 +12,7 @@ export async function sendBoardInviteEmail(input: {
 }) {
   await sendEmail({
     to: input.to,
-    subject: `${input.inviterName} invited you to "${input.boardName}" on TimeCraft`,
+    subject: `${input.inviterName} invited you to “${input.boardName}” on TimeCraft`,
     email: BoardInviteEmail({
       inviterName: input.inviterName,
       boardName: input.boardName,
