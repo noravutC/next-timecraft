@@ -19,6 +19,18 @@ export const FOOTER_NAV = [
   { label: 'Sign in', href: '/login' },
 ];
 
+// the phone menu works from any marketing page, so its links are absolute
+export const MOBILE_MENU: { label: string; href: string; badge?: string }[] = [
+  { label: 'Features', href: '/timecraft#features' },
+  {
+    label: 'Integrations',
+    href: '/timecraft#integrations',
+    badge: 'Coming soon',
+  },
+  { label: 'Pricing', href: '/timecraft#pricing' },
+  { label: 'Privacy', href: '/privacy' },
+];
+
 export const LEGAL_FOOTER_NAV = [
   { label: 'Privacy', href: '/privacy' },
   { label: 'Terms', href: '/terms' },
