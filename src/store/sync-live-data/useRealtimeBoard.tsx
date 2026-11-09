@@ -11,6 +11,7 @@ import { useUnreadStore } from '@/store/use-unread.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import type { TaskAssigneeUser } from '@/services/assignee.service';
 import { Task } from '@/types';
+import type { TagRenames } from '@/helper/utils/tag-rename';
 
 export const useRealtimeBoard = (projectId?: string | null) => {
   const {
@@ -37,6 +38,10 @@ export const useRealtimeBoard = (projectId?: string | null) => {
 
     channel.bind('tasks-deleted', (ids: string[]) => {
       removeTasksFromRealtime(ids);
+    });
+
+    channel.bind('tags-renamed', ({ renames }: { renames: TagRenames }) => {
+      useTaskStore.getState().renameTagsOnBoard(projectId, renames);
     });
 
     channel.bind(

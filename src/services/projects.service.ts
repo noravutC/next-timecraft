@@ -15,6 +15,7 @@ import {
   ProjectRow,
 } from "@/types";
 import type { ProjectSettings } from "@/types/project-settings";
+import type { TagRenames } from "@/helper/utils/tag-rename";
 
 export type ProjectTemplateColumnInput = {
   name: string;
@@ -35,6 +36,7 @@ export type UpdateProjectPayload = {
   description?: string;
   coverImage?: string | null;
   tags?: string[];
+  renameTags?: TagRenames;
   archived?: boolean;
   settings?: ProjectSettings;
 };

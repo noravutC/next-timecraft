@@ -2,9 +2,12 @@
 
 import { db } from "@/db";
 import { projectsTable } from "@/db/schema";
+import { renameBoardTags } from "@/db/uniq-query/task/tag-utils";
+import { hasTagRenames } from "@/helper/utils/tag-rename";
 import { BadRequestError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
 import { parseId } from "@/lib/api/params";
+import { triggerExclusive } from "@/lib/pusher-server";
 import { projectSettingsSchema } from "@/types/project-settings";
 import {
   isValidProjectCoverImage,
@@ -24,7 +27,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
     permission: "project:update",
     resolveProjectIds: ({ params }) => [parseId(params.id)],
   },
-  async ({ params, body, userId }) => {
+  async ({ request, params, body, userId }) => {
     const projectId = parseId(params.id);
 
     const name = body.name?.trim();
@@ -75,11 +78,31 @@ export const PATCH = createParamHandle<RouteParams, UpdateProjectBody>(
     if (settingsResult?.success)
       updatePayload.settings = settingsResult.data;
 
-    const [updated] = await db
-      .update(projectsTable)
-      .set(updatePayload)
-      .where(eq(projectsTable.id, projectId))
-      .returning();
+    const renames = body.renameTags ?? {};
+    if (hasTagRenames(renames)) {
+      const tags = body.tags ?? [];
+      if (!Object.values(renames).every((tag) => tags.includes(tag))) {
+        throw new BadRequestError("Renamed tags must be in the tag list");
+      }
+    }
+
+    const { updated, retagged } = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(projectsTable)
+        .set(updatePayload)
+        .where(eq(projectsTable.id, projectId))
+        .returning();
+      return {
+        updated: row,
+        retagged: await renameBoardTags(tx, projectId, renames),
+      };
+    });
+
+    if (retagged > 0) {
+      triggerExclusive(request, `project-${projectId}`, "tags-renamed", {
+        renames,
+      }).catch((e) => console.error("Pusher tags-renamed failed:", e));
+    }
 
     return NextResponse.json(
       { updated, message: "Project updated successfully", status: 200 },

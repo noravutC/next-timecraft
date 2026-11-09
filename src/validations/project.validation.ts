@@ -7,6 +7,7 @@ const MAX_PROJECT_COVER_IMAGE_LENGTH = 2_900_000;
 const projectName = z.string().max(100);
 const projectDescription = z.string().max(2000);
 const projectTags = z.array(z.string().trim().min(1).max(64)).max(30);
+const tagName = z.string().min(1).max(64);
 
 export const normalizeCoverImage = (value?: string | null) => {
   const normalized = value?.trim() ?? '';
@@ -49,6 +50,11 @@ export const updateProjectSchema = z.object({
   description: projectDescription.optional(),
   coverImage: z.string().nullable().optional(),
   tags: projectTags.optional(),
+  /** saved tag name → new name, applied to the board's tasks */
+  renameTags: z
+    .record(tagName, tagName)
+    .refine((r) => Object.keys(r).length <= 30, 'Too many tag renames')
+    .optional(),
   archived: z.boolean().optional(),
   settings: z.unknown().optional(),
 });

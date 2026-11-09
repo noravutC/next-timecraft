@@ -11,6 +11,7 @@ import { LoaderStatus } from '@/types/global/types';
 import { taskServices } from '@/services/tasks.service';
 import { toRecord, toValueRecord } from '@/helper/utils/object';
 import { shiftPriorityCounts } from '@/helper/utils/priority-counts';
+import { renameTagsIn, type TagRenames } from '@/helper/utils/tag-rename';
 import { toast } from 'sonner';
 import { useColumnStore } from './use-column.store';
 import { useAssigneeStore } from './use-assignee.store';
@@ -52,6 +53,8 @@ type TaskStore = {
   upsertOpenedTask: (task: Task) => void;
   addTasksFromRealtime: (tasks: Task[]) => void;
   removeTasksFromRealtime: (taskIds: string[]) => void;
+  /** board tags renamed in Board settings: the loaded tasks follow */
+  renameTagsOnBoard: (projectId: string, renames: TagRenames) => void;
 };
 
 let updateReqCounter = 0;
@@ -391,6 +394,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           taskIds.map((id) => [state.tasks[id], null]),
         ),
       };
+    });
+  },
+
+  renameTagsOnBoard: (projectId, renames) => {
+    const columns = useColumnStore.getState().columns;
+    set((state) => {
+      const next = { ...state.tasks };
+      let changed = false;
+      for (const task of Object.values(state.tasks)) {
+        if (columns[task.columnId]?.projectId !== projectId) continue;
+        if (!task.tags.some((tag) => Object.hasOwn(renames, tag))) continue;
+        next[task.id] = { ...task, tags: renameTagsIn(task.tags, renames) };
+        changed = true;
+      }
+      return changed ? { tasks: next } : state;
     });
   },
 }));

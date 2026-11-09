@@ -1,12 +1,11 @@
 'use client';
 
 import { useRef } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TAG_LIMIT } from '@/lib/project-settings/constants';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
+import { BoardTagRow } from './board-tag-row';
 import { TagColorPicker } from './tag-color-picker';
 
 /** Tags tab of Board settings: add field (with next color) + the tag list. */
@@ -17,6 +16,8 @@ export const BoardTagsEditor = ({
   draftTag,
   onDraftTagChange,
   onAddTag,
+  onRenameTag,
+  onRecolorTag,
   onRemoveTag,
   onPickNextColor,
   readOnly = false,
@@ -27,6 +28,9 @@ export const BoardTagsEditor = ({
   draftTag: string;
   onDraftTagChange: (value: string) => void;
   onAddTag: () => void;
+  /** false when the new name is refused */
+  onRenameTag: (tag: string, name: string) => boolean;
+  onRecolorTag: (tag: string, color: string) => void;
   onRemoveTag: (tag: string) => void;
   onPickNextColor: (color: string) => void;
   /** editors and viewers: the list only */
@@ -47,7 +51,12 @@ export const BoardTagsEditor = ({
       {!readOnly && (
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
-            <TagColorPicker value={nextTagColor} onChange={onPickNextColor} />
+            <TagColorPicker
+              value={nextTagColor}
+              onChange={onPickNextColor}
+              label="Color for the new tag"
+              className="absolute top-1/2 left-1.5 -translate-y-1/2"
+            />
             <Input
               ref={inputRef}
               inputSize="md"
@@ -79,37 +88,16 @@ export const BoardTagsEditor = ({
       {tags.length > 0 ? (
         <ul className="flex flex-col overflow-hidden rounded-popover border border-line">
           {tags.map((tag, index) => (
-            <li
+            <BoardTagRow
               key={tag}
-              className={cn(
-                'flex h-10 items-center gap-2.5 pr-2 pl-3.5 hover:bg-surface',
-                index > 0 && 'border-t border-line-soft',
-              )}
-            >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: paletteFor(
-                    tagColors[tag] ?? hashTagColor(tag),
-                  ).value,
-                }}
-              />
-              <span className="min-w-0 flex-1 truncate text-base text-ink">
-                {tag}
-              </span>
-              {!readOnly && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Remove tag ${tag}`}
-                  onClick={() => onRemoveTag(tag)}
-                  className="text-ink-subtle"
-                >
-                  <X className="size-3.5" />
-                </Button>
-              )}
-            </li>
+              tag={tag}
+              color={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
+              first={index === 0}
+              readOnly={readOnly}
+              onRename={(name) => onRenameTag(tag, name)}
+              onRecolor={(color) => onRecolorTag(tag, color)}
+              onRemove={() => onRemoveTag(tag)}
+            />
           ))}
         </ul>
       ) : (
