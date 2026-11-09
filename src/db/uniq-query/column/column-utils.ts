@@ -19,3 +19,37 @@ export async function getActiveColumnLinks(columnIds: string[]) {
       ),
     );
 }
+
+// columns in the archive (deleted, not yet purged), for restoring
+export async function getDeletedColumnLinks(columnIds: string[]) {
+  if (columnIds.length === 0) return [];
+  return db
+    .select({ columnId: columnsTable.id, projectId: columnsTable.projectId })
+    .from(columnsTable)
+    .where(
+      and(
+        inArray(columnsTable.id, columnIds),
+        eq(columnsTable.isDeleted, true),
+      ),
+    );
+}
+
+/** Brings deleted columns back where they were, with their tasks. */
+export async function restoreColumns(columnIds: string[]) {
+  if (columnIds.length === 0) return [];
+  return db
+    .update(columnsTable)
+    .set({
+      isDeleted: false,
+      deletedAt: null,
+      purgeAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        inArray(columnsTable.id, columnIds),
+        eq(columnsTable.isDeleted, true),
+      ),
+    )
+    .returning();
+}

@@ -125,3 +125,22 @@ export const computeColumnMove = (
 export const countBoardTasks = (
   columns: Pick<TColumn, 'totalTasks'>[],
 ): number => columns.reduce((sum, column) => sum + column.totalTasks, 0);
+
+/**
+ * The orderFraction that moves a column one place left (-1) or right (1):
+ * between the neighbour and the one past it. Null at either end.
+ */
+export const shiftedColumnFraction = (
+  columns: Pick<TColumn, 'id' | 'orderFraction'>[],
+  columnId: string,
+  direction: -1 | 1,
+): string | null => {
+  const from = columns.findIndex((c) => c.id === columnId);
+  const to = from + direction;
+  if (from === -1 || to < 0 || to >= columns.length) return null;
+  const [before, after] =
+    direction === -1
+      ? [columns[to - 1]?.orderFraction ?? null, columns[to].orderFraction]
+      : [columns[to].orderFraction, columns[to + 1]?.orderFraction ?? null];
+  return generateFractionBetween(before, after);
+};

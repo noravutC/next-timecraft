@@ -56,6 +56,14 @@ class ColumnService {
         throw error?.response?.data || new Error("Failed to delete columns");
       });
   }
+  async restoreColumns(colIds: string[]): Promise<APIPatch<ColumnCache[]>> {
+    return this.client
+      .post(`/column/${colIds.join(",")}/restore`)
+      .then((response) => response.data as APIPatch<ColumnCache[]>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to restore columns");
+      });
+  }
 }
 
 export const columnServices = new ColumnService();
