@@ -61,13 +61,37 @@ export interface PayloadMoveTask {
   columnDestination: string;
 }
 
+/** Where a due date falls, as the board's Due date filter groups them. */
+export type DueBucket = 'overdue' | 'this_week' | 'later' | 'none';
+
+/** Local midnight today and the Monday after it, as ISO instants. */
+export type DueBounds = { today: string; weekEnd: string };
+
 /** Server-side task filter — POST /api/task/columns applies it per column. */
 export interface TaskFilter {
   q?: string;
   priorities?: TaskPriority[];
   tags?: string[];
   assigneeIds?: string[];
+  /** assigned to whoever is looking */
+  mine?: boolean;
+  /** nobody assigned */
+  unassigned?: boolean;
+  due?: DueBucket[];
+  /** set with `due`: the bucket edges in the viewer's time zone */
+  dueBounds?: DueBounds;
 }
+
+/** The board's filter as the toolbar holds it and a link carries it. */
+export type BoardFilterState = {
+  q: string;
+  priorities: TaskPriority[];
+  tags: string[];
+  assigneeIds: string[];
+  mine: boolean;
+  unassigned: boolean;
+  due: DueBucket[];
+};
 
 /** Tasks per priority in one column, ignoring board filters (filter menu counts). */
 export type PriorityCounts = Partial<Record<TaskPriority, number>>;

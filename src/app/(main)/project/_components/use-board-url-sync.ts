@@ -6,14 +6,24 @@ import { toast } from 'sonner';
 import { useProjectStore } from '@/store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useOpenTask } from '@/components/task-detail/use-open-task';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  selectBoardFilter,
+  useBoardFilterStore,
+} from '@/store/use-board-filter.store';
 import {
   boardUrl,
   readBoardUrl,
   type BoardUrlState,
 } from '@/helper/utils/board-url';
+import { readFilterUrl } from '@/helper/utils/filter-url';
+import type { BoardFilterState } from '@/types';
+
+type RequestedState = BoardUrlState & { filter: BoardFilterState };
 
 /**
- * Keeps `/project?board=&task=` and the open board and task in step.
+ * Keeps `/project?board=&task=` (and the board filter) and the open board
+ * and task in step.
  * On the first load it opens the board (and task) the URL names. After that,
  * every board switch or opened task rewrites the URL, so a reload or a copied
  * address lands in the same place.
@@ -27,12 +37,24 @@ export function useBoardUrlSync() {
   const openTaskId = useTaskDetailStore((s) => s.openTaskId);
   const openTask = useOpenTask();
 
+  const filter = useBoardFilterStore(useShallow(selectBoardFilter));
+
   // what the URL asked for when the page loaded; read once
-  const requested = useRef<BoardUrlState | null>(null);
+  const requested = useRef<RequestedState | null>(null);
   if (requested.current === null)
-    requested.current = readBoardUrl(searchParams);
+    requested.current = {
+      ...readBoardUrl(searchParams),
+      filter: readFilterUrl(searchParams),
+    };
   const [applied, setApplied] = useState(false);
   const loaded = Object.keys(projects).length > 0;
+
+  // the link's filter, before the first tasks are fetched
+  useEffect(() => {
+    if (requested.current) {
+      useBoardFilterStore.getState().replace(requested.current.filter);
+    }
+  }, []);
 
   // keep a board open; until the URL is applied, prefer the one it names
   useEffect(() => {
@@ -57,8 +79,8 @@ export function useBoardUrlSync() {
   // app → URL. replaceState keeps Next's router in sync without a navigation
   useEffect(() => {
     if (!applied) return;
-    const next = boardUrl({ board: projectIsUsing, task: openTaskId });
+    const next = boardUrl({ board: projectIsUsing, task: openTaskId, filter });
     const current = `${window.location.pathname}${window.location.search}`;
     if (next !== current) window.history.replaceState(null, '', next);
-  }, [applied, projectIsUsing, openTaskId]);
+  }, [applied, projectIsUsing, openTaskId, filter]);
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   isTaskFilterActive,
+  resolveMine,
   sumPriorityCounts,
   taskMatchesFilter,
 } from './task-filter';
@@ -65,6 +66,31 @@ describe('taskMatchesFilter', () => {
     expect(taskMatchesFilter(task(), { assigneeIds: ['u1'] })).toBe(false);
   });
 
+  it('filters by due date bucket', () => {
+    const dueBounds = {
+      today: new Date(2026, 10, 4).toISOString(),
+      weekEnd: new Date(2026, 10, 9).toISOString(),
+    };
+    const overdue = task({ dueDate: new Date(2026, 10, 2) });
+    expect(taskMatchesFilter(overdue, { due: ['overdue'], dueBounds })).toBe(
+      true,
+    );
+    expect(taskMatchesFilter(overdue, { due: ['later'], dueBounds })).toBe(
+      false,
+    );
+    expect(
+      taskMatchesFilter(task({ dueDate: null }), { due: ['none'], dueBounds }),
+    ).toBe(true);
+  });
+
+  it('matches anyone chosen or nobody, when both are asked for', () => {
+    const filter = { assigneeIds: ['u1'], unassigned: true };
+    expect(taskMatchesFilter(task(), filter, [])).toBe(true);
+    expect(taskMatchesFilter(task(), filter, ['u1'])).toBe(true);
+    expect(taskMatchesFilter(task(), filter, ['u2'])).toBe(false);
+    expect(taskMatchesFilter(task(), { unassigned: true }, ['u2'])).toBe(false);
+  });
+
   it('combines conditions with AND', () => {
     expect(
       taskMatchesFilter(task(), { q: 'design', priorities: ['medium'] }),
@@ -88,5 +114,14 @@ describe('sumPriorityCounts', () => {
       low: 1,
     });
     expect(sumPriorityCounts(byColumn, [])).toEqual({});
+  });
+});
+
+describe('resolveMine', () => {
+  it('turns "Assigned to me" into the viewer as an assignee', () => {
+    expect(resolveMine({ mine: true, assigneeIds: ['u2'] }, 'u1')).toEqual({
+      assigneeIds: ['u2', 'u1'],
+    });
+    expect(resolveMine({ mine: true }, null)).toEqual({ mine: true });
   });
 });

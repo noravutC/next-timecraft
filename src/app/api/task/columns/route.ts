@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { taskAssigneesTable, tasksTable } from '@/db/schema';
+import { tasksTable } from '@/db/schema';
 import { getActiveColumnLinks } from '@/db/uniq-query/column/column-utils';
 import { NotFoundError } from '@/lib/api/errors';
 import { createHandle } from '@/lib/api/handle';
@@ -9,21 +9,19 @@ import {
   type AssigneeWithUser,
 } from '@/db/uniq-query/task/assignee-utils';
 import { fetchSubtaskProgress } from '@/db/uniq-query/task/subtask-progress';
+import { taskFilterConditions } from '@/db/uniq-query/task/task-filter';
 import { countUnreadByTask } from '@/db/uniq-query/comment/comment-utils';
 import type { PriorityCounts, TaskPageInfo, TaskRow } from '@/types';
 import {
   and,
-  arrayOverlaps,
   asc,
   count,
   eq,
   getTableColumns,
-  ilike,
   inArray,
   lte,
   or,
   sql,
-  type SQL,
 } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import {
@@ -48,27 +46,7 @@ export const POST = createHandle<GetTasksByColumnsBody>(
 
     // Optional filter — must hit both the page query and the totals so the
     // cursor pagination and the WIP badge describe the same (filtered) set.
-    const filterConditions: SQL[] = [];
-    if (filter?.q) {
-      filterConditions.push(ilike(tasksTable.title, `%${filter.q}%`));
-    }
-    if (filter?.priorities?.length) {
-      filterConditions.push(inArray(tasksTable.priority, filter.priorities));
-    }
-    if (filter?.tags?.length) {
-      filterConditions.push(arrayOverlaps(tasksTable.tags, filter.tags));
-    }
-    if (filter?.assigneeIds?.length) {
-      filterConditions.push(
-        inArray(
-          tasksTable.id,
-          db
-            .select({ id: taskAssigneesTable.taskId })
-            .from(taskAssigneesTable)
-            .where(inArray(taskAssigneesTable.userId, filter.assigneeIds)),
-        ),
-      );
-    }
+    const filterConditions = taskFilterConditions(filter, userId);
 
     // Per-column filter, shifted past the cursor when one is provided.
     const perColumn = colIds.map((colId) => {
