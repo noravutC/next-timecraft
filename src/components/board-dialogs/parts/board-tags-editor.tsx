@@ -16,8 +16,8 @@ export const BoardTagsEditor = ({
   draftTag,
   onDraftTagChange,
   onAddTag,
-  onRenameTag,
-  onRecolorTag,
+  onSaveTag,
+  tagUses,
   onRemoveTag,
   onPickNextColor,
   readOnly = false,
@@ -28,9 +28,10 @@ export const BoardTagsEditor = ({
   draftTag: string;
   onDraftTagChange: (value: string) => void;
   onAddTag: () => void;
-  /** false when the new name is refused */
-  onRenameTag: (tag: string, name: string) => boolean;
-  onRecolorTag: (tag: string, color: string) => void;
+  /** a tag's new name and color; false when the name is refused */
+  onSaveTag: (tag: string, name: string, color: string) => boolean;
+  /** how many tasks use a tag */
+  tagUses: (tag: string) => number;
   onRemoveTag: (tag: string) => void;
   onPickNextColor: (color: string) => void;
   /** editors and viewers: the list only */
@@ -44,8 +45,8 @@ export const BoardTagsEditor = ({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-5 text-ink-subtle">
-        Labels members can add to tasks on this board. Up to {TAG_LIMIT}{' '}
-        characters each.
+        Labels members can add to tasks on this board. Renaming a tag updates
+        every task that uses it.
       </p>
 
       {!readOnly && (
@@ -94,8 +95,8 @@ export const BoardTagsEditor = ({
               color={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
               first={index === 0}
               readOnly={readOnly}
-              onRename={(name) => onRenameTag(tag, name)}
-              onRecolor={(color) => onRecolorTag(tag, color)}
+              uses={tagUses(tag)}
+              onSave={(name, color) => onSaveTag(tag, name, color)}
               onRemove={() => onRemoveTag(tag)}
             />
           ))}

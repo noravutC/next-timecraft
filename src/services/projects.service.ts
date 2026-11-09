@@ -98,6 +98,16 @@ class ProjectService {
       });
   }
 
+  /** How many tasks use each tag on the board. */
+  async getTagCounts(projectId: string): Promise<Record<string, number>> {
+    return this.client
+      .get(`/project/${projectId}/tag-counts`)
+      .then((response) => response.data.data as Record<string, number>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to count tags");
+      });
+  }
+
   /** Your iCal link for the board; `reset` replaces it with a new one. */
   async getCalendarFeed(projectId: string, reset = false): Promise<string> {
     return this.client
