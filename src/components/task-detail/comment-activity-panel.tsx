@@ -10,12 +10,19 @@ import { CommentList } from './comment-list';
 interface Props {
   taskId: string;
   currentUserId: string;
+  canReact: boolean;
+  canManageOwn: boolean;
 }
 
 type DiscussionTab = 'comments' | 'activity';
 
 /** Comments / Activity tabs under the task body (the composer is pinned below). */
-export const CommentActivityPanel = ({ taskId, currentUserId }: Props) => {
+export const CommentActivityPanel = ({
+  taskId,
+  currentUserId,
+  canReact,
+  canManageOwn,
+}: Props) => {
   const commentCount = useTaskStore((s) => s.tasks[taskId]?.commentCount ?? 0);
   const [tab, setTab] = useState<DiscussionTab>('comments');
 
@@ -39,7 +46,12 @@ export const CommentActivityPanel = ({ taskId, currentUserId }: Props) => {
       </TabsList>
 
       <TabsContent value="comments" className="pt-5">
-        <CommentList taskId={taskId} currentUserId={currentUserId} />
+        <CommentList
+          taskId={taskId}
+          currentUserId={currentUserId}
+          canReact={canReact}
+          canManageOwn={canManageOwn}
+        />
       </TabsContent>
 
       <TabsContent

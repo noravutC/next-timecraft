@@ -23,6 +23,7 @@ import {
 } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
+import { useBoardAccess } from '@/components/project/use-board-access';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { withSettingsDefaults } from '@/types/project-settings';
 import { TCardState, useCardDnd } from './use-card-dnd';
@@ -243,7 +244,17 @@ export function Card({
 
   const tasksLoader = useTaskStore(useShallow((s) => s.tasksLoader));
   const isLoading = tasksLoader[card.id] ?? false;
-  const state = useCardDnd({ card, columnId, isLoading, outerRef, innerRef });
+  const access = useBoardAccess();
+  const state = useCardDnd({
+    card,
+    columnId,
+    isLoading,
+    canDrag: access.can('task:move'),
+    outerRef,
+    innerRef,
+  });
+  // read-only boards get no card menu (it only holds changes)
+  const menuColumns = access.can('task:update') ? allColumns : undefined;
 
   return (
     <>
@@ -252,11 +263,11 @@ export function Card({
         innerRef={innerRef}
         state={state}
         card={card}
-        allColumns={allColumns}
+        allColumns={menuColumns}
       />
       {state.type === 'preview' &&
         createPortal(
-          <CardDisplay state={state} card={card} allColumns={allColumns} />,
+          <CardDisplay state={state} card={card} allColumns={menuColumns} />,
           state.container,
         )}
     </>

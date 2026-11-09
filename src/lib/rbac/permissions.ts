@@ -86,3 +86,24 @@ export const ROLE_PERMISSIONS = definePermissions({
   ],
   viewer: ["project:view", "comment:react"],
 });
+
+/**
+ * Permissions that change what's on a board. An archived board is read-only,
+ * so these are refused there until someone restores it. Settings, members
+ * and deleting the board stay open, so it can still be restored or cleaned up.
+ */
+export const BLOCKED_ON_ARCHIVED_BOARD: ReadonlySet<Permission> = new Set<Permission>([
+  "column:create",
+  "column:update",
+  "column:delete",
+  "task:create",
+  "task:update",
+  "task:move",
+  "task:delete",
+  "task:comment",
+  "comment:update",
+  "comment:delete",
+  "comment:react",
+  "comment:upload",
+  "member:invite",
+]);

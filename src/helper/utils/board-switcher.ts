@@ -17,6 +17,17 @@ export const orderBoardsForSwitcher = <T extends SwitcherBoard>(
   ];
 };
 
+/**
+ * Archived boards are read-only and kept out of the main list; the switcher
+ * shows them in their own section.
+ */
+export const splitArchivedBoards = <T extends { archived?: boolean | null }>(
+  boards: T[],
+): { active: T[]; archived: T[] } => ({
+  active: boards.filter((b) => !b.archived),
+  archived: boards.filter((b) => Boolean(b.archived)),
+});
+
 /** "1 member", "4 members" */
 export const memberCountLabel = (count: number): string =>
   `${count} ${count === 1 ? 'member' : 'members'}`;

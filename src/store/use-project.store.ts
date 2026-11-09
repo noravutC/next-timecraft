@@ -53,8 +53,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       return;
     }
     if (projectIsUsing && projects[projectIsUsing]) return;
-    const [first] = Object.keys(projects);
-    if (first) set({ projectIsUsing: first });
+    // an archived board only opens when asked for by name
+    const all = Object.values(projects);
+    const first = all.find((p) => !p.archived) ?? all[0];
+    if (first) set({ projectIsUsing: first.id });
   },
   setNeedCreateProject: (needCreateProject) => {
     set({ needCreateProject });

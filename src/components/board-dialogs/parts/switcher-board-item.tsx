@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Kbd } from '@/components/ui/kbd';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { memberCountLabel } from '@/helper/utils/board-switcher';
+import { cn } from '@/lib/utils';
 import type { ProjectCache } from '@/types';
 
 /** One board row in the ⌘K palette: tile, name, state chips, member count. */
@@ -12,15 +13,17 @@ export const SwitcherBoardItem = ({
   project,
   isCurrent,
   onSelect,
+  className,
 }: {
   project: ProjectCache;
   isCurrent: boolean;
   onSelect: () => void;
+  className?: string;
 }) => (
   <CommandItem
     value={`board:${project.id}`}
     onSelect={onSelect}
-    className="h-11"
+    className={cn('h-11', className)}
   >
     <ProjectAvatar
       project={project}
@@ -42,7 +45,9 @@ export const SwitcherBoardItem = ({
     )}
     <span className="flex-1" />
     <span className="shrink-0 text-xs text-ink-subtle">
-      {memberCountLabel(project.members?.length ?? 0)}
+      {project.archived
+        ? 'Read-only'
+        : memberCountLabel(project.members?.length ?? 0)}
     </span>
     <Kbd className="hidden group-data-[selected=true]:inline-grid">↵</Kbd>
   </CommandItem>

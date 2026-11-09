@@ -8,6 +8,7 @@ import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
 import { useNavStore } from '@/store';
+import { useBoardAccess } from '@/components/project/use-board-access';
 import {
   FilterCheckItem,
   FilterChip,
@@ -42,6 +43,11 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   } = useBoardFilterBar(columns);
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
   const requestNewTask = useNavStore((s) => s.requestNewTask);
+  const access = useBoardAccess();
+  const canAddTasks = access.can('task:create');
+  const addTasksBlockedReason = access.archived
+    ? 'Restore the board to add tasks'
+    : 'Viewers can’t add tasks';
   const search = draft.trim();
 
   return (
@@ -147,7 +153,7 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
 
         <div className="flex-1" />
 
-        <AiBreakdown columns={columns} />
+        {canAddTasks && <AiBreakdown columns={columns} />}
         <Button
           variant="outline"
           size="icon"
@@ -157,7 +163,12 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
         >
           <Settings2 className="size-3.75" />
         </Button>
-        <Button size="sm" onClick={requestNewTask} disabled={!columns.length}>
+        <Button
+          size="sm"
+          onClick={requestNewTask}
+          disabled={!columns.length || !canAddTasks}
+          title={canAddTasks ? undefined : addTasksBlockedReason}
+        >
           <Plus className="size-3.75 stroke-2" />
           <span className="sr-only sm:not-sr-only">New task</span>
         </Button>

@@ -11,9 +11,16 @@ import { CommentItem } from './comment-item';
 interface CommentListProps {
   taskId: string;
   currentUserId: string;
+  canReact: boolean;
+  canManageOwn: boolean;
 }
 
-export const CommentList = ({ taskId, currentUserId }: CommentListProps) => {
+export const CommentList = ({
+  taskId,
+  currentUserId,
+  canReact,
+  canManageOwn,
+}: CommentListProps) => {
   const state = useCommentStore(useShallow((s) => s.byTask[taskId]));
   const items = useCommentStore(useShallow((s) => s.chronological(taskId)));
   const fetchMore = useCommentStore((s) => s.fetchMore);
@@ -74,6 +81,8 @@ export const CommentList = ({ taskId, currentUserId }: CommentListProps) => {
           comment={c}
           isOwn={c.userId === currentUserId}
           currentUserId={currentUserId}
+          canReact={canReact}
+          canManageOwn={canManageOwn}
         />
       ))}
     </div>

@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BreadcrumbSlash } from '@/components/breadcrumb/breadcrumb-slash';
@@ -78,6 +79,11 @@ export const ProjectHeader = () => {
             <span className="truncate text-base font-semibold tracking-tight">
               {projectValue?.name ?? 'Board'}
             </span>
+            {projectValue?.archived && (
+              <Badge variant="secondary" className="h-5 px-1.75 text-2xs">
+                Archived
+              </Badge>
+            )}
             <ChevronsUpDown className="size-3.5 text-ink-subtle" />
           </Button>
         )}

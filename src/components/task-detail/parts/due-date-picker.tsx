@@ -23,11 +23,16 @@ import { propertyButtonClass } from './property-row';
 interface DueDatePickerProps {
   value: Date | null;
   onChange: (next: Date | null) => void;
+  disabled?: boolean;
 }
 
-export const DueDatePicker = ({ value, onChange }: DueDatePickerProps) => (
+export const DueDatePicker = ({
+  value,
+  onChange,
+  disabled,
+}: DueDatePickerProps) => (
   <DropdownMenu>
-    <DropdownMenuTrigger asChild>
+    <DropdownMenuTrigger asChild disabled={disabled}>
       <Button variant="ghost" className={propertyButtonClass}>
         {value ? (
           <>

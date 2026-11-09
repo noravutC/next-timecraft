@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { can, canAll, canAny, outranks } from './can';
+import { can, canAll, canAny, canOnBoard, outranks } from './can';
 import { ROLE_PERMISSIONS, type ProjectRole } from './permissions';
 
 describe('can', () => {
@@ -77,5 +77,30 @@ describe('outranks (member management)', () => {
     expect(outranks('admin', 'admin')).toBe(false);
     expect(outranks('editor', 'admin')).toBe(false);
     expect(outranks('admin', 'owner')).toBe(false);
+  });
+});
+
+describe('canOnBoard', () => {
+  const archived = { archived: true };
+  const active = { archived: false };
+
+  it('matches can() on an active board', () => {
+    expect(canOnBoard('editor', 'task:update', active)).toBe(true);
+    expect(canOnBoard('viewer', 'task:update', active)).toBe(false);
+  });
+
+  it('makes an archived board read-only, even for the owner', () => {
+    expect(canOnBoard('owner', 'task:create', archived)).toBe(false);
+    expect(canOnBoard('owner', 'task:move', archived)).toBe(false);
+    expect(canOnBoard('owner', 'column:update', archived)).toBe(false);
+    expect(canOnBoard('owner', 'task:comment', archived)).toBe(false);
+    expect(canOnBoard('owner', 'member:invite', archived)).toBe(false);
+  });
+
+  it('still lets an archived board be viewed, restored or deleted', () => {
+    expect(canOnBoard('viewer', 'project:view', archived)).toBe(true);
+    expect(canOnBoard('admin', 'project:update', archived)).toBe(true);
+    expect(canOnBoard('owner', 'project:delete', archived)).toBe(true);
+    expect(canOnBoard('admin', 'member:remove', archived)).toBe(true);
   });
 });

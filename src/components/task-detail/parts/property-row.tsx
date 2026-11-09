@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 /** Value buttons in the properties grid: quiet until hovered. */
 export const propertyButtonClass =
-  'h-7.5 gap-2 px-2 font-normal text-ink hover:text-ink';
+  'h-7.5 gap-2 px-2 font-normal text-ink hover:text-ink disabled:cursor-default disabled:opacity-100';
 
 interface PropertyRowProps {
   icon: ReactNode;

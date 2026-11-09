@@ -45,12 +45,15 @@ const idle: TColumnState = { type: 'idle' };
  */
 export function useColumnDnd({
   column,
+  canDrag,
   outerRef,
   scrollableRef,
   headerRef,
   innerRef,
 }: {
   column: TColumn;
+  /** false on a board the user can't change (below admin, or archived) */
+  canDrag: boolean;
   outerRef: RefObject<HTMLDivElement | null>;
   scrollableRef: RefObject<HTMLDivElement | null>;
   headerRef: RefObject<HTMLDivElement | null>;
@@ -103,6 +106,7 @@ export function useColumnDnd({
     return combine(
       draggable({
         element: header,
+        canDrag: () => canDrag,
         getInitialData: getColData,
         onGenerateDragPreview({ source, location, nativeSetDragImage }) {
           invariant(isColumnData(source.data));
@@ -177,7 +181,7 @@ export function useColumnDnd({
         }),
       }),
     );
-  }, [settings, outerRef, scrollableRef, headerRef, innerRef]);
+  }, [settings, canDrag, outerRef, scrollableRef, headerRef, innerRef]);
 
   return state;
 }

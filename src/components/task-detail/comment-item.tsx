@@ -27,12 +27,18 @@ interface CommentItemProps {
   comment: TaskCommentWithAuthor;
   isOwn: boolean;
   currentUserId: string;
+  /** may react (not a viewer on an archived board, etc.) */
+  canReact: boolean;
+  /** may edit and delete their own comments */
+  canManageOwn: boolean;
 }
 
 export const CommentItem = ({
   comment,
   isOwn,
   currentUserId,
+  canReact,
+  canManageOwn,
 }: CommentItemProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.body);
@@ -111,13 +117,13 @@ export const CommentItem = ({
           {/* hover actions; add-reaction sits here until there are reactions */}
           {!editing && !isPending && (
             <div className="-my-1 ml-auto flex items-center gap-0.5 self-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 has-data-[state=open]:opacity-100">
-              {!hasReactions && (
+              {!hasReactions && canReact && (
                 <ReactionPicker
                   comment={comment}
                   currentUserId={currentUserId}
                 />
               )}
-              {isOwn && (
+              {isOwn && canManageOwn && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -215,7 +221,7 @@ export const CommentItem = ({
               <CommentReactions
                 comment={comment}
                 currentUserId={currentUserId}
-                disabled={isPending}
+                disabled={isPending || !canReact}
               />
             )}
           </>

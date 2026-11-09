@@ -15,9 +15,11 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   taskId: string;
+  /** viewer, or an archived board: list only, no ticking or editing */
+  readOnly?: boolean;
 }
 
-export const SubtaskList = ({ taskId }: Props) => {
+export const SubtaskList = ({ taskId, readOnly = false }: Props) => {
   const items = useSubtaskStore(
     useShallow((s) => s.byTask[taskId]?.items ?? []),
   );
@@ -53,15 +55,17 @@ export const SubtaskList = ({ taskId }: Props) => {
             style={{ width: `${progressPercent(progress)}%` }}
           />
         </div>
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={() => inputRef.current?.focus()}
-          className="gap-1 px-2 text-ink-muted"
-        >
-          <Plus className="size-3.25" />
-          Add
-        </Button>
+        {!readOnly && (
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => inputRef.current?.focus()}
+            className="gap-1 px-2 text-ink-muted"
+          >
+            <Plus className="size-3.25" />
+            Add
+          </Button>
+        )}
       </div>
 
       <ul className="flex flex-col gap-0.5">
@@ -73,7 +77,7 @@ export const SubtaskList = ({ taskId }: Props) => {
             <Checkbox
               id={`subtask-${sub.id}`}
               // not saved yet: toggling the temp row would race the create
-              disabled={sub.id.startsWith('temp-')}
+              disabled={readOnly || sub.id.startsWith('temp-')}
               className="border-ink-faint"
               checked={sub.completed}
               onCheckedChange={(c) =>
@@ -83,46 +87,54 @@ export const SubtaskList = ({ taskId }: Props) => {
             <label
               htmlFor={`subtask-${sub.id}`}
               className={cn(
-                'flex-1 cursor-pointer text-base',
+                'flex-1 text-base',
+                readOnly ? 'cursor-default' : 'cursor-pointer',
                 sub.completed ? 'text-ink-faint line-through' : 'text-ink',
               )}
             >
               {sub.title}
             </label>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => remove(sub.id, taskId)}
-              disabled={sub.id.startsWith('temp-')}
-              aria-label={`Delete subtask ${sub.title}`}
-              className="text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-            >
-              <X className="size-3.5" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => remove(sub.id, taskId)}
+                disabled={sub.id.startsWith('temp-')}
+                aria-label={`Delete subtask ${sub.title}`}
+                className="text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              >
+                <X className="size-3.5" />
+              </Button>
+            )}
           </li>
         ))}
-        <li className="-mx-2 flex min-h-9 items-center gap-2.5 px-2 text-ink-subtle">
-          <Plus className="size-4" />
-          <Input
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={submit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                submit();
-              } else if (e.key === 'Escape') {
-                // Esc clears the draft first, then leaves the field
-                if (draft) setDraft('');
-                else e.currentTarget.blur();
-              }
-            }}
-            placeholder="Add a subtask"
-            aria-label="New subtask"
-            className="h-auto flex-1 border-0 bg-transparent p-0 text-base focus-visible:ring-0"
-          />
-        </li>
+        {readOnly && items.length === 0 && (
+          <li className="text-sm text-ink-subtle">No subtasks</li>
+        )}
+        {!readOnly && (
+          <li className="-mx-2 flex min-h-9 items-center gap-2.5 px-2 text-ink-subtle">
+            <Plus className="size-4" />
+            <Input
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={submit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submit();
+                } else if (e.key === 'Escape') {
+                  // Esc clears the draft first, then leaves the field
+                  if (draft) setDraft('');
+                  else e.currentTarget.blur();
+                }
+              }}
+              placeholder="Add a subtask"
+              aria-label="New subtask"
+              className="h-auto flex-1 border-0 bg-transparent p-0 text-base focus-visible:ring-0"
+            />
+          </li>
+        )}
       </ul>
     </section>
   );
