@@ -1,4 +1,8 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
+
+/** Value buttons in the properties grid: quiet until hovered. */
+export const propertyButtonClass =
+  'h-7.5 gap-2 px-2 font-normal text-ink hover:text-ink';
 
 interface PropertyRowProps {
   icon: ReactNode;
@@ -6,12 +10,13 @@ interface PropertyRowProps {
   children: ReactNode;
 }
 
+/** One row of the task properties grid: label cell + value cell. */
 export const PropertyRow = ({ icon, label, children }: PropertyRowProps) => (
-  <div className="grid grid-cols-[150px_1fr] items-center gap-3 py-1.5">
-    <div className="flex items-center gap-2.5 text-sm font-medium text-ink-subtle">
-      <span className="text-ink-faint [&>svg]:size-4">{icon}</span>
+  <>
+    <div className="flex h-9 items-center gap-2 text-sm text-ink-subtle [&_svg]:size-3.75">
+      {icon}
       {label}
     </div>
-    <div className="min-w-0">{children}</div>
-  </div>
+    <div className="flex min-h-9 min-w-0 items-center">{children}</div>
+  </>
 );

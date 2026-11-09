@@ -1,4 +1,5 @@
 import { memo } from "react";
+import Image from "next/image";
 import { X } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import type { PendingFile } from "../use-attachment-uploads";
@@ -13,12 +14,15 @@ export const AttachmentPreviewTile = memo(function AttachmentPreviewTile({
   onRemove,
 }: Props) {
   return (
-    <div className="group relative size-20 overflow-hidden rounded-md border border-border bg-muted">
+    <div className="group relative size-20 overflow-hidden rounded-lg border border-line bg-surface">
       {pending.kind === "image" ? (
-        <img
+        // local blob: preview of a file being uploaded; nothing to optimize
+        <Image
           src={pending.previewUrl}
           alt={pending.file.name}
-          className="size-full object-cover"
+          fill
+          unoptimized
+          className="object-cover"
         />
       ) : (
         <video

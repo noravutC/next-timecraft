@@ -1,5 +1,11 @@
-import { Eye, Image as ImageIcon, Paperclip, Pencil, Send, Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Image as ImageIcon,
+  Paperclip,
+  Video,
+  type LucideIcon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { modKeyLabel } from '@/lib/platform';
 
 type Props = {
   preview: boolean;
@@ -11,6 +17,26 @@ type Props = {
   onPickAny: () => void;
 };
 
+const AttachButton = ({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    aria-label={label}
+    className="size-7.5 text-ink-subtle"
+  >
+    <Icon />
+  </Button>
+);
+
 export const ComposerToolbar = ({
   preview,
   canSend,
@@ -19,67 +45,27 @@ export const ComposerToolbar = ({
   onPickImage,
   onPickVideo,
   onPickAny,
-}: Props) => {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
-        <span className="mx-1 h-4 w-px bg-border" />
-        <Button
-          variant="ghost"
-          title="Attach image"
-          onClick={onPickImage}
-          className="p-1"
-          size={null}
-        >
-          <ImageIcon className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          title="Attach video"
-          onClick={onPickVideo}
-          className="p-1"
-          size={null}
-        >
-          <Video className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          title="Attach file"
-          onClick={onPickAny}
-          className="p-1"
-          size={null}
-        >
-          <Paperclip className="size-4" />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size={null}
-          onClick={onTogglePreview}
-          className="gap-1 p-1 text-xs"
-          title={preview ? "Edit" : "Preview"}
-        >
-          {preview ? (
-            <>
-              <Pencil className="size-3.5" /> Edit
-            </>
-          ) : (
-            <>
-              <Eye className="size-3.5" /> Preview
-            </>
-          )}
-        </Button>
-        <Button
-          size="xs"
-          onClick={onSend}
-          disabled={!canSend}
-          className="gap-2 text-xs"
-        >
-          <Send className="size-3" />
-          Send
-        </Button>
-      </div>
-    </div>
-  );
-};
+}: Props) => (
+  <div className="flex items-center gap-0.5 px-2 pt-1.5 pb-2">
+    <AttachButton icon={ImageIcon} label="Attach image" onClick={onPickImage} />
+    <AttachButton icon={Video} label="Attach video" onClick={onPickVideo} />
+    <AttachButton icon={Paperclip} label="Attach file" onClick={onPickAny} />
+    <span aria-hidden className="mx-1.5 h-4 w-px bg-line" />
+    <Button
+      variant="ghost"
+      size="xs"
+      onClick={onTogglePreview}
+      aria-pressed={preview}
+      className="h-7.5 px-2"
+    >
+      {preview ? 'Edit' : 'Preview'}
+    </Button>
+    <div className="flex-1" />
+    <span className="mr-2 font-mono text-2xs text-ink-subtle">
+      {modKeyLabel()} ↵
+    </span>
+    <Button size="sm" onClick={onSend} disabled={!canSend} className="h-7.5">
+      Comment
+    </Button>
+  </div>
+);

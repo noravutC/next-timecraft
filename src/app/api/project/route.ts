@@ -11,7 +11,14 @@ import {
   UnauthorizedError,
 } from "@/lib/api/errors";
 import { createHandle, enforceQuota } from "@/lib/api/handle";
-import { DAILY_QUOTAS } from "@/lib/api/quotas";
+import {
+  assertUnderDailyLimit,
+  DAILY_QUOTAS,
+  dayAgo,
+  GUEST_BOARDS_DAILY_CEILING,
+} from "@/lib/api/quotas";
+import { isGuestSession } from "@/lib/guest";
+import { countBoardsCreatedSince } from "@/db/uniq-query/quota/daily-usage";
 import { parseIdList } from "@/lib/api/params";
 import {
   isValidProjectCoverImage,
@@ -29,6 +36,13 @@ export const POST = createHandle<ProjectRequestBody>(
         { request, session },
         "project-create",
         DAILY_QUOTAS.projectCreate,
+        "Daily board limit reached. Try again tomorrow.",
+      );
+      assertUnderDailyLimit(
+        await countBoardsCreatedSince(userId, dayAgo()),
+        isGuestSession(session)
+          ? GUEST_BOARDS_DAILY_CEILING
+          : DAILY_QUOTAS.projectCreate.limit,
         "Daily board limit reached. Try again tomorrow.",
       );
       // สร้างบอร์ดต้องมี org (บอร์ดสังกัด org) — แต่ fetch ไม่ต้อง:

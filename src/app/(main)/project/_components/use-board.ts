@@ -2,18 +2,28 @@ import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-sc
 import { unsafeOverflowAutoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/unsafe-overflow/element';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import invariant from 'tiny-invariant';
 import { toast } from 'sonner';
 import { SettingsContext } from '@/context/kanban/setting-provider';
 import { useColumnStore } from '@/store/use-column.store';
 import { useProjectStore } from '@/store/use-project.store';
-import { useTaskStore } from '@/store/use-task.store';
-import type { UpdateColumnPayload, UpdateTaskPayload } from '@/types';
+import { TASK_PAGE_SIZE, useTaskStore } from '@/store/use-task.store';
+import type { UpdateTaskPayload } from '@/types';
 import { useRealtimeBoard } from '@/store/sync-live-data/useRealtimeBoard';
 import { useAssigneeStore } from '@/store/use-assignee.store';
-import { useBoardFilterStore } from '@/store/use-board-filter.store';
+import {
+  selectFilterKey,
+  useBoardFilterStore,
+} from '@/store/use-board-filter.store';
 import { computeCardMove, computeColumnMove } from './board-operations';
 import { useSpacebarPan } from './use-spacebar-pan';
 import {
@@ -43,6 +53,7 @@ export function useBoard() {
   const tasks = useTaskStore(useShallow((s) => s.tasks));
   const taskPages = useTaskStore(useShallow((s) => s.taskPages));
   const updateTasks = useTaskStore((s) => s.updateTasks);
+  const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
   useRealtimeBoard(projectId);
 
   const filterQ = useBoardFilterStore((s) => s.q);
@@ -65,7 +76,7 @@ export function useBoard() {
     return map;
   }, [assigneesByTask]);
 
-  // โหลดข้อมูล columns ลง store ครั้งแรก (tasks โหลดใน Column แต่ละตัวเอง)
+  // โหลดข้อมูล columns ลง store ครั้งแรก (tasks โหลดรวมทั้งบอร์ดด้านล่าง)
   useEffect(() => {
     let active = true;
     if (!projectId) return;
@@ -106,11 +117,24 @@ export function useBoard() {
     ],
   );
 
-  // ref สำหรับ DnD callbacks เสมอใช้ข้อมูลล่าสุด
+  // task หน้าแรกของทุก column ในคำขอเดียว — โหลดใหม่เมื่อชุด column หรือ
+  // filter เปลี่ยน (เดิมยิงแยกทีละ column)
+  const filterKey = useBoardFilterStore(selectFilterKey);
+  const columnIdsKey = board.columns.map((c) => c.id).join(',');
+  useEffect(() => {
+    if (!columnIdsKey) return;
+    fetchTasksByColumns(columnIdsKey.split(','), TASK_PAGE_SIZE).catch(
+      () => {},
+    );
+  }, [columnIdsKey, filterKey, fetchTasksByColumns]);
+
+  // ref สำหรับ DnD callbacks เสมอใช้ข้อมูลล่าสุด (อัปเดตหลัง commit ไม่ใช่ระหว่าง render)
   const boardRef = useRef(board);
-  boardRef.current = board;
   const tasksRef = useRef(tasks);
-  tasksRef.current = tasks;
+  useLayoutEffect(() => {
+    boardRef.current = board;
+    tasksRef.current = tasks;
+  });
 
   // DnD monitors + autoscroll
   useEffect(() => {
@@ -178,22 +202,16 @@ export function useBoard() {
           );
           if (!result) return;
 
-          const col = boardRef.current.columns.find(
-            (c) => c.id === result.columnId,
-          );
-          if (!col) return;
-
           setPendingMove({ type: 'column', ...result });
+          // a move only changes the order: re-sending name/color would fail
+          // validation for long legacy names and reset an unset color
           void updateColumns(
             [result.columnId],
             [
               {
                 id: result.columnId,
-                name: col.title,
-                color: col.color ?? '#CBD5E1',
-                wipLimit: col.wipLimit,
                 orderFraction: result.newOrderFraction,
-              } as UpdateColumnPayload,
+              },
             ],
           )
             .then(() => setPendingMove(null))

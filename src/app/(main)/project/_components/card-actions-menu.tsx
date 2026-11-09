@@ -1,6 +1,7 @@
 'use client';
 
-import { Copy, Ellipsis, Flag, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, Trash2 } from 'lucide-react';
+import { PriorityBars } from '@/components/task-meta/priority-bars';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +15,6 @@ import { generateFractionBetween } from '@/helper/utils/fraction-string-indexing
 import { TCard, TColumn } from './data';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-
-const menuItemClass =
-  'gap-2.5 rounded-lg px-2.5 py-2 font-medium text-ink-subtle focus:bg-surface-hover focus:text-brand [&_svg]:!text-current';
 
 interface CardActionsMenuProps {
   card: TCard;
@@ -103,43 +100,44 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          size={'xs'}
-          variant={'ghost'}
+          size="icon-xs"
+          variant="ghost"
           onClick={(e) => e.stopPropagation()}
-          className="size-6 rounded-lg p-0 text-ink-faint opacity-0 group-hover:opacity-100 hover:bg-brand-soft hover:text-brand data-[state=open]:bg-brand-soft data-[state=open]:text-brand data-[state=open]:opacity-100"
+          className="size-5.5 bg-surface-hover text-ink-muted opacity-0 group-hover:opacity-100 hover:bg-surface-active data-[state=open]:bg-surface-active data-[state=open]:text-ink data-[state=open]:opacity-100"
           aria-label="Task actions"
         >
-          <Ellipsis className="size-4" />
+          <Ellipsis className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="w-52 rounded-xl border-line p-1.5 shadow-[0_10px_34px_rgba(20,22,35,0.13)]"
+        className="w-55"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuItem onClick={handleDuplicate} className={menuItemClass}>
+        <DropdownMenuItem onClick={handleDuplicate}>
           <Copy />
           Duplicate
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleToggleFlag} className={menuItemClass}>
-          <Flag />
-          {isFlagged ? 'Remove flag' : 'Add flag'}
+        <DropdownMenuItem onClick={handleToggleFlag}>
+          <PriorityBars
+            priority={isFlagged ? 'medium' : 'high'}
+            decorative
+            className="size-3.75"
+          />
+          {isFlagged ? 'Remove high priority' : 'Mark as high priority'}
         </DropdownMenuItem>
         {otherColumns.length > 0 && (
           <>
-            <DropdownMenuSeparator className="mx-1 bg-line/70" />
-            <DropdownMenuLabel className="px-2.5 pt-2 pb-1 text-xs font-semibold tracking-wider text-ink-faint uppercase">
-              Move to
-            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Move to</DropdownMenuLabel>
             {otherColumns.map((column) => (
               <DropdownMenuItem
                 key={column.id}
                 onClick={() => handleMoveTo(column)}
-                className={menuItemClass}
               >
                 <span
-                  className="size-2.5 shrink-0 rounded-full"
+                  className="mx-0.75 size-2 shrink-0 rounded-full"
                   style={{ backgroundColor: column.color ?? '#94a3b8' }}
                 />
                 {column.title}
@@ -147,14 +145,8 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
             ))}
           </>
         )}
-        <DropdownMenuSeparator className="mx-1 bg-line/70" />
-        <DropdownMenuItem
-          onClick={handleDelete}
-          className={cn(
-            menuItemClass,
-            'text-red-500 focus:bg-red-50 focus:text-red-500',
-          )}
-        >
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <Trash2 />
           Delete task
         </DropdownMenuItem>

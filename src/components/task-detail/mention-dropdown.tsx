@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/people/user-avatar";
 
 export interface MentionCandidate {
   id: string;
@@ -24,12 +24,17 @@ export const MentionDropdown = ({
 }: MentionDropdownProps) => {
   if (candidates.length === 0) return null;
   return (
-    <div className="absolute bottom-full left-0 z-20 mb-1 w-64 overflow-hidden rounded-lg border border-border bg-popover shadow-md">
-      <ul className="max-h-56 overflow-y-auto py-1">
+    <div
+      role="listbox"
+      aria-label="Mention a member"
+      className="absolute bottom-full left-0 z-20 mb-1.5 w-64 overflow-hidden rounded-popover border border-line bg-popover p-1 shadow-popover"
+    >
+      <ul className="max-h-56 overflow-y-auto">
         {candidates.map((c, i) => {
           const active = i === activeIndex;
           return (
-            <li key={c.id}>
+            <li key={c.id} role="option" aria-selected={active}>
+              {/* mouse down (not click) keeps focus in the composer */}
               <button
                 type="button"
                 onMouseDown={(e) => {
@@ -38,16 +43,11 @@ export const MentionDropdown = ({
                 }}
                 onMouseEnter={() => onHover(i)}
                 className={cn(
-                  "flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sm",
-                  active ? "bg-muted" : "hover:bg-muted/60",
+                  "flex h-8 w-full cursor-pointer items-center gap-2.5 rounded-md px-2 text-left text-sm text-ink",
+                  active && "bg-surface-hover",
                 )}
               >
-                <Avatar className="size-6">
-                  <AvatarImage src={c.avatar ?? undefined} alt={c.name} />
-                  <AvatarFallback className="text-[10px] font-semibold">
-                    {c.name.charAt(0).toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar name={c.name} image={c.avatar} seed={c.id} size="xs" />
                 <span className="truncate">{c.name}</span>
               </button>
             </li>

@@ -10,6 +10,8 @@ import {
   TaskFilter,
   TaskPageCursor,
   TaskPageInfo,
+  SubtaskProgress,
+  PriorityCounts,
   CreateTaskPayload,
   UpdateTaskPayload,
 } from '@/types';
@@ -30,6 +32,8 @@ class TaskService {
   ): Promise<
     APIGet<TaskCache> & {
       assignees: Record<string, TaskAssigneeLite[]>;
+      subtasks: Record<string, SubtaskProgress>;
+      priorityCounts: Record<string, PriorityCounts>;
       pageInfo: Record<string, TaskPageInfo>;
     }
   > {
@@ -44,6 +48,8 @@ class TaskService {
         (response) =>
           response.data as APIGet<TaskCache> & {
             assignees: Record<string, TaskAssigneeLite[]>;
+            subtasks: Record<string, SubtaskProgress>;
+            priorityCounts: Record<string, PriorityCounts>;
             pageInfo: Record<string, TaskPageInfo>;
           },
       )

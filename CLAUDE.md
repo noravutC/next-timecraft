@@ -16,6 +16,8 @@ pnpm db:generate  # Generate migration files
 pnpm db:migrate   # Apply migrations
 pnpm db:push      # Push schema directly (dev only)
 pnpm db:studio    # Open Drizzle Studio
+
+pnpm demo:reset   # Rebuild the shared guest workspace (uses DATABASE_URL; runs nightly in CI)
 ```
 
 Do not run `pnpm format` repo-wide from a feature branch: `.prettierrc` enforces
@@ -39,12 +41,15 @@ a full run rewrites ~230 files. Format only the files you touched.
 - `src/app/(main)/` — authenticated route group; auth guard lives in `(main)/layout.tsx` (not middleware)
 - `src/app/(main)/project/` — Kanban board (main feature)
 - `src/app/api/` — REST API routes (NextAuth + custom)
-- `src/app/login/` — Google OAuth login page
-- `src/middleware.ts` — minimal auth redirect for unauthenticated users
+- `src/app/login/` — sign-in page: Google OAuth and Continue as guest
 
 ### Authentication
 
-**File:** `src/auth.ts` — NextAuth 4 config, Google OAuth only, JWT strategy, 48h session.
+**File:** `src/auth.ts` — Auth.js v5 (`next-auth` beta) config, JWT strategy, 48h session. Two providers:
+- **Google** — the email must be verified by Google.
+- **Guest** (Credentials) — every "Continue as guest" visitor signs in as one shared account (`GUEST_EMAIL` in `src/lib/guest.ts`), throttled per IP. Use `isGuestSession(session)` to branch: guests can't store AI keys, invite people or join boards by invitation, and get smaller daily quotas.
+
+The session `update()` payload is never trusted: `trigger === "update"` only re-reads the user from the DB.
 
 JWT callback (`hydrateTokenFromDb`) upserts the user into the DB on sign-in, then enriches the token with:
 - `organizationId` (owner org or first membership org)
@@ -90,6 +95,14 @@ Four stores in `src/store/`:
 
 Always use `authorize` / `authorizeOrThrow`. Never re-implement role/permission logic in routes. Add new permissions to the union + each role's set in `permissions.ts`.
 
+### Security
+
+- **CSP** is set per request in `src/proxy.ts` (Next 16's middleware): scripts run only with that request's nonce (`'strict-dynamic'`). Pages render dynamically for this (`dynamic` in `src/app/layout.tsx`); a prerendered page would lose its scripts. Allowed origins live in `src/lib/security/csp.ts`. The other security headers are static in `next.config.ts`.
+- **Quotas**: per-minute limits and daily quotas (`enforceQuota`, `src/lib/api/quotas.ts`) are in memory, keyed by user or by IP for guests. Daily ceilings that must survive a restart are counted from the DB (`src/db/uniq-query/quota/daily-usage.ts`, `assertUnderDailyLimit`).
+- **Database TLS**: `src/db/ssl.ts` decides it for the app, drizzle-kit and scripts: `require` for any non-local host.
+- **Storage**: the comment-media bucket is public but limited to 50MB and image/video types (`scripts/harden-storage-bucket.ts`); upload URLs are quota-limited.
+- **Realtime**: every Pusher channel is private and authorized in `/api/pusher/auth`.
+
 ### API Handler Wrappers (Standard pattern — use this for every route)
 
 **Location:** `src/lib/api/`
@@ -115,7 +128,7 @@ The wrapper handles: session 401, Zod body validation → 400, permission check 
 
 **Example route:** `src/app/api/task/route.ts` (POST) — uses `createHandle` + Zod + inline `authorizeOrThrow` after column lookup.
 
-**Migration status:** only `api/task/route.ts` migrated so far. Older routes still use `getServerSession` + `hasPermission` + manual try/catch. When touching an old route, migrate it to the wrapper.
+**Migration status:** every route uses the wrappers (except the Auth.js handler). Keep it that way for new routes.
 
 ### Existing helpers — always check before writing new utilities
 
@@ -139,17 +152,17 @@ Relevant routes for the board:
 
 ### Real-time
 
-Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Hook `useRealtimeBoard(projectId)` subscribes to channel `project-{projectId}` and calls `useTaskStore.updateTaskFromRealtime()` on `task-updated` events.
+Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Every channel is private: subscribe with `privateChannel('project-' + id)` (→ `private-project-{id}`) and the server authorizes it in `/api/pusher/auth`. Hook `useRealtimeBoard(projectId)` subscribes to the project channel and calls `useTaskStore.updateTaskFromRealtime()` on `task-updated` events.
 
 ### Context Providers
 
-- **`BottomBarProvider`** (`src/context/bottom-bar-provider.tsx`) — manages bottom tab: `'bar-board' | 'bar-templates' | 'bar-calendar'`
-- **`ProjectMenuProvider`** (`src/context/project/project-menu-provider.tsx`) — menu state: `'settings' | 'new-project' | 'none'`
-- **`LoadingProvider`** (`src/context/loading-provider.tsx`) — global loading flag
+- **`SettingsContext`** (`src/context/kanban/setting-provider.tsx`) — drag-and-drop tuning (auto-scroll, scroll speeds). Read through its default value; no provider is mounted.
 
-### Bottom-Bar Dialogs (Board Settings / Switch Boards / Create Board)
+### Board Dialogs (Switch Boards / Create Board / Board Settings / Delete)
 
-Board settings, board switcher, and board creation are centered Dialogs opened from the bottom bar — all in `src/components/bottom-menu/` (`board-settings-dialog.tsx`, `project-switcher-panel.tsx`, `create-board-dialog.tsx`). They share one skeleton: `h-[560px] sm:max-w-2xl`, header with brand-soft icon tile + round `DialogClose`, `border-b`/`border-t` section dividers. Keep new bottom-bar dialogs on this same skeleton so switching between them doesn't jump.
+All live in `src/components/board-dialogs/` and are mounted once by `board-dialogs.tsx`. Open them through `useNavStore`: `setBoardDialog('switch' | 'create' | 'settings')`, or `openBoardSettings(tab)` for a tab (`'general' | 'tags' | 'members' | 'danger'`). ⌘K / Ctrl+K toggles the switcher.
+
+Build new ones from the Dialog primitives like the existing ones: `DialogContent` has no padding, compose `DialogHeader` / `DialogBody` / `DialogFooter`. Sizes follow the redesign prototype: switcher is a 600px command palette (cmdk), create board 640px, board settings 720×620 with underline tabs. Deleting a board goes through `ConfirmDialog` with `confirmPhrase` (type the board name).
 
 ### Drag-and-Drop
 
@@ -167,7 +180,7 @@ Uses `@atlaskit/pragmatic-drag-and-drop` with auto-scroll. Column and card move 
 ## Required Environment Variables
 
 ```
-DATABASE_URL=                    # Supabase PostgreSQL connection string
+DATABASE_URL=                    # Supabase PostgreSQL connection string (TLS is added for non-local hosts)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 NEXTAUTH_SECRET=
@@ -181,6 +194,13 @@ ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns
 RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
 EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
 APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
+NEXTAUTH_URL=                    # public site URL (OAuth callbacks)
+NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
+SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only
+AI_ENCRYPTION_KEY=               # encrypts AI keys users save in AI settings
+SENTRY_DSN=                      # optional — server error reporting
+NEXT_PUBLIC_SENTRY_DSN=          # optional — browser error reporting
+LOG_LEVEL=                       # optional — pino level, defaults to info
 ```
 
 ## Skills system

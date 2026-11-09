@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toRecord, toValueRecord } from "./object";
+import { chunk, toRecord, toValueRecord } from "./object";
 
 describe("toValueRecord", () => {
   it("maps every id to the given value", () => {
@@ -37,5 +37,19 @@ describe("toRecord", () => {
       { id: "x", n: 2 },
     ];
     expect(toRecord(dup, "id")).toEqual({ x: { id: "x", n: 2 } });
+  });
+});
+
+describe("chunk", () => {
+  it("splits into pieces of the given size, last one shorter", () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it("returns no pieces for an empty array", () => {
+    expect(chunk([], 100)).toEqual([]);
+  });
+
+  it("rejects a size below 1", () => {
+    expect(() => chunk([1], 0)).toThrow(RangeError);
   });
 });

@@ -1,4 +1,4 @@
-import type { TaskCache, TaskFilter } from '@/types';
+import type { PriorityCounts, TaskCache, TaskFilter } from '@/types';
 
 export function isTaskFilterActive(
   filter: TaskFilter | null | undefined,
@@ -45,4 +45,19 @@ export function taskMatchesFilter(
   }
 
   return true;
+}
+
+/** Board-wide tasks per priority: sums each column's counts. */
+export function sumPriorityCounts(
+  byColumn: Record<string, PriorityCounts>,
+  columnIds: string[],
+): PriorityCounts {
+  const total: PriorityCounts = {};
+  for (const id of columnIds) {
+    for (const [priority, n] of Object.entries(byColumn[id] ?? {})) {
+      const key = priority as keyof PriorityCounts;
+      total[key] = (total[key] ?? 0) + (n ?? 0);
+    }
+  }
+  return total;
 }

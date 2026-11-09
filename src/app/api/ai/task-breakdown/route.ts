@@ -16,6 +16,8 @@ import {
 import { isGuestSession } from "@/lib/guest";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
 import { z } from "zod";
+import { assertUnderDailyLimit } from "@/lib/api/quotas";
+import { countAiUsageByUserSince } from "@/db/uniq-query/quota/daily-usage";
 
 const breakdownSchema = z.object({
   goal: z.string().trim().min(3).max(2000),
@@ -75,6 +77,13 @@ export const POST = createHandle<BreakdownBody>(
         isGuest ? SERVER_KEY_DAILY_LIMIT.guest : SERVER_KEY_DAILY_LIMIT.user,
         "Daily AI limit reached. Add your own API key in AI settings to keep going.",
       );
+      if (!isGuest) {
+        assertUnderDailyLimit(
+          await countAiUsageByUserSince(userId, dayAgo()),
+          SERVER_KEY_DAILY_LIMIT.user.limit,
+          "Daily AI limit reached. Add your own API key in AI settings to keep going.",
+        );
+      }
       if ((await countAiUsageSince(dayAgo())) >= SERVER_KEY_GLOBAL_DAILY_LIMIT) {
         throw new AppError(
           429,

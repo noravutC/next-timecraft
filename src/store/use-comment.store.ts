@@ -62,6 +62,8 @@ type CommentStore = {
   ingestUpdated: (taskId: string, comment: TaskCommentWithAuthor) => void;
   ingestDeleted: (taskId: string, commentId: string) => void;
   reset: (taskId: string) => void;
+  /** comments oldest → newest, the reading order under the task */
+  chronological: (taskId: string) => TaskCommentWithAuthor[];
 };
 
 const buildOptimisticAttachments = (
@@ -528,4 +530,6 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
       return { byTask: next };
     });
   },
+
+  chronological: (taskId) => [...(get().byTask[taskId]?.items ?? [])].reverse(),
 }));

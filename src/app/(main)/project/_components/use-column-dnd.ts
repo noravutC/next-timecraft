@@ -8,7 +8,14 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import { DragLocationHistory } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-import { RefObject, useContext, useEffect, useRef, useState } from 'react';
+import {
+  RefObject,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import invariant from 'tiny-invariant';
 import {
   getColumnData,
@@ -53,7 +60,9 @@ export function useColumnDnd({
   const [state, setState] = useState<TColumnState>(idle);
   // ref เก็บ column ล่าสุด ป้องกัน effect re-run ทุกครั้งที่ card เปลี่ยน
   const columnRef = useRef(column);
-  columnRef.current = column;
+  useLayoutEffect(() => {
+    columnRef.current = column;
+  });
 
   useEffect(() => {
     const outer = outerRef.current;

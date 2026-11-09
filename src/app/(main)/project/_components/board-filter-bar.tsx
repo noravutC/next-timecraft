@@ -1,22 +1,26 @@
 'use client';
 
-import { Search, SlidersHorizontal, Tag, Users } from 'lucide-react';
+import { Plus, Search, Settings2, Tag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TagChip } from '@/components/task-detail/parts/tag-chip';
+import { UserAvatar } from '@/components/people/user-avatar';
+import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { PRIORITY_ORDER, PRIORITY_STYLES } from '@/lib/task-priority';
 import { hashTagColor, paletteFor } from '@/lib/project-settings/tag-palette';
+import { useNavStore } from '@/store';
 import {
   FilterCheckItem,
   FilterChip,
   FilterDropdown,
+  FilterEmpty,
 } from './board-filter-controls';
 import { useBoardFilterBar } from './use-board-filter-bar';
+import { AiBreakdown } from './ai-breakdown';
+import type { TColumn } from './data';
 
-// แถบ filter เป็น section ขาวคั่นระหว่าง header กับบอร์ด (border-b เดียวกับ header)
-// แถวบน = controls, แถวล่าง = chips ของค่าที่เลือกไว้ + Clear all
-export function BoardFilterBar() {
+// แถบเครื่องมือของบอร์ด: ซ้าย = ค้นหา + ตัวกรอง, ขวา = AI / ตั้งค่า / New task
+// แถวล่าง (เมื่อมี filter) = Showing X of Y + chips ของค่าที่เลือกไว้ + Clear all
+export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   const {
     draft,
     setDraft,
@@ -32,73 +36,92 @@ export function BoardFilterBar() {
     memberIds,
     tagOptions,
     activeCount,
-  } = useBoardFilterBar();
+    shownCount,
+    totalCount,
+    priorityCounts,
+  } = useBoardFilterBar(columns);
+  const setBoardDialog = useNavStore((s) => s.setBoardDialog);
+  const requestNewTask = useNavStore((s) => s.requestNewTask);
+  const search = draft.trim();
 
   return (
-    <div className="border-b bg-background px-5 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-faint" />
+    <>
+      {/* wraps on narrow screens: search gets its own row on phones;
+          at desktop width it is the same single 52px row */}
+      <div className="flex min-h-13 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-2.25">
+        <div className="relative w-full sm:w-auto">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.75 -translate-y-1/2 text-ink-subtle" />
           <Input
-            inputSize="sm"
+            type="search"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Search tasks…"
-            className="w-64 rounded-md border-line bg-surface pl-8 text-sm shadow-none placeholder:text-ink-faint focus-visible:bg-white"
+            placeholder="Search tasks"
+            aria-label="Search tasks"
+            className="w-full border-line pl-8 sm:w-40 lg:w-65"
             data-testid="board-filter-search"
           />
         </div>
 
         <FilterDropdown
-          icon={SlidersHorizontal}
+          icon={
+            <PriorityBars
+              priority="high"
+              color="var(--ink-subtle)"
+              decorative
+            />
+          }
           label="Priority"
+          title="Filter by priority"
           activeCount={priorities.length}
         >
-          {PRIORITY_ORDER.map((priority) => (
+          {[...PRIORITY_ORDER].reverse().map((priority) => (
             <FilterCheckItem
               key={priority}
               checked={priorities.includes(priority)}
               onToggle={() => togglePriority(priority)}
             >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: PRIORITY_STYLES[priority].dot }}
-              />
-              {PRIORITY_STYLES[priority].label}
+              <PriorityBars priority={priority} decorative />
+              <span className="flex-1">{PRIORITY_STYLES[priority].label}</span>
+              <span className="font-mono text-xs text-ink-subtle">
+                {priorityCounts[priority] ?? 0}
+              </span>
             </FilterCheckItem>
           ))}
         </FilterDropdown>
 
         <FilterDropdown
-          icon={Tag}
-          label="Tags"
+          icon={<Tag className="size-3.5" />}
+          label="Labels"
+          title="Filter by label"
           activeCount={tags.length}
-          disabled={tagOptions.length === 0}
         >
-          {tagOptions.map((tag) => {
-            const palette = paletteFor(tagColors[tag] ?? hashTagColor(tag));
-            return (
-              <FilterCheckItem
-                key={tag}
-                checked={tags.includes(tag)}
-                onToggle={() => toggleTag(tag)}
-              >
-                <span
-                  className="rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{ backgroundColor: palette.bg, color: palette.text }}
-                >
-                  {tag}
-                </span>
-              </FilterCheckItem>
-            );
-          })}
+          {tagOptions.length === 0 && (
+            <FilterEmpty>No labels on this board yet</FilterEmpty>
+          )}
+          {tagOptions.map((tag) => (
+            <FilterCheckItem
+              key={tag}
+              checked={tags.includes(tag)}
+              onToggle={() => toggleTag(tag)}
+            >
+              <span
+                className="size-1.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: paletteFor(
+                    tagColors[tag] ?? hashTagColor(tag),
+                  ).value,
+                }}
+              />
+              {tag}
+            </FilterCheckItem>
+          ))}
         </FilterDropdown>
 
         <FilterDropdown
-          icon={Users}
+          icon={<User className="size-3.5" />}
           label="Assignee"
+          title="Filter by assignee"
           activeCount={assigneeIds.length}
-          disabled={memberIds.length === 0}
         >
           {memberIds.map((userId) => {
             const user = users[userId];
@@ -108,49 +131,70 @@ export function BoardFilterBar() {
                 checked={assigneeIds.includes(userId)}
                 onToggle={() => toggleAssignee(userId)}
               >
-                <Avatar className="size-5">
-                  <AvatarImage src={user?.avatar ?? undefined} />
-                  <AvatarFallback className="text-xs">
-                    {(user?.fullName ?? '?').slice(0, 1)}
-                  </AvatarFallback>
-                </Avatar>
-                {user?.fullName ?? 'Unknown member'}
+                <UserAvatar
+                  name={user?.fullName}
+                  image={user?.avatar}
+                  seed={userId}
+                  size="xs"
+                />
+                <span className="truncate">
+                  {user?.fullName ?? 'Unknown member'}
+                </span>
               </FilterCheckItem>
             );
           })}
         </FilterDropdown>
+
+        <div className="flex-1" />
+
+        <AiBreakdown columns={columns} />
+        <Button
+          variant="outline"
+          size="icon"
+          className="border-line text-ink-muted"
+          aria-label="Board settings"
+          onClick={() => setBoardDialog('settings')}
+        >
+          <Settings2 className="size-3.75" />
+        </Button>
+        <Button size="sm" onClick={requestNewTask} disabled={!columns.length}>
+          <Plus className="size-3.75 stroke-2" />
+          <span className="sr-only sm:not-sr-only">New task</span>
+        </Button>
       </div>
 
       {activeCount > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium text-ink-subtle">
-            Filters
+        <div className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-1.5">
+          <span className="text-xs text-ink-subtle">
+            {totalCount === null
+              ? `Showing ${shownCount}`
+              : `Showing ${shownCount} of ${totalCount}`}
           </span>
-          {priorities.map((priority) => {
-            const style = PRIORITY_STYLES[priority];
-            return (
-              <FilterChip
-                key={priority}
-                label={style.label}
-                palette={style}
-                dotColor={style.dot}
-                onRemove={() => togglePriority(priority)}
-              />
-            );
-          })}
+          {search && (
+            <FilterChip
+              label={`Search: ${search}`}
+              onRemove={() => setDraft('')}
+            />
+          )}
+          {priorities.map((priority) => (
+            <FilterChip
+              key={priority}
+              label={`Priority: ${PRIORITY_STYLES[priority].label}`}
+              onRemove={() => togglePriority(priority)}
+            />
+          ))}
           {tags.map((tag) => (
-            <TagChip
+            <FilterChip
               key={tag}
-              tag={tag}
-              tagColors={tagColors}
-              size="sm"
+              label={`Label: ${tag}`}
+              dotColor={paletteFor(tagColors[tag] ?? hashTagColor(tag)).value}
               onRemove={() => toggleTag(tag)}
             />
           ))}
           {assigneeIds.map((userId) => (
             <FilterChip
               key={userId}
-              label={users[userId]?.fullName ?? 'Unknown member'}
+              label={`Assignee: ${users[userId]?.fullName ?? 'Unknown member'}`}
               onRemove={() => toggleAssignee(userId)}
             />
           ))}
@@ -161,12 +205,12 @@ export function BoardFilterBar() {
               setDraft('');
               clear();
             }}
-            className="text-xs font-medium text-ink-subtle hover:text-ink"
+            className="h-6.5 px-2 text-ink-muted underline underline-offset-3 hover:bg-transparent hover:text-ink"
           >
             Clear all
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 }

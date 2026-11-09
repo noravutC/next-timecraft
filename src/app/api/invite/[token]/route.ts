@@ -19,6 +19,7 @@ import { createParamHandle } from '@/lib/api/handle';
 import { authorizeOrThrow } from '@/lib/rbac/authorize';
 import type { InvitationPreview } from '@/types';
 import { NextResponse } from 'next/server';
+import { isGuestSession } from '@/lib/guest';
 
 type RouteParams = { token: string };
 
@@ -51,6 +52,9 @@ export const GET = createParamHandle<RouteParams>(
 export const POST = createParamHandle<RouteParams>(
   {},
   async ({ params, userId, session }) => {
+    if (isGuestSession(session)) {
+      throw new ForbiddenError('Sign in with Google to join a board');
+    }
     const invitation = await getInvitationByToken(params.token);
     if (!invitation) throw new NotFoundError('Invitation not found');
 

@@ -78,3 +78,23 @@ describe('removeMember (pessimistic delete)', () => {
     expect(useProjectStore.getState().status).toBe('error');
   });
 });
+
+describe('ensureActiveProject', () => {
+  it('keeps the open board when it still exists', () => {
+    seedStore([makeProject('a', []), makeProject('b', [])]);
+    useProjectStore.setState({ projectIsUsing: 'b' });
+    useProjectStore.getState().ensureActiveProject();
+    expect(useProjectStore.getState().projectIsUsing).toBe('b');
+  });
+
+  it('falls back to the first board when none or a missing one is open', () => {
+    seedStore([makeProject('a', []), makeProject('b', [])]);
+    useProjectStore.setState({ projectIsUsing: 'gone' });
+    useProjectStore.getState().ensureActiveProject();
+    expect(useProjectStore.getState().projectIsUsing).toBe('a');
+
+    useProjectStore.setState({ projectIsUsing: null });
+    useProjectStore.getState().ensureActiveProject();
+    expect(useProjectStore.getState().projectIsUsing).toBe('a');
+  });
+});

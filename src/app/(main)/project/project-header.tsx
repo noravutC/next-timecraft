@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, UserPlus } from 'lucide-react';
+import { ChevronsUpDown, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
+import { useWorkspaceName } from '@/components/workspace/use-workspace-name';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
+import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
-import { InviteMemberDialog } from '@/components/project/invite-member-dialog';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
   Tooltip,
@@ -15,26 +15,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarGroup,
-  AvatarGroupCount,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BreadcrumbSlash } from '@/components/breadcrumb/breadcrumb-slash';
 
-const AVATAR_LIMIT = 3;
+const AVATAR_LIMIT = 4;
 
-// เส้นคั่นแนวตั้งของ header ตาม design (1×22px)
-const HeaderDivider = () => <div className="h-5.5 w-px shrink-0 bg-line" />;
+const HeaderDivider = () => (
+  <div aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-line" />
+);
 
 export const ProjectHeader = () => {
   const { projectIsUsing, projects, status } = useProjectStore();
   const { users } = useUserStore();
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const openBoardSettings = useNavStore((s) => s.openBoardSettings);
+  const workspaceName = useWorkspaceName();
 
   const projectValue = projectIsUsing ? projects[projectIsUsing] : null;
   const members = projectValue?.members ?? [];
@@ -43,111 +40,113 @@ export const ProjectHeader = () => {
   const loading = status === 'fetching';
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-5">
-      {/* LEFT — logo | board identity (กดเปิด switcher แบบ design) */}
-      <div className="flex items-center gap-4.5">
-        <Logo size={20} textSize="base" />
-        <HeaderDivider />
+    <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line bg-background px-5">
+      {/* LEFT: logo / workspace / board (กดเปิดตัวสลับบอร์ด หรือ ⌘K) */}
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <Logo size={24} textSize="md" textClassName="hidden sm:block" />
+        <BreadcrumbSlash />
+        {/* phones keep logo / board only */}
+        {workspaceName && (
+          <span className="hidden min-w-0 items-center gap-2.5 sm:flex">
+            <span className="truncate text-base font-medium text-ink-muted">
+              {workspaceName}
+            </span>
+            <BreadcrumbSlash />
+          </span>
+        )}
         {loading ? (
           <div className="flex items-center gap-2">
-            <Skeleton className="size-6 rounded-md" />
-            <Skeleton className="h-5 w-36 rounded" />
+            <Skeleton className="size-5 rounded-sm" />
+            <Skeleton className="h-4 w-32 rounded" />
           </div>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setBoardDialog('switch')}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-surface-hover"
+            aria-label="Switch board"
+            className="-ml-1.5 min-w-0 shrink gap-2 pr-2 pl-1.5 text-ink"
           >
             {projectValue && (
               <ProjectAvatar
                 project={projectValue}
-                size="size-6"
-                rounded="rounded-md"
+                size="size-5"
+                rounded="rounded-sm"
+                textSize="text-2xs"
               />
             )}
-            <span className="text-md font-bold text-ink">
-              {projectValue?.name ?? '—'}
+            <span className="truncate text-base font-semibold tracking-tight">
+              {projectValue?.name ?? 'Board'}
             </span>
-            <ChevronDown className="size-4 text-ink-faint" />
-          </button>
+            <ChevronsUpDown className="size-3.5 text-ink-subtle" />
+          </Button>
         )}
       </div>
 
-      {/* RIGHT — avatars | invite | bell | user */}
+      {/* RIGHT: members | invite | bell | user */}
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-3.5">
-          {loading ? (
-            <Skeleton className="h-7.5 w-44 rounded-full" />
-          ) : (
-            <>
-              {members.length > 0 && (
-                <AvatarGroup
-                  className="cursor-pointer transition-opacity hover:opacity-90"
-                  onClick={() => setInviteOpen(true)}
-                >
-                  {visibleMembers.map((member) => {
-                    const user = users[member.userId];
-                    const initials =
-                      user?.fullName?.slice(0, 2).toUpperCase() ?? '?';
-                    return (
-                      <Tooltip key={member.userId}>
-                        <TooltipTrigger asChild>
-                          <Avatar className="size-7.5 ring-2 ring-background">
-                            <AvatarImage
-                              src={user?.avatar ?? undefined}
-                              alt={user?.fullName}
-                            />
-                            <AvatarFallback className="text-xs font-bold">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="space-y-0.5">
-                          <p className="text-sm font-semibold">
-                            {user?.fullName ?? '…'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {user?.email}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {ROLE_LABELS[member.role]}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                  {overflowCount > 0 && (
-                    <AvatarGroupCount className="size-7.5 bg-surface-active text-xs font-bold text-ink-muted ring-2 ring-background">
-                      +{overflowCount}
-                    </AvatarGroupCount>
-                  )}
-                </AvatarGroup>
-              )}
-
-              <Button
-                variant="outline"
-                className="h-8.5 gap-1.5 rounded-lg border-line px-3 text-sm font-bold text-brand-dark shadow-none hover:border-brand-line hover:bg-brand-soft/40 hover:text-brand-dark"
-                onClick={() => setInviteOpen(true)}
+        {loading ? (
+          <Skeleton className="h-7 w-40 rounded-full" />
+        ) : (
+          <>
+            {members.length > 0 && (
+              <AvatarGroup
+                aria-label={`${members.length} members`}
+                className="hidden cursor-pointer md:flex"
+                onClick={() => openBoardSettings('members')}
               >
-                <UserPlus className="size-4" />
-                Invite
-              </Button>
+                {visibleMembers.map((member) => {
+                  const user = users[member.userId];
+                  return (
+                    <Tooltip key={member.userId}>
+                      <TooltipTrigger asChild>
+                        <span className="rounded-full ring-2 ring-background">
+                          <UserAvatar
+                            name={user?.fullName}
+                            image={user?.avatar}
+                            seed={member.userId}
+                            size="md"
+                          />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="flex flex-col">
+                        <span className="font-medium">
+                          {user?.fullName ?? 'Member'} ·{' '}
+                          {ROLE_LABELS[member.role]}
+                        </span>
+                        {user?.email && (
+                          <span className="text-white/70">{user.email}</span>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {overflowCount > 0 && (
+                  <AvatarGroupCount className="size-6.5">
+                    +{overflowCount}
+                  </AvatarGroupCount>
+                )}
+              </AvatarGroup>
+            )}
 
-              <HeaderDivider />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-line"
+              onClick={() => openBoardSettings('members')}
+            >
+              <UserPlus className="size-3.75" />
+              <span className="sr-only sm:not-sr-only">Invite</span>
+            </Button>
 
-              <NotificationBell />
+            <HeaderDivider />
 
-              <UserMenu />
-            </>
-          )}
-        </div>
+            <NotificationBell />
+
+            <UserMenu />
+          </>
+        )}
       </TooltipProvider>
-
-      <InviteMemberDialog
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-      />
     </header>
   );
 };

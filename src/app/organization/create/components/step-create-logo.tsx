@@ -1,7 +1,10 @@
-import { ArrowLeft, ArrowRight, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { firstImageFile } from "@/helper/utils/image-file";
 import { slideVariants } from "../steps-create";
+import { StepHeading } from "./step-heading";
 
 type StepCreateLogoProps = {
   model: {
@@ -24,55 +27,74 @@ export function StepCreateLogo({ model, actions }: StepCreateLogoProps) {
       animate="center"
       exit="exit"
       transition={{ duration: 0.25 }}
+      className="flex flex-col gap-6"
     >
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Add a logo</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Give your workspace a visual identity.
-        </p>
-      </div>
+      <StepHeading title="Add a logo">
+        Optional. You can skip this for now.
+      </StepHeading>
 
-      <label className="mb-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-foreground/30">
+      <label
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          const file = firstImageFile(event.dataTransfer.files);
+          if (file) actions.onFileChange(file);
+        }}
+        className="relative flex cursor-pointer flex-col items-center gap-2.5 rounded-popover border border-dashed border-line-strong px-4 py-8 text-center transition-colors hover:border-neutral-400 hover:bg-surface"
+      >
         {model.logoPreview ? (
+          // eslint-disable-next-line @next/next/no-img-element -- local blob preview
           <img
             src={model.logoPreview}
             alt="Logo preview"
-            className="h-24 w-24 rounded-lg object-cover"
+            className="size-16 rounded-popover border border-line object-cover"
           />
         ) : (
-          <>
-            <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Click to upload your logo
-            </span>
-          </>
+          <span className="grid size-10 place-items-center rounded-popover border border-line bg-background text-ink-muted">
+            <Upload className="size-4.5" />
+          </span>
         )}
-        <input
+        <span className="text-base font-medium text-ink">
+          Drop an image or{" "}
+          <span className="underline underline-offset-3">browse</span>
+        </span>
+        <span className="text-xs leading-5 text-ink-subtle">
+          PNG, JPG or SVG, square works best
+        </span>
+        <Input
           type="file"
           accept="image/*"
-          onChange={(event) =>
-            actions.onFileChange(event.target.files?.[0] ?? null)
-          }
-          className="hidden"
+          aria-label="Upload logo"
+          onChange={(event) => {
+            const file = firstImageFile(event.target.files);
+            if (file) actions.onFileChange(file);
+          }}
+          className="sr-only"
         />
       </label>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={actions.onBack} className="flex-1">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={actions.onBack}
+          className="h-10.5 px-4"
+        >
+          Back
         </Button>
-        <Button onClick={actions.onNext} className="flex-1">
-          Next <ArrowRight className="ml-2 h-4 w-4" />
+        <span className="flex-1" />
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={actions.onSkip}
+          className="h-10.5 px-3.5"
+        >
+          Skip for now
+        </Button>
+        <Button size="lg" onClick={actions.onNext} className="h-10.5">
+          Continue
         </Button>
       </div>
-
-      <button
-        type="button"
-        onClick={actions.onSkip}
-        className="mt-3 w-full text-center text-sm text-muted-foreground hover:text-foreground"
-      >
-        Skip for now
-      </button>
     </motion.div>
   );
 }

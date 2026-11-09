@@ -1,26 +1,35 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
+// Chips from the UI kit: counts are round 18px, status chips 22px.
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  'inline-flex w-fit shrink-0 items-center justify-center gap-1.25 overflow-hidden rounded-full whitespace-nowrap transition-colors [&>svg]:pointer-events-none [&>svg]:size-3',
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+        /** solid ink count, e.g. active filter count */
+        default: 'h-4.5 min-w-4.5 bg-ink px-1.25 text-2xs text-white',
+        /** quiet count, e.g. comments tab */
+        count:
+          'h-4.5 min-w-4.5 bg-surface-active px-1.25 text-2xs text-ink-muted',
+        /** brand count, e.g. unread mentions */
+        brand:
+          'h-5 bg-brand-soft px-1.75 text-2xs font-semibold text-brand-dark',
+        outline: 'h-5.5 border border-line px-2 text-xs text-ink-muted',
+        secondary: 'h-5.5 bg-surface-hover px-2 text-xs text-ink-muted',
+        success:
+          'h-5.5 bg-success-soft px-2 text-xs font-medium text-success-text',
+        warning:
+          'h-5.5 bg-warning-tint px-2 text-xs font-medium text-tone-orange-fg',
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          'h-5.5 bg-danger-soft px-2 text-xs font-medium text-danger-text',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
   },
 );
@@ -30,9 +39,9 @@ function Badge({
   variant,
   asChild = false,
   ...props
-}: React.ComponentProps<"span"> &
+}: React.ComponentProps<'span'> &
   VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "span";
+  const Comp = asChild ? Slot : 'span';
 
   return (
     <Comp

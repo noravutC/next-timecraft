@@ -49,9 +49,10 @@ export const CommentComposer = ({
   const users = useUserStore(useShallow((s) => s.users));
   const create = useCommentStore((s) => s.create);
 
+  const members = project?.members;
   const memberCandidates: MentionCandidate[] = useMemo(() => {
-    if (!project?.members) return [];
-    return project.members
+    if (!members) return [];
+    return members
       .map((m) => {
         const u = users[m.userId];
         return u
@@ -59,7 +60,7 @@ export const CommentComposer = ({
           : null;
       })
       .filter((m): m is MentionCandidate => m !== null);
-  }, [project?.members, users]);
+  }, [members, users]);
 
   const mention = useMentionPicker(memberCandidates);
   const upload = useAttachmentUploads(taskId);
@@ -145,7 +146,7 @@ export const CommentComposer = ({
       upload.pending.some((p) => p.status === "ready"));
 
   return (
-    <div className="shrink-0 pt-2 pb-4">
+    <div className="shrink-0">
       <HiddenFileInput
         ref={imageInputRef}
         accept="image/png,image/jpeg,image/webp,image/gif"
@@ -164,7 +165,7 @@ export const CommentComposer = ({
 
       {/* relative จำเป็น — MentionDropdown เป็น absolute bottom-full ต้องยึดกล่องนี้ */}
       <div
-        className="relative flex flex-col rounded-md border border-border bg-background p-2 px-3 shadow-sm focus-within:border-primary focus-within:shadow-md"
+        className="relative flex flex-col rounded-popover border border-line bg-background shadow-card transition-[border-color,box-shadow] focus-within:border-ink focus-within:ring-3 focus-within:ring-ink/8"
         onDragOver={(e) => e.preventDefault()}
         onDrop={upload.onDrop}
       >
@@ -177,10 +178,10 @@ export const CommentComposer = ({
           />
         )}
 
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 px-3.5 pt-3 pb-1">
           <div className="flex-1">
             {preview ? (
-              <div className="min-h-9 py-1.5 text-sm">
+              <div className="min-h-10 text-base leading-5">
                 <MarkdownView value={value} />
               </div>
             ) : (
@@ -231,7 +232,9 @@ export const CommentComposer = ({
                   }
                 }}
                 placeholder="Write a comment… use @ to mention"
-                className="min-h-9 resize-none border-0 bg-transparent p-0 py-1.5 text-sm shadow-none focus-visible:ring-0"
+                aria-label="Write a comment"
+                rows={2}
+                className="min-h-10 resize-none rounded-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
               />
             )}
 

@@ -1,42 +1,48 @@
+import { Github, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EMAIL, GITHUB_URL, LINKEDIN_URL } from './case-study-content';
 
 const PROFILE_LINKS = [
-  { label: 'GitHub', href: 'https://github.com/noravutC' },
-  {
-    label: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/noravut-chanthalay-2396672b6/',
-  },
+  { label: 'GitHub', href: GITHUB_URL, Icon: Github },
+  { label: 'LinkedIn', href: LINKEDIN_URL, Icon: Linkedin },
 ];
 
 export function ContactSection() {
   return (
-    <section id="contact" className="mx-auto max-w-270 px-8 pt-16 pb-20 text-center">
-      <h2 className="mk-display mb-3 text-4xl font-extrabold tracking-tight">
-        Let&apos;s talk
-      </h2>
-      <p className="mx-auto mb-6 max-w-155 text-base leading-relaxed text-ink-muted">
-        Open to full-stack roles and interesting projects. The fastest way to
-        reach me is email.
-      </p>
-      <a
-        href="mailto:noravut.ch@gmail.com"
-        className="mk-display inline-block text-2xl font-extrabold tracking-tight break-all text-brand hover:text-brand-dark hover:underline md:text-4xl"
-      >
-        noravut.ch@gmail.com
-      </a>
-      <div className="mt-7 flex flex-wrap justify-center gap-3.5">
-        {PROFILE_LINKS.map((link) => (
-          <Button
-            key={link.href}
-            asChild
-            variant="outline"
-            className="cs-mono h-auto rounded-lg border-brand-line bg-brand-soft px-4.5 py-2.5 text-sm font-bold whitespace-nowrap text-brand shadow-none hover:bg-brand-line hover:text-brand"
-          >
-            <a href={link.href} target="_blank" rel="noreferrer">
-              {link.label}
-            </a>
-          </Button>
-        ))}
+    <section
+      id="contact"
+      className="scroll-mt-16 border-t border-line bg-surface"
+    >
+      <div className="mx-auto flex max-w-292 flex-col items-center gap-4.5 px-6 py-24 text-center">
+        <h2 className="text-cta-sm font-semibold tracking-tighter">
+          Let&rsquo;s talk.
+        </h2>
+        <p className="max-w-120 text-copy text-ink-muted">
+          Open to full-stack roles and interesting projects. The fastest way to
+          reach me is email.
+        </p>
+        <a
+          href={`mailto:${EMAIL}`}
+          className="font-mono text-md leading-6 break-all text-ink underline-offset-3 hover:underline"
+        >
+          {EMAIL}
+        </a>
+        <div className="flex flex-wrap justify-center gap-2.5">
+          {PROFILE_LINKS.map(({ label, href, Icon }) => (
+            <Button
+              key={href}
+              asChild
+              size="lg"
+              variant="outline"
+              className="h-10.5 gap-2 px-4"
+            >
+              <a href={href} target="_blank" rel="noreferrer">
+                <Icon className="size-4" />
+                {label}
+              </a>
+            </Button>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -64,3 +64,6 @@ export interface TaskFilter {
   tags?: string[];
   assigneeIds?: string[];
 }
+
+/** Tasks per priority in one column, ignoring board filters (filter menu counts). */
+export type PriorityCounts = Partial<Record<TaskPriority, number>>;
