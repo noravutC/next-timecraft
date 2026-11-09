@@ -1,6 +1,8 @@
 // src/services/organization.service.ts
 import apiClient from "@/lib/axios";
+import type { WorkspaceInvitableRole } from "@/lib/rbac/workspace-permissions";
 import {
+  APIDelete,
   APIGet,
   APIPatch,
   APIPost,
@@ -10,8 +12,11 @@ import {
   InviteToWorkspacePayload,
   InviteToWorkspaceResult,
   OrganizationCache,
+  PendingWorkspaceInvitation,
+  PendingWorkspaceInvitationWithInviter,
   UpdateOrganizationPayload,
   WorkspaceInvitationPreview,
+  WorkspaceMembersResponse,
 } from "@/types";
 
 class OrganizationService {
@@ -63,6 +68,102 @@ class OrganizationService {
         throw (
           error?.response?.data || new Error("Failed to load archived boards")
         );
+      });
+  }
+
+  async getMembers(
+    organizationId: string,
+  ): Promise<APISingleGet<WorkspaceMembersResponse>> {
+    return this.client
+      .get(`/organization/${organizationId}/members`)
+      .then(
+        (response) => response.data as APISingleGet<WorkspaceMembersResponse>,
+      )
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to load members");
+      });
+  }
+
+  async changeMemberRole(
+    organizationId: string,
+    userId: string,
+    role: WorkspaceInvitableRole,
+  ): Promise<APIPatch<{ userId: string; role: WorkspaceInvitableRole }>> {
+    return this.client
+      .patch(`/organization/${organizationId}/members/${userId}`, { role })
+      .then(
+        (response) =>
+          response.data as APIPatch<{
+            userId: string;
+            role: WorkspaceInvitableRole;
+          }>,
+      )
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to change role");
+      });
+  }
+
+  async removeMember(
+    organizationId: string,
+    userId: string,
+  ): Promise<APIDelete<{ userId: string }>> {
+    return this.client
+      .delete(`/organization/${organizationId}/members/${userId}`)
+      .then((response) => response.data as APIDelete<{ userId: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to remove member");
+      });
+  }
+
+  async addGuest(
+    organizationId: string,
+    userId: string,
+  ): Promise<APIPost<{ userId: string }>> {
+    return this.client
+      .post(`/organization/${organizationId}/members`, { userId })
+      .then((response) => response.data as APIPost<{ userId: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to add to workspace");
+      });
+  }
+
+  async getInvitations(
+    organizationId: string,
+  ): Promise<APIGet<PendingWorkspaceInvitationWithInviter>> {
+    return this.client
+      .get(`/organization/${organizationId}/invitations`)
+      .then(
+        (response) =>
+          response.data as APIGet<PendingWorkspaceInvitationWithInviter>,
+      )
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to load invitations");
+      });
+  }
+
+  async revokeInvitation(
+    organizationId: string,
+    invitationId: string,
+  ): Promise<APIDelete<{ id: string }>> {
+    return this.client
+      .delete(`/organization/${organizationId}/invitations/${invitationId}`)
+      .then((response) => response.data as APIDelete<{ id: string }>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to revoke invitation");
+      });
+  }
+
+  async resendInvitation(
+    organizationId: string,
+    invitationId: string,
+  ): Promise<APIPost<PendingWorkspaceInvitation>> {
+    return this.client
+      .post(
+        `/organization/${organizationId}/invitations/${invitationId}/resend`,
+      )
+      .then((response) => response.data as APIPost<PendingWorkspaceInvitation>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to send it again");
       });
   }
 

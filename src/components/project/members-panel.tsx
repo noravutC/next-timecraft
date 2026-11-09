@@ -2,6 +2,8 @@
 
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { memberCountLabel } from '@/helper/utils/board-switcher';
+import { boardInvitationMeta } from '@/helper/utils/invitation-status';
+import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { InviteForm } from './invite-form';
 import { MemberRow } from './member-row';
 import { InvitationRow } from './invitation-row';
@@ -79,7 +81,11 @@ export const MembersPanel = () => {
             {invitations.map((invitation, index) => (
               <InvitationRow
                 key={invitation.id}
-                invitation={invitation}
+                email={invitation.email}
+                meta={boardInvitationMeta(
+                  ROLE_LABELS[invitation.role],
+                  invitation.expiresAt,
+                )}
                 bordered={index > 0}
                 onCopyLink={() =>
                   void copyText(

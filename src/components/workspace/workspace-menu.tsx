@@ -52,6 +52,9 @@ export const WorkspaceMenu = ({
         <DropdownMenuItem asChild className="h-8 px-2.5">
           <Link href="/settings/workspace">Workspace settings</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild className="h-8 px-2.5">
+          <Link href="/settings/members">Members</Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

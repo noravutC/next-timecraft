@@ -66,3 +66,37 @@ export type UpdateOrganizationPayload = {
   logo?: string | null;
   timeZone?: string;
 };
+
+// Settings > Members
+export type WorkspaceMember = {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatar: string | null;
+  role: WorkspaceRole;
+  joinedAt: Date;
+  boardCount: number;
+};
+
+export type BoardGuest = {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatar: string | null;
+  boards: {
+    projectId: string;
+    name: string;
+    role: import("@/lib/rbac/permissions").ProjectRole;
+  }[];
+};
+
+export type WorkspaceMembersResponse = {
+  members: WorkspaceMember[];
+  /** only for the owner and admins */
+  guests: BoardGuest[];
+};
+
+export type PendingWorkspaceInvitationWithInviter = PendingWorkspaceInvitation & {
+  invitedBy: string | null;
+  invitedByName: string | null;
+};

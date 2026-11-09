@@ -1,10 +1,12 @@
-// app/api/organization/[id]/invitations/route.ts: POST = invite to the workspace
+// app/api/organization/[id]/invitations/route.ts: POST = invite to the
+// workspace, GET = pending invitations (with their links: owner and admins)
 
 import { createNotification } from '@/db/uniq-query/notification/notification-utils';
 import { getWorkspaceSummary } from '@/db/uniq-query/organization/organization-utils';
 import {
   createWorkspaceInvitation,
   hasPendingWorkspaceInvitation,
+  listPendingWorkspaceInvitations,
   toPendingWorkspaceInvitation,
 } from '@/db/uniq-query/organization/workspace-invitation-utils';
 import { getOrgRole } from '@/db/uniq-query/project/project-utils';
@@ -17,7 +19,7 @@ import { assertUnderDailyLimit, DAILY_QUOTAS, dayAgo } from '@/lib/api/quotas';
 import { sendWorkspaceInviteEmail } from '@/lib/email/send-workspace-invite';
 import { isGuestEmail, isGuestSession } from '@/lib/guest';
 import { triggerExclusive } from '@/lib/pusher-server';
-import { canInviteToWorkspace } from '@/lib/rbac/workspace-permissions';
+import { authorizeWorkspace } from '@/lib/rbac/authorize-workspace';
 import type { InviteToWorkspaceResult } from '@/types';
 import {
   inviteToWorkspaceSchema,
@@ -37,11 +39,7 @@ export const POST = createParamHandle<RouteParams, InviteToWorkspaceBody>(
       throw new ForbiddenError('Sign in with Google to invite people');
     }
     const organizationId = parseId(params.id);
-    if (!canInviteToWorkspace(await getOrgRole(userId, organizationId))) {
-      throw new ForbiddenError(
-        'Only the owner and admins can invite people to this workspace',
-      );
-    }
+    await authorizeWorkspace(userId, organizationId, 'manage');
     const workspace = await getWorkspaceSummary(organizationId);
     if (!workspace) throw new NotFoundError('Workspace not found');
 
@@ -122,6 +120,19 @@ export const POST = createParamHandle<RouteParams, InviteToWorkspaceBody>(
     return NextResponse.json(
       { created: result, message: 'Invitations sent', status: 201 },
       { status: 201 },
+    );
+  },
+);
+
+export const GET = createParamHandle<RouteParams>(
+  {},
+  async ({ params, userId }) => {
+    const organizationId = parseId(params.id);
+    await authorizeWorkspace(userId, organizationId, 'manage');
+    const data = await listPendingWorkspaceInvitations(organizationId);
+    return NextResponse.json(
+      { data, message: 'Get invitations success', status: 200 },
+      { status: 200 },
     );
   },
 );

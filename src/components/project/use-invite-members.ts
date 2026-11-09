@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useProjectStore, useUserStore } from '@/store';
 import { projectServices } from '@/services/projects.service';
 import { can } from '@/lib/rbac/can';
+import { copyWithToast } from '@/lib/clipboard';
 import type { InvitableRole, Member, PendingInvitation } from '@/types';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,14 +117,7 @@ export function useInviteMembers({ open }: { open: boolean }) {
     }
   };
 
-  const copyText = async (text: string, message: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(message);
-    } catch {
-      toast.error('Unable to copy link');
-    }
-  };
+  const copyText = copyWithToast;
 
   const handleRemoveMember = async () => {
     if (!project || !memberToRemove || removing) return;
