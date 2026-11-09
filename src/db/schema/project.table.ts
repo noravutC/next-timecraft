@@ -27,6 +27,11 @@ export const projectsTable = pgTable("projects", {
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),
   archived: boolean("archived").notNull().default(false),
+  // when and by whom it was archived; null while active
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: uuid("archived_by").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
   tags: text("tags")
     .array()
     .notNull()

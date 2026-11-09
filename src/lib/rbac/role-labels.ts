@@ -45,3 +45,11 @@ export const WORKSPACE_JOIN_COPY: Record<
     hint: 'You can open the boards you’re invited to once you join.',
   },
 };
+
+/** The role line under the workspace name in the workspace menu. */
+export const YOUR_WORKSPACE_ROLE: Record<WorkspaceRole, string> = {
+  owner: 'You’re the owner',
+  admin: 'You’re an admin',
+  member: 'You’re a member',
+  guest: 'You’re a guest',
+};

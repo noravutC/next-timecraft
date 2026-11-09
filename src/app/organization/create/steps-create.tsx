@@ -14,6 +14,7 @@ import { AuthHeader } from "@/components/auth/auth-header";
 import { appendEmail } from "@/helper/utils/email-list";
 import { useWorkspaceLogoPicker } from "@/components/workspace/use-workspace-logo-picker";
 import { invitesSummary } from "@/helper/utils/invite-result";
+import { browserTimeZone } from "@/helper/utils/time-zone";
 
 const STEP_LABELS = ["Name", "Logo", "Invite"];
 export const slideVariants = {
@@ -59,6 +60,7 @@ export const CreateOrganization = () => {
         name,
         description: null,
         logo: logo.logo,
+        timeZone: browserTimeZone(),
       });
       if (!createdOrganization) {
         toast.error("Unable to create workspace");

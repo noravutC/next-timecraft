@@ -10,7 +10,7 @@ export type Organizations = InferSelectModel<typeof organizationsTable>;
 export type NewOrganizationRow = InferInsertModel<typeof organizationsTable>;
 export type CreateOrganizationPayload = Pick<
   NewOrganizationRow,
-  "name" | "description" | "logo"
+  "name" | "description" | "logo" | "timeZone"
 >;
 
 export interface OrganizationCache extends Organizations {
@@ -45,4 +45,24 @@ export type WorkspaceInvitationPreview = {
   email: string;
   status: InvitationStatus;
   emailMatches: boolean;
+};
+
+// an archived board, as Settings > General lists it
+export type ArchivedBoard = {
+  id: string;
+  name: string;
+  coverImage: string | null;
+  settings: import("@/types/project-settings").ProjectSettings;
+  archivedAt: Date | null;
+  archivedByName: string | null;
+  /** your role on it: restoring needs owner or admin */
+  role: import("@/lib/rbac/permissions").ProjectRole;
+  memberCount: number;
+  taskCount: number;
+};
+
+export type UpdateOrganizationPayload = {
+  name?: string;
+  logo?: string | null;
+  timeZone?: string;
 };

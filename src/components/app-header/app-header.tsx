@@ -5,7 +5,7 @@ import { BreadcrumbSlash } from '@/components/breadcrumb/breadcrumb-slash';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { WorkspaceLogo } from '@/components/workspace/workspace-logo';
+import { WorkspaceMenu } from '@/components/workspace/workspace-menu';
 
 interface AppHeaderProps {
   workspace: { name: string; logo: string | null } | null;
@@ -26,12 +26,7 @@ export const AppHeader = ({ workspace, current }: AppHeaderProps) => (
     {workspace && (
       <>
         <BreadcrumbSlash />
-        <span className="flex min-w-0 items-center gap-2">
-          <WorkspaceLogo workspace={workspace} />
-          <span className="truncate text-base font-medium text-ink-muted">
-            {workspace.name}
-          </span>
-        </span>
+        <WorkspaceMenu workspace={workspace} />
       </>
     )}
     {current && (

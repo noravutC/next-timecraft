@@ -3,7 +3,7 @@
 import { ChevronsUpDown, UserPlus } from 'lucide-react';
 import { useNavStore, useProjectStore, useUserStore } from '@/store';
 import { useWorkspace } from '@/components/workspace/use-workspace-name';
-import { WorkspaceLogo } from '@/components/workspace/workspace-logo';
+import { WorkspaceMenu } from '@/components/workspace/workspace-menu';
 import { ROLE_LABELS } from '@/lib/rbac/role-labels';
 import { Logo } from '@/components/logo-space/logo';
 import { UserMenu } from '@/components/menu-bar/user-menu';
@@ -52,12 +52,7 @@ export const ProjectHeader = () => {
         {/* phones keep logo / board only */}
         {workspace && (
           <span className="hidden min-w-0 items-center gap-2.5 sm:flex">
-            <span className="flex min-w-0 items-center gap-2">
-              <WorkspaceLogo workspace={workspace} />
-              <span className="truncate text-base font-medium text-ink-muted">
-                {workspace.name}
-              </span>
-            </span>
+            <WorkspaceMenu workspace={workspace} />
             <BreadcrumbSlash />
           </span>
         )}

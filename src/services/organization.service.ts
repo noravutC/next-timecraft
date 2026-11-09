@@ -2,12 +2,15 @@
 import apiClient from "@/lib/axios";
 import {
   APIGet,
+  APIPatch,
   APIPost,
   APISingleGet,
+  ArchivedBoard,
   CreateOrganizationPayload,
   InviteToWorkspacePayload,
   InviteToWorkspaceResult,
   OrganizationCache,
+  UpdateOrganizationPayload,
   WorkspaceInvitationPreview,
 } from "@/types";
 
@@ -34,6 +37,31 @@ class OrganizationService {
       .catch((error) => {
         throw (
           error?.response?.data || new Error("Failed to create organization")
+        );
+      });
+  }
+
+  async updateOrganization(
+    organizationId: string,
+    payload: UpdateOrganizationPayload,
+  ): Promise<APIPatch<OrganizationCache>> {
+    return this.client
+      .patch(`/organization/${organizationId}`, payload)
+      .then((response) => response.data as APIPatch<OrganizationCache>)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to save workspace");
+      });
+  }
+
+  async getArchivedBoards(
+    organizationId: string,
+  ): Promise<APIGet<ArchivedBoard>> {
+    return this.client
+      .get(`/organization/${organizationId}/archived-boards`)
+      .then((response) => response.data as APIGet<ArchivedBoard>)
+      .catch((error) => {
+        throw (
+          error?.response?.data || new Error("Failed to load archived boards")
         );
       });
   }

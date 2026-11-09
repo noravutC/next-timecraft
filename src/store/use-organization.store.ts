@@ -4,6 +4,7 @@ import {
   InviteToWorkspacePayload,
   InviteToWorkspaceResult,
   OrganizationCache,
+  UpdateOrganizationPayload,
 } from "@/types";
 import { LoaderStatus } from "@/types/global/types";
 import { organizationServices } from "@/services/organization.service";
@@ -21,6 +22,11 @@ type OrganizationStore = {
     organizationId: string,
     payload: InviteToWorkspacePayload,
   ) => Promise<InviteToWorkspaceResult>;
+  /** optimistic: the header shows the new name and logo right away */
+  updateOrganization: (
+    organizationId: string,
+    payload: UpdateOrganizationPayload,
+  ) => Promise<void>;
 };
 
 // one request at a time per org: header, switcher and first-board page all
@@ -70,6 +76,24 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
       return organization;
     } catch (error) {
       set({ status: "error" });
+      throw error;
+    }
+  },
+  updateOrganization: async (organizationId, payload) => {
+    const snapshot = get().organization;
+    if (snapshot?.id === organizationId) {
+      set({ organization: { ...snapshot, ...payload } });
+    }
+    try {
+      const { updated } = await organizationServices.updateOrganization(
+        organizationId,
+        payload,
+      );
+      if (updated && get().organization?.id === organizationId) {
+        set({ organization: { ...updated, timestamp: Date.now() } });
+      }
+    } catch (error) {
+      if (snapshot?.id === organizationId) set({ organization: snapshot });
       throw error;
     }
   },

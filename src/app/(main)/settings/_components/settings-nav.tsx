@@ -2,19 +2,30 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const GROUPS: { label: string; links: { href: string; label: string }[] }[] = [
-  {
-    label: 'Account',
-    links: [{ href: '/settings/profile', label: 'Profile' }],
-  },
-];
+type NavGroup = { label: string; links: { href: string; label: string }[] };
+
+const ACCOUNT: NavGroup = {
+  label: 'Account',
+  links: [{ href: '/settings/profile', label: 'Profile' }],
+};
+
+const WORKSPACE: NavGroup = {
+  label: 'Workspace',
+  links: [{ href: '/settings/workspace', label: 'General' }],
+};
 
 /** Settings sections, grouped by account and workspace. */
 export const SettingsNav = () => {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  // people who are only on boards have no workspace to set up
+  const groups = session?.user?.organizationId
+    ? [ACCOUNT, WORKSPACE]
+    : [ACCOUNT];
 
   return (
     <nav
@@ -28,7 +39,7 @@ export const SettingsNav = () => {
         <ArrowLeft className="size-3.75" />
         Back to boards
       </Link>
-      {GROUPS.map((group, index) => (
+      {groups.map((group, index) => (
         <div key={group.label} className="flex flex-col gap-0.5">
           <span
             className={cn(

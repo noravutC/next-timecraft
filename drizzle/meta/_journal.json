@@ -106,6 +106,13 @@
       "when": 1793975038002,
       "tag": "0015_account_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793975883101,
+      "tag": "0016_workspace_settings",
+      "breakpoints": true
     }
   ]
 }
