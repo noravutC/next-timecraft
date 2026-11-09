@@ -20,6 +20,15 @@ describe('signInDestination', () => {
       '/project',
     );
   });
+  it('sends people invited to a board to their boards, not workspace setup', () => {
+    expect(
+      signInDestination({
+        organizationId: '',
+        canCreateOrg: true,
+        hasBoards: true,
+      }),
+    ).toBe('/project');
+  });
 });
 
 describe('inviteView', () => {

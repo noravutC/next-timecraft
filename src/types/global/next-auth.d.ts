@@ -14,6 +14,8 @@ declare module "next-auth" {
       organizationId: string;
       systemRole: SystemRole;
       canCreateOrg: boolean;
+      /** member of at least one board, through an invitation or their own */
+      hasBoards: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -28,5 +30,6 @@ declare module "next-auth/jwt" {
     organizationId?: string;
     systemRole?: SystemRole;
     canCreateOrg?: boolean;
+    hasBoards?: boolean;
   }
 }

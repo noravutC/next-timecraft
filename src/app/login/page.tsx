@@ -15,11 +15,14 @@ export default function Login() {
   const [guestLoading, setGuestLoading] = useState(false);
   const organizationId = session?.user?.organizationId?.trim() ?? "";
   const canCreateOrg = session?.user?.canCreateOrg ?? false;
+  const hasBoards = session?.user?.hasBoards ?? false;
 
   useEffect(() => {
     if (status !== "authenticated" || !session) return;
-    router.replace(signInDestination({ organizationId, canCreateOrg }));
-  }, [status, session, organizationId, canCreateOrg, router]);
+    router.replace(
+      signInDestination({ organizationId, canCreateOrg, hasBoards }),
+    );
+  }, [status, session, organizationId, canCreateOrg, hasBoards, router]);
 
   const handleGuestLogin = async () => {
     if (guestLoading) return;
