@@ -25,7 +25,7 @@ export const MOBILE_MENU: { label: string; href: string; badge?: string }[] = [
   {
     label: 'Integrations',
     href: '/timecraft#integrations',
-    badge: 'Coming soon',
+    badge: 'More coming',
   },
   { label: 'Pricing', href: '/timecraft#pricing' },
   { label: 'Privacy', href: '/privacy' },
@@ -175,15 +175,16 @@ export const STEPS: NumberedItem[] = [
   },
 ];
 
-export const INTEGRATIONS = [
-  'Calendar',
-  'Slack',
-  'Notion',
-  'GitHub',
-  'Figma',
-  'Stripe',
-  'Zapier',
-  'Toggl',
+// Calendar is the board's iCal feed (Calendar view › Subscribe)
+export const INTEGRATIONS: { name: string; live?: boolean }[] = [
+  { name: 'Calendar', live: true },
+  { name: 'Slack' },
+  { name: 'Notion' },
+  { name: 'GitHub' },
+  { name: 'Figma' },
+  { name: 'Stripe' },
+  { name: 'Zapier' },
+  { name: 'Toggl' },
 ];
 
 // ---- pricing (planned, not live) ----

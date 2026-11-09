@@ -7,17 +7,23 @@ export function IntegrationsSection() {
       <div className="mx-auto grid max-w-312 items-center gap-12 px-6 py-24 lg:grid-cols-2">
         <SectionIntro
           eyebrow="Integrations"
-          badge="Coming soon"
+          badge="More coming"
           title="Your board, wherever the work happens."
-          body="These connections are on the roadmap. None of them are live yet."
+          body="Calendar is live: subscribe to a board and its due dates show up in Google Calendar, Apple Calendar or Outlook. The rest are on the roadmap."
         />
         <div className="grid grid-cols-4 border-t border-l border-line">
-          {INTEGRATIONS.map((name) => (
+          {INTEGRATIONS.map(({ name, live }) => (
             <div
               key={name}
-              className="grid h-23.25 place-items-center border-r border-b border-line text-base font-medium text-ink-muted transition-colors hover:bg-surface"
+              className="flex h-23.25 flex-col items-center justify-center gap-1.5 border-r border-b border-line text-base font-medium text-ink-muted transition-colors hover:bg-surface"
             >
               {name}
+              {live && (
+                <span className="inline-flex h-5 items-center gap-1.5 rounded-full border border-line px-2 text-2xs font-normal text-success-text">
+                  <span className="size-1.5 rounded-full bg-success-text" />
+                  Live
+                </span>
+              )}
             </div>
           ))}
         </div>
