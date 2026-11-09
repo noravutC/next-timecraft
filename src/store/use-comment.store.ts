@@ -75,6 +75,7 @@ const buildOptimisticAttachments = (
     id: `temp-att-${commentId}-${idx}`,
     commentId,
     type: a.type,
+    fileName: a.fileName ?? null,
     storagePath: a.storagePath,
     url: a.url,
     mimeType: a.mimeType,

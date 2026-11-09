@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MAX_FILES_PER_COMMENT } from '@/lib/supabase-storage';
+import { MAX_FILES_PER_COMMENT } from '@/helper/utils/attachment-kinds';
 
 export const MAX_COMMENT_BODY_LEN = 5000;
 const MAX_MENTIONS = 50;
@@ -7,7 +7,9 @@ const MAX_MENTIONS = 50;
 const mentions = z.array(z.guid()).max(MAX_MENTIONS).optional().default([]);
 
 const attachmentSchema = z.object({
-  type: z.enum(['image', 'video']),
+  type: z.enum(['image', 'video', 'file']),
+  // shown on file chips; display only, the storage path is server-built
+  fileName: z.string().trim().min(1).max(200).nullable().optional(),
   storagePath: z.string().min(1).max(512),
   url: z.string().url().max(1024),
   mimeType: z.string().min(1).max(120),

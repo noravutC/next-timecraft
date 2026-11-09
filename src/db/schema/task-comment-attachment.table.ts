@@ -12,6 +12,7 @@ import { taskCommentsTable } from "./task-comment.table";
 export const commentAttachmentTypeEnum = pgEnum("comment_attachment_type", [
   "image",
   "video",
+  "file",
 ]);
 
 export const taskCommentAttachmentsTable = pgTable(
@@ -22,6 +23,8 @@ export const taskCommentAttachmentsTable = pgTable(
       .notNull()
       .references(() => taskCommentsTable.id, { onDelete: "cascade" }),
     type: commentAttachmentTypeEnum("type").notNull(),
+    // original name, shown on file chips (images and videos have none)
+    fileName: text("file_name"),
     storagePath: text("storage_path").notNull(),
     url: text("url").notNull(),
     mimeType: text("mime_type").notNull(),

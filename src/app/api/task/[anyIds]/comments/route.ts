@@ -17,8 +17,7 @@ import {
   getTaskProjectLink,
 } from "@/db/uniq-query/comment/comment-utils";
 import {
-  ALLOWED_IMAGE_MIME,
-  ALLOWED_VIDEO_MIME,
+  classifyMime,
   COMMENT_MEDIA_BUCKET,
   isCommentMediaPath,
   maxBytesFor,
@@ -96,11 +95,7 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
       if (!supabaseAdmin) throw new AppError(500, "Storage is not configured");
       const storage = supabaseAdmin.storage;
       attachmentUrls = attachmentsInput.map((a) => {
-        const allowed =
-          a.type === "image"
-            ? ALLOWED_IMAGE_MIME.has(a.mimeType)
-            : ALLOWED_VIDEO_MIME.has(a.mimeType);
-        if (!allowed) {
+        if (classifyMime(a.mimeType) !== a.type) {
           throw new BadRequestError(
             `Unsupported attachment mime: ${a.mimeType}`,
           );
@@ -176,6 +171,7 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
           attachmentsInput.map((a, idx) => ({
             commentId: comment.id,
             type: a.type,
+            fileName: a.fileName ?? null,
             storagePath: a.storagePath,
             url: attachmentUrls[idx],
             mimeType: a.mimeType,
