@@ -14,7 +14,9 @@ test('task sheet edits a card and the card reflects it', async ({ page }) => {
     .getByRole('button', { name: /add a card to the top/i })
     .click();
   await firstColumn.getByLabel('Task title').fill(TITLE);
-  await firstColumn.getByRole('button', { name: 'Add card' }).click();
+  await firstColumn
+    .getByRole('button', { name: 'Add card', exact: true })
+    .click();
   const card = page.locator(`[data-card-title="${TITLE}"]`);
   await expect(card).toBeVisible({ timeout: 15_000 });
   await page.keyboard.press('Escape');

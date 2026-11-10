@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev          # Start dev server with Turbopack
 pnpm build        # Production build
-pnpm test         # Vitest unit tests (colocated *.test.ts)
+pnpm test         # Vitest: logic tests (*.test.ts, node) and component tests (*.test.tsx, jsdom)
+pnpm test:coverage # same, failing under the thresholds in vitest.config.mts (CI runs this)
 pnpm lint         # ESLint (flat config)
 pnpm format       # Prettier + Tailwind class sorting
 
@@ -23,6 +24,13 @@ pnpm demo:reset   # Rebuild the shared guest workspace (uses DATABASE_URL; runs 
 Do not run `pnpm format` repo-wide from a feature branch: `.prettierrc` enforces
 single quotes but most older files are double-quoted and were never formatted, so
 a full run rewrites ~230 files. Format only the files you touched.
+
+## Testing
+
+- **Logic**: colocated `*.test.ts`, node environment.
+- **Components**: colocated `*.test.tsx` with `// @vitest-environment jsdom` as the first line, React Testing Library + `user-event`. Query by role and accessible name, not by class or test id.
+- **Coverage**: thresholds in `vitest.config.mts` are a ratchet set just under the current numbers; raise them when you add tests, never lower them to pass.
+- **E2E**: Playwright in `e2e/`, signing in as the guest. `e2e/a11y.spec.ts` runs axe (WCAG 2.1 A/AA) and fails on serious or critical violations: a new page should get a test there.
 
 ## Tech Stack
 

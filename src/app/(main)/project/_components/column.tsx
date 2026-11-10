@@ -204,7 +204,7 @@ export const Column = ({
                 size="sm"
                 onClick={() => setAddingAt('bottom')}
                 disabled={isLoading}
-                aria-label={`Add a card to the bottom of ${column.title}`}
+                aria-label={`Add card to the bottom of ${column.title}`}
                 className="w-full justify-start px-2 font-normal text-ink-subtle hover:bg-surface-active hover:text-ink"
               >
                 <Plus className="size-3.5" />

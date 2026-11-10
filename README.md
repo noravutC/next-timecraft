@@ -104,6 +104,20 @@ malformed task.
   429/5xx twice with backoff). If the stream dies mid-way, the user keeps the cards
   that were already created — nothing is rolled back.
 
+## Testing
+
+- **Unit and component tests** (Vitest): pure logic runs in node; components
+  render in jsdom with React Testing Library and are queried the way a
+  screen reader sees them (role and accessible name).
+- **Coverage gate**: CI fails if coverage drops under the thresholds in
+  `vitest.config.mts`, a ratchet that only moves up (pure utilities are held
+  to 80% lines).
+- **End to end** (Playwright): the real app on a throwaway Postgres in CI:
+  sign-in, drag and drop, the task sheet, filters.
+- **Accessibility**: `e2e/a11y.spec.ts` runs axe against the landing page,
+  login and the board and fails on any serious or critical WCAG 2.1 A/AA
+  violation.
+
 ## Deployment
 
 Two supported paths:

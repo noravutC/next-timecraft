@@ -37,8 +37,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Unit tests
-        run: pnpm test
+      # fails under the thresholds in vitest.config.mts
+      - name: Unit and component tests, with coverage
+        run: pnpm test:coverage
 
       # Build first: it generates next-env.d.ts and .next/types,
       # which `tsc --noEmit` needs (next-env.d.ts is gitignored).
