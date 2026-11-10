@@ -18,7 +18,7 @@ class ColumnService {
     limit: number,
   ): Promise<APIGet<ColumnCache>> {
     return this.client
-      .get(`/column/${projectId}/?limit=${limit}`)
+      .get(`/column/${projectId}?limit=${limit}`)
       .then((response) => response.data as APIGet<ColumnCache>)
       .catch((error) => {
         throw (
@@ -31,7 +31,7 @@ class ColumnService {
     payload: CreateColumnPayload[],
   ): Promise<APIPost<ColumnCache[]>> {
     return this.client
-      .post(`/column/`, payload)
+      .post(`/column`, payload)
       .then((response) => response.data as APIPost<ColumnCache[]>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to create columns");

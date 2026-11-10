@@ -82,6 +82,7 @@ Four stores in `src/store/`:
 ### Key Schema Concepts
 
 - **`orderFraction`** — fractional-indexing string used for drag-and-drop ordering on both columns and tasks; never use integer indices. Helpers: `generateFractionBetween()` and `assignBulkIndexes()` in `src/helper/utils/fraction-string-indexing.ts`.
+- **Indexes** — declared next to each table (third `pgTable` argument). Search and the board text filter rely on `pg_trgm` GIN indexes, so keep them as `ILIKE '%…%'`; ordering by `orderFraction` in SQL must say `COLLATE "C"` to use `tasks_column_order_idx`. Measure changes with `scripts/perf/` (k6, scratch DB only).
 - **Soft delete on columns** — `isDeleted`, `deletedAt`, `purgeAt` fields; always filter these out in queries
 - **`tags`** — `text[]` array on both projects and tasks
 

@@ -73,19 +73,21 @@ export async function listMyTasks(userId: string): Promise<MyTask[]> {
     projectIds.map((id) => [id, finishColumnOf(columns, id)]),
   );
 
+  // grouped once: filtering the whole list per task is quadratic
+  const assigneesOf = new Map<string, MyTask['assignees']>();
+  for (const { taskId, userId: id, fullName, avatar } of assignees) {
+    const list = assigneesOf.get(taskId) ?? [];
+    list.push({ userId: id, fullName, avatar });
+    assigneesOf.set(taskId, list);
+  }
+
   return rows.map((row) => {
     const finish = finishOf.get(row.projectId) ?? null;
     return {
       ...row,
       finished: row.columnId === finish,
       blocked: isBlocked(blockers[row.id], {}, finish),
-      assignees: assignees
-        .filter((a) => a.taskId === row.id)
-        .map(({ userId: id, fullName, avatar }) => ({
-          userId: id,
-          fullName,
-          avatar,
-        })),
+      assignees: assigneesOf.get(row.id) ?? [],
     };
   });
 }

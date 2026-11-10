@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  index,
   integer,
   jsonb,
   pgTable,
@@ -44,5 +46,9 @@ export const jobQueueTable = pgTable(
     idempotencyKeyUnique: uniqueIndex("job_queue_idempotency_key_unique").on(
       table.idempotencyKey,
     ),
+    // the worker claims pending jobs whose time has come
+    pendingIdx: index("job_queue_pending_idx")
+      .on(table.scheduledAt)
+      .where(sql`${table.status} = 'pending'`),
   }),
 );

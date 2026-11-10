@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { projectMemberSourceEnum, projectMembershipRoleEnum } from "./enums";
 import { projectsTable } from "./project.table";
 import { usersTable } from "./user.table";
@@ -30,5 +30,7 @@ export const projectMembersTable = pgTable(
       table.projectId,
       table.userId,
     ),
+    // "the boards I'm on": search, My tasks, the board list
+    userIdx: index("project_members_user_idx").on(table.userId),
   }),
 );
