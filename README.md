@@ -142,12 +142,31 @@ load balancers and uptime monitors. CI builds the production image on every PR.
   wrapper (`src/lib/api/handle.ts`) which emits one JSON log line via **pino**:
   method, path, status, duration, userId. Unhandled errors log with full stack.
   `docker logs timecraft` therefore yields grep-able JSON, ready for CloudWatch.
-- **Error tracking (Sentry)** — DSN-gated: set `SENTRY_DSN` (server) and
-  `NEXT_PUBLIC_SENTRY_DSN` (client) and both runtimes report unhandled errors,
-  API 500s, and React render crashes (`global-error.tsx`). With no DSN the
-  integration is a no-op. Source-map upload is intentionally not wired (it
-  requires a build-time `SENTRY_AUTH_TOKEN`); stack traces are still useful
-  because server code runs unminified in the standalone build.
+- **Error tracking (Sentry)**: DSN-gated. Set `SENTRY_DSN` (server) and
+  `NEXT_PUBLIC_SENTRY_DSN` (client, a Docker build arg) and both runtimes
+  report unhandled errors, API 500s and React render crashes
+  (`global-error.tsx`). With no DSN the integration is a no-op. The Docker
+  build on `main` uploads source maps when the repo has a `SENTRY_AUTH_TOKEN`
+  secret plus `SENTRY_ORG` / `SENTRY_PROJECT` variables, so production stack
+  traces point at the original TypeScript.
+- **Tracing and metrics (OpenTelemetry)**: set `OTEL_EXPORTER_OTLP_ENDPOINT`
+  (and `OTEL_EXPORTER_OTLP_HEADERS` for auth) and the server exports to any
+  OTLP backend: Grafana Cloud, Honeycomb, a local collector. Traces are the
+  spans Next.js emits per request (route handler, render, proxy), tagged with
+  the user id. Metrics are `http.server.request.duration` per route, method
+  and status, and one histogram per Core Web Vital. Without the endpoint
+  nothing is set up. With Sentry on as well, Sentry owns the tracer and the
+  spans it samples go to both (`src/lib/telemetry/otel.ts`).
+- **Log correlation**: inside a traced request every log line carries
+  `traceId` and `spanId`, so a slow trace leads straight to its logs.
+- **Real-user Web Vitals**: every page reports LCP, INP, CLS, FCP and TTFB
+  from the visitor's browser to `POST /api/vitals` (rate limited per IP,
+  nothing stored), which logs them and records the histograms above.
+- **Service levels** (targets, measured from the metrics above):
+  99.5% of API requests answer without a 5xx; p95 API latency under 500 ms;
+  75% of page loads with LCP under 2.5 s and INP under 200 ms. Uptime:
+  `GET /api/health` checks the database, and the 5-minute jobs workflow
+  fails (GitHub emails the owner) whenever the app is unreachable.
 
 ## Getting Started
 

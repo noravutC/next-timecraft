@@ -103,6 +103,13 @@ Always use `authorize` / `authorizeOrThrow`. Never re-implement role/permission 
 - **Storage**: the comment-media bucket is public but limited to 50MB and image/video types (`scripts/harden-storage-bucket.ts`); upload URLs are quota-limited.
 - **Realtime**: every Pusher channel is private and authorized in `/api/pusher/auth`.
 
+### Observability
+
+- **Logs**: `logger` (pino, `src/lib/logger.ts`); `createHandle` logs every API request. Lines carry `traceId` when tracing is on.
+- **Traces and metrics**: OpenTelemetry, set up in `src/instrumentation.ts` + `src/lib/telemetry/otel.ts`, off unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Add metrics in `src/lib/telemetry/metrics.ts` (instruments are created on first use). With `SENTRY_DSN`, Sentry owns the tracer provider: don't register a second one.
+- **Web Vitals**: `WebVitalsReporter` (root layout) posts to `/api/vitals`, a sessionless route like `/api/health`.
+- The OpenTelemetry packages are pinned to the versions Sentry uses (SDK 2.9.x, exporters 0.220.x). Upgrade them together with `@sentry/nextjs`.
+
 ### API Handler Wrappers (Standard pattern — use this for every route)
 
 **Location:** `src/lib/api/`
@@ -128,7 +135,7 @@ The wrapper handles: session 401, Zod body validation → 400, permission check 
 
 **Example route:** `src/app/api/task/route.ts` (POST) — uses `createHandle` + Zod + inline `authorizeOrThrow` after column lookup.
 
-**Migration status:** every route uses the wrappers (except the Auth.js handler). Keep it that way for new routes.
+**Migration status:** every route uses the wrappers (except the Auth.js handler and the sessionless `/api/health`, `/api/vitals` and `/cal/[token]`). Keep it that way for new routes.
 
 ### Existing helpers — always check before writing new utilities
 
@@ -200,7 +207,10 @@ NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
 SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only
 AI_ENCRYPTION_KEY=               # encrypts AI keys users save in AI settings
 SENTRY_DSN=                      # optional — server error reporting
-NEXT_PUBLIC_SENTRY_DSN=          # optional — browser error reporting
+NEXT_PUBLIC_SENTRY_DSN=          # optional — browser error reporting (inlined at build: a Docker build arg)
+SENTRY_AUTH_TOKEN=               # optional, build time only: uploads source maps (with SENTRY_ORG, SENTRY_PROJECT)
+OTEL_EXPORTER_OTLP_ENDPOINT=     # optional: export traces and metrics over OTLP (off without it)
+OTEL_EXPORTER_OTLP_HEADERS=      # optional: auth for that endpoint, e.g. Authorization=Basic ...
 LOG_LEVEL=                       # optional — pino level, defaults to info
 ```
 
