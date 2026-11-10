@@ -148,6 +148,13 @@
       "when": 1793987350991,
       "tag": "0021_time_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794309453014,
+      "tag": "0022_hot_path_indexes",
+      "breakpoints": true
     }
   ]
 }

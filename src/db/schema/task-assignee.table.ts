@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { tasksTable } from "./task.table";
 import { usersTable } from "./user.table";
 
@@ -21,5 +21,7 @@ export const taskAssigneesTable = pgTable(
       table.taskId,
       table.userId,
     ),
+    // My tasks: the unique index leads with task_id, so it can't serve this
+    userIdx: index("task_assignees_user_idx").on(table.userId),
   }),
 );

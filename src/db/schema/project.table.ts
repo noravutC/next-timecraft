@@ -2,6 +2,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   jsonb,
   pgTable,
   text,
@@ -12,38 +13,46 @@ import { organizationsTable } from "./organization.table";
 import { usersTable } from "./user.table";
 import type { ProjectSettings } from "@/types/project-settings";
 
-export const projectsTable = pgTable("projects", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: uuid("organization_id").references(
-    () => organizationsTable.id,
-    {
+export const projectsTable = pgTable(
+  "projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id").references(
+      () => organizationsTable.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    name: text("name").notNull(),
+    description: text("description"),
+    coverImage: text("cover_image"),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "restrict" }),
+    archived: boolean("archived").notNull().default(false),
+    // when and by whom it was archived; null while active
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    archivedBy: uuid("archived_by").references(() => usersTable.id, {
       onDelete: "set null",
-    },
-  ),
-  name: text("name").notNull(),
-  description: text("description"),
-  coverImage: text("cover_image"),
-  ownerId: uuid("owner_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "restrict" }),
-  archived: boolean("archived").notNull().default(false),
-  // when and by whom it was archived; null while active
-  archivedAt: timestamp("archived_at", { withTimezone: true }),
-  archivedBy: uuid("archived_by").references(() => usersTable.id, {
-    onDelete: "set null",
+    }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    settings: jsonb("settings")
+      .$type<ProjectSettings>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    organizationIdx: index("projects_organization_idx").on(
+      table.organizationId,
+    ),
   }),
-  tags: text("tags")
-    .array()
-    .notNull()
-    .default(sql`ARRAY[]::text[]`),
-  settings: jsonb("settings")
-    .$type<ProjectSettings>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+);

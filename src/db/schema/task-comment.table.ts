@@ -48,5 +48,10 @@ export const taskCommentsTable = pgTable(
     clientIdUnique: uniqueIndex("task_comments_client_id_unique")
       .on(table.clientId)
       .where(sql`${table.clientId} IS NOT NULL`),
+    // search reads comments with ILIKE '%words%' (see tasks_title_trgm)
+    bodyTrgm: index("task_comments_body_trgm").using(
+      "gin",
+      sql`${table.body} gin_trgm_ops`,
+    ),
   }),
 );

@@ -37,7 +37,7 @@ class UserService {
 
   async getUserByIds(userIds: string[]): Promise<APIGet<User>> {
     return this.client
-      .post(`/user/look-up/multiple/`, { userIds: userIds })
+      .post(`/user/look-up/multiple`, { userIds: userIds })
       .then((response) => response.data as APIGet<User>)
       .catch((error) => {
         throw (

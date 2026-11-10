@@ -162,7 +162,7 @@ class TaskService {
     payload: CreateTaskPayload[],
   ): Promise<APIPost<TaskCache[]>> {
     return this.client
-      .post(`/task/`, payload)
+      .post(`/task`, payload)
       .then((response) => response.data as APIPost<TaskCache[]>)
       .catch((error) => {
         throw error?.response?.data || new Error('Failed to create tasks');

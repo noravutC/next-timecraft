@@ -136,6 +136,14 @@ load balancers and uptime monitors. CI builds the production image on every PR.
   the module is a drop-in swap point for Upstash Redis if it ever scales
   horizontally.
 
+- **Indexes sized by a load test**: `scripts/perf/` seeds 98,000 tasks into
+  a scratch database and runs a k6 scenario of 50 concurrent users. Adding
+  the indexes in migration `0022` (board order, foreign keys, trigram
+  indexes for search) took p95 from 733 ms to 98 ms and throughput from 70
+  to 112 req/s. Search keeps `ILIKE '%words%'` on `pg_trgm` GIN indexes
+  rather than `tsvector`: it matches inside words and works for Thai, which
+  has no spaces for a text-search parser to split on.
+
 ## Observability
 
 - **Structured logging** — every API request goes through the shared handler

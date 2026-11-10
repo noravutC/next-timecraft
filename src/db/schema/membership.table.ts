@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organizationMembershipRoleEnum } from "./enums";
 import { organizationsTable } from "./organization.table";
 import { usersTable } from "./user.table";
@@ -24,6 +24,10 @@ export const membershipsTable = pgTable(
   (table) => ({
     userOrganizationUnique: uniqueIndex("memberships_user_org_unique").on(
       table.userId,
+      table.organizationId,
+    ),
+    // a workspace's member list
+    organizationIdx: index("memberships_organization_idx").on(
       table.organizationId,
     ),
   }),
