@@ -123,6 +123,14 @@ docker compose up --build
 `GET /api/health` reports app + database status (`200 ok` / `503 degraded`) for
 load balancers and uptime monitors. CI builds the production image on every PR.
 
+**Delivery.** Every push to `main` builds the image and pushes it to GHCR,
+one run at a time so `latest` always is the newest commit. `scripts/deploy.sh`
+starts it, waits for `/api/health`, and rolls back to the previous image by
+itself if the new one never becomes healthy. The Deploy workflow runs
+migrations and that script on the server through AWS Systems Manager with
+short-lived OIDC credentials: no SSH port, no stored keys. Dependabot keeps
+dependencies, actions and the base image current, and CodeQL scans every PR.
+
 ## Performance & hardening
 
 - **Core Web Vitals** (Lighthouse against the live AWS deployment, `/login`):
