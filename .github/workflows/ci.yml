@@ -147,3 +147,10 @@ jobs:
             NEXT_PUBLIC_PUSHER_KEY=5d804b66a55a28f9aeb7
             NEXT_PUBLIC_PUSHER_CLUSTER=ap1
             NEXT_PUBLIC_SUPABASE_URL=https://egafogvlhftyzslzmkcv.supabase.co
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
+          # Source maps are uploaded for the image that ships, not for PR
+          # builds. Without the secret the build skips the upload.
+          secrets: |
+            sentry_auth_token=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_AUTH_TOKEN || '' }}

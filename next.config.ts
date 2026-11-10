@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 // The Content-Security-Policy is set per request in src/proxy.ts (it needs
@@ -52,4 +53,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps go to Sentry only when a build has SENTRY_AUTH_TOKEN (the
+// Docker build on main). Every other build is the plain config, unchanged.
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: !process.env.CI,
+      telemetry: false,
+      // uploaded, then removed: the maps are never served to browsers
+      sourcemaps: { deleteSourcemapsAfterUpload: true },
+      // a failed upload must not fail the deploy
+      errorHandler: (error) =>
+        console.warn("Sentry source map upload failed:", error.message),
+    })
+  : nextConfig;

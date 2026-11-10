@@ -1,3 +1,4 @@
+import { trace } from '@opentelemetry/api';
 import * as Sentry from '@sentry/nextjs';
 import { auth } from '@/auth';
 import { toRouteKey } from '@/helper/utils/route-key';
@@ -5,6 +6,7 @@ import { isGuestSession } from '@/lib/guest';
 import { logger } from '@/lib/logger';
 import { authorizeOrThrow, type AuthorizeMode } from '@/lib/rbac/authorize';
 import { Permission } from '@/lib/rbac/permissions';
+import { recordApiRequest } from '@/lib/telemetry/metrics';
 import { Session } from 'next-auth';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
@@ -127,17 +129,15 @@ const logRequest = (
   startedAt: number,
   userId?: string,
 ) => {
+  // ids/tokens collapsed: invite tokens must not land in logs
+  const path = toRouteKey(new URL(request.url).pathname);
+  const durationMs = Date.now() - startedAt;
   logger.info(
-    {
-      method: request.method,
-      // ids/tokens collapsed: invite tokens must not land in logs
-      path: toRouteKey(new URL(request.url).pathname),
-      status,
-      durationMs: Date.now() - startedAt,
-      userId,
-    },
+    { method: request.method, path, status, durationMs, userId },
     'api request',
   );
+  if (userId) trace.getActiveSpan()?.setAttribute('user.id', userId);
+  recordApiRequest(request.method, path, status, durationMs);
 };
 
 const parseBody = async <TBody>(

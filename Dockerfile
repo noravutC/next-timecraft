@@ -19,9 +19,17 @@ COPY . .
 ARG NEXT_PUBLIC_PUSHER_KEY
 ARG NEXT_PUBLIC_PUSHER_CLUSTER
 ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SENTRY_DSN
 ENV NEXT_PUBLIC_PUSHER_KEY=$NEXT_PUBLIC_PUSHER_KEY \
     NEXT_PUBLIC_PUSHER_CLUSTER=$NEXT_PUBLIC_PUSHER_CLUSTER \
-    NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+
+# Where next.config.ts uploads source maps, when the build is also given
+# the sentry_auth_token secret below. All three are optional.
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ENV SENTRY_ORG=$SENTRY_ORG SENTRY_PROJECT=$SENTRY_PROJECT
 
 # Server-side secrets are read at request time, but a few modules touch env
 # at import during the build — give them harmless placeholders.
@@ -34,7 +42,10 @@ ENV DATABASE_URL=postgres://build:build@localhost:5432/build \
 # ~1GB) the TypeScript pass of `next build` OOMs even when swap is free.
 # Raise the cap explicitly so the build can spill into swap instead.
 ENV NODE_OPTIONS=--max-old-space-size=2048
-RUN pnpm build
+# The token is a build secret, so it never lands in an image layer. If the
+# upload fails the browser maps are still on disk: drop them either way.
+RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
+    pnpm build && find .next/static -name '*.map' -delete
 
 # ---- run: minimal standalone runtime ----
 FROM node:22-alpine AS runner

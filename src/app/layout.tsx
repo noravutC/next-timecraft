@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_Thai } from 'next/font/google';
 // import './globals.css';
 import './globals.css';
 import AuthProvider from '@/components/SessionProvider';
+import { WebVitalsReporter } from '@/components/telemetry/web-vitals-reporter';
 import { Toaster } from '@/components/ui/sonner';
 import { appUrl } from '@/lib/app-url';
 
@@ -62,6 +63,7 @@ export default function RootLayout({
       className={`h-full w-full overflow-hidden ${geistSans.variable} ${geistMono.variable} ${notoSansThai.variable}`}
     >
       <body className="h-full w-full overflow-hidden font-sans">
+        <WebVitalsReporter />
         <AuthProvider>
           {children}
           <Toaster />
