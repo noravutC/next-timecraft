@@ -26,7 +26,9 @@ test.describe('kanban board', () => {
       .getByRole('button', { name: /add a card to the top/i })
       .click();
     await firstColumn.getByLabel('Task title').fill(CARD_TITLE);
-    await firstColumn.getByRole('button', { name: 'Add card' }).click();
+    await firstColumn
+      .getByRole('button', { name: 'Add card', exact: true })
+      .click();
 
     // optimistic insert + server confirm
     await expect(
@@ -97,7 +99,9 @@ test.describe('kanban board', () => {
       .getByRole('button', { name: /add a card to the top/i })
       .click();
     await firstColumn.getByLabel('Task title').fill(topTitle);
-    await firstColumn.getByRole('button', { name: 'Add card' }).click();
+    await firstColumn
+      .getByRole('button', { name: 'Add card', exact: true })
+      .click();
 
     const card = firstColumn.locator(`[data-card-title="${topTitle}"]`);
     await expect(card).toBeVisible({ timeout: 15_000 });
@@ -117,11 +121,13 @@ test.describe('kanban board', () => {
 
     // seed a uniquely named card to filter by
     await firstColumn
-      .getByRole('button', { name: /add a card to the bottom/i })
+      .getByRole('button', { name: /add card to the bottom/i })
       .last()
       .click();
     await firstColumn.getByLabel('Task title').fill(filterTitle);
-    await firstColumn.getByRole('button', { name: 'Add card' }).click();
+    await firstColumn
+      .getByRole('button', { name: 'Add card', exact: true })
+      .click();
     const card = page.locator(`[data-card-title="${filterTitle}"]`);
     await expect(card).toBeVisible({ timeout: 15_000 });
     const countBefore = await allCards.count();

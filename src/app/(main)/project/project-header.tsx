@@ -67,7 +67,8 @@ export const ProjectHeader = () => {
             variant="ghost"
             size="sm"
             onClick={() => setBoardDialog('switch')}
-            aria-label="Switch board"
+            // starts with the visible name, so voice control can target it
+            aria-label={`${projectValue?.name ?? 'Board'}: switch board`}
             className="-ml-1.5 min-w-0 shrink gap-2 pr-2 pl-1.5 text-ink"
           >
             {projectValue && (
