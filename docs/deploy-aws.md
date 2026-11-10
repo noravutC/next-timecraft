@@ -167,16 +167,40 @@ docker run -d --name timecraft --env-file .env.production \
 
 ## Step 7 — Deploying updates
 
+The box never builds (a `next build` needs more memory than a t3.micro has).
+Every push to `main` builds the image in GitHub Actions and pushes it to GHCR
+as `:latest` and `:<commit sha>`. Deploying means pulling one of those.
+
+**On the server:**
+
 ```bash
-cd ~/next-timecraft
-git pull
-docker build --build-arg NEXT_PUBLIC_PUSHER_KEY=... --build-arg NEXT_PUBLIC_PUSHER_CLUSTER=... -t timecraft .
-docker stop timecraft && docker rm timecraft
-docker run -d --name timecraft --env-file .env.production \
-  -p 127.0.0.1:3000:3000 --restart unless-stopped timecraft
+cd ~/next-timecraft && git pull     # for the current deploy.sh
+bash scripts/deploy.sh              # the latest main build
+bash scripts/deploy.sh <commit sha> # or one exact build
 ```
 
-(Automating this with a GitHub Actions deploy job + ECR is a good follow-up.)
+`deploy.sh` starts the new image, then polls `/api/health` for up to a
+minute. If it never answers 200 it prints the container's last logs, starts
+the image that was running before, and exits 1. Old images are pruned only
+after a healthy start, so the rollback target is always still on disk. Run
+any new migrations first (`pnpm db:migrate` from your machine): they only
+add things, so the old version keeps working until the new one is up.
+
+**From GitHub** (Actions > Deploy > Run workflow): applies migrations, then
+runs the same script on the box through AWS Systems Manager, so there is no
+SSH port or key involved. One-time setup:
+
+1. In IAM, add GitHub as an OIDC identity provider
+   (`token.actions.githubusercontent.com`, audience `sts.amazonaws.com`).
+2. Create a role that this repository may assume
+   (`repo:noravutC/next-timecraft:environment:production`), allowed only
+   `ssm:SendCommand` on this instance and the `AWS-RunShellScript` document,
+   plus `ssm:GetCommandInvocation`.
+3. In the repository settings add the secrets `AWS_DEPLOY_ROLE_ARN`,
+   `EC2_INSTANCE_ID` and `DATABASE_URL`, and the variable `AWS_REGION`.
+
+The workflow has not run against the real server yet: do the first run while
+you can watch it.
 
 ## Step 7.5 — Battle-tested gotchas (hit during the real deploy)
 
