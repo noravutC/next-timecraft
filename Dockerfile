@@ -1,16 +1,18 @@
 # syntax=docker/dockerfile:1
 
 # ---- deps: install node_modules with pnpm ----
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
-RUN corepack enable
+# Node 25+ no longer ships corepack. Keep this version in step with
+# "packageManager" in package.json.
+RUN npm install -g pnpm@10.18.0
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # ---- build: compile Next.js (standalone output) ----
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@10.18.0
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -48,7 +50,7 @@ RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
     pnpm build && find .next/static -name '*.map' -delete
 
 # ---- run: minimal standalone runtime ----
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 
