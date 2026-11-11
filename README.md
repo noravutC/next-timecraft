@@ -14,14 +14,17 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 
 ## Features
 
-- **AI Task Breakdown** — Type a goal and Claude streams it into actionable cards on the board
-- **Kanban Board** — Drag-and-drop columns and cards with smooth, conflict-free ordering
-- **Real-time Collaboration** — Changes sync instantly across all project members
-- **Optimistic UI** — Every action feels instant with automatic rollback on failure
-- **Project Settings** — Animated slide-in panel for managing name, appearance, and tags
-- **Multi-tenant** — Organizations with projects and members, each with role-based access control
-- **Google OAuth** — Secure sign-in with session management and organization context
-- **Soft Delete** — Safe column deletion with scheduled purge support
+- **AI Task Breakdown**: type a goal and Claude or Gemini streams it into actionable cards on the board
+- **Kanban Board**: drag-and-drop columns and cards with fractional ordering, WIP limits, filters and a calendar view
+- **Task detail**: subtasks, assignees, tags, due dates and reminders, dependencies (blocked tasks), estimates and logged time, an activity trail
+- **Comments**: mentions, reactions and image/video attachments
+- **My tasks, search and notifications**: everything assigned to you across boards, ⌘K search over tasks and boards, in-app and email notifications
+- **Real-time Collaboration**: changes sync instantly across all project members over private channels
+- **Optimistic UI**: every action applies at once, rolls back on failure and offers Undo
+- **Multi-tenant**: organizations with boards and members, role-based access control, email invitations
+- **Sign-in**: Google OAuth, or Continue as guest on a shared demo workspace that is rebuilt nightly
+- **Export and calendar feed**: a board as CSV, due dates as an iCal subscription
+- **Soft Delete**: safe column deletion with scheduled purge
 
 ## Screenshots
 
@@ -41,9 +44,12 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 | Styling | Tailwind CSS v4, shadcn/ui, Framer Motion |
 | State | Zustand 5 |
 | Database | PostgreSQL (Supabase) via Drizzle ORM |
-| Auth | NextAuth 4 — Google OAuth, JWT |
+| Auth | Auth.js v5 (`next-auth` beta): Google OAuth and guest sign-in, JWT |
 | Real-time | Pusher WebSocket |
 | Drag & Drop | Atlaskit pragmatic-drag-and-drop |
+| AI | Anthropic and Google Gen AI SDKs, bring your own key |
+| Observability | pino, Sentry, OpenTelemetry |
+| Tests | Vitest, React Testing Library, Playwright, axe |
 | Package Manager | pnpm |
 
 ## Architecture
@@ -52,14 +58,21 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 src/
 ├── app/
 │   ├── (main)/        # Authenticated route group
-│   │   └── project/   # Kanban board + settings panel
-│   ├── api/           # REST API routes
-│   └── login/         # Google OAuth login
+│   │   ├── project/   # Kanban board and calendar
+│   │   ├── my-tasks/  # Tasks assigned to you, across boards
+│   │   ├── notifications/
+│   │   └── settings/  # Profile, workspace, members, usage
+│   ├── (marketing)/   # Landing page, case study, privacy, terms
+│   ├── api/           # REST API routes (shared handler wrapper)
+│   └── login/         # Google OAuth and guest sign-in
 ├── store/             # Zustand global state
 ├── services/          # API service layer
 ├── db/                # Drizzle ORM schema & queries
+├── lib/               # RBAC, API wrappers, AI, telemetry, security
 ├── components/        # UI components (shadcn/ui)
 └── types/             # TypeScript type definitions
+drizzle/               # SQL migrations
+e2e/                   # Playwright tests
 ```
 
 ## AI Task Breakdown — design notes
@@ -204,15 +217,15 @@ dependencies, actions and the base image current, and CodeQL scans every PR.
 
 - Node.js 20+
 - pnpm
-- Supabase PostgreSQL database
-- Google OAuth credentials
+- A PostgreSQL database (Supabase in production)
 - Pusher account
+- Google OAuth credentials (optional: guest sign-in works without them)
 
 ### Setup
 
 ```bash
 pnpm install
-pnpm db:push
+pnpm db:migrate   # applies drizzle/*.sql to DATABASE_URL
 pnpm dev
 ```
 
@@ -236,10 +249,19 @@ NEXT_PUBLIC_SENTRY_DSN=  # optional — client-side error tracking (build-time o
 LOG_LEVEL=               # optional — pino level, default "info"
 ```
 
+The full list, including email (Resend), comment attachments (Supabase
+storage), cron and OpenTelemetry, is in [CLAUDE.md](CLAUDE.md#required-environment-variables).
+
 ### Commands
 
 ```bash
-pnpm dev      # Start dev server (Turbopack)
-pnpm build    # Production build
-pnpm format   # Prettier + Tailwind class sorting
+pnpm dev            # Start dev server (Turbopack)
+pnpm build          # Production build
+pnpm lint           # ESLint
+pnpm typecheck      # tsc --noEmit
+pnpm test           # Vitest (logic and component tests)
+pnpm test:coverage  # same, with the coverage gate CI uses
+pnpm db:generate    # Generate a migration from the schema
+pnpm db:migrate     # Apply migrations
+pnpm demo:reset     # Rebuild the shared guest workspace
 ```

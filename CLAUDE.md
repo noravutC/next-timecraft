@@ -37,7 +37,7 @@ a full run rewrites ~230 files. Format only the files you touched.
 - Framework: Next.js 16 (App Router), React 19
 - Language: TypeScript 5
 - Styling: Tailwind CSS v4, shadcn/ui
-- State Management: Zustand 5 (global), MobX (not yet actively used)
+- State Management: Zustand 5
 - Database ORM: Drizzle ORM + PostgreSQL via Supabase
 
 ## Architecture
