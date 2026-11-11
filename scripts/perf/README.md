@@ -43,3 +43,20 @@ and after migration `0022_hot_path_indexes`:
 | Throughput         | 70 req/s   | 112 req/s    |
 
 Absolute numbers depend on the machine; the ratio is the point.
+
+## Board first page, 2026-11-11
+
+The first page used to rank every card of every requested column with
+`row_number()` and keep 21 per column. It now takes each column's first 21
+straight from `tasks_column_order_idx` and glues the columns with
+`UNION ALL`. On the big board (5 columns, about 3,800 open cards each):
+
+| Measure                                  | Window function | Per-column LIMIT |
+| ---------------------------------------- | --------------- | ---------------- |
+| The page query alone (`EXPLAIN ANALYZE`) | 47.6 ms         | 0.2 ms           |
+| Buffers read by it                       | 3,812           | 120              |
+| Whole request, median of 40, one user    | 66 ms           | 39 ms            |
+
+The whole request is from a browser against `pnpm dev`, so it includes the
+other queries of the route (totals, priority counts, assignees) and dev-mode
+overhead. With a text filter the two forms take the same time.
