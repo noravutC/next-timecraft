@@ -42,8 +42,7 @@ export function useCalendar(projectId: string | null, columns: ColumnCache[]) {
     const last = cells[cells.length - 1].date;
     return new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
   }, [cells]);
-  // the last column is where finished work usually ends up
-  const finishColumn = columns[columns.length - 1] ?? null;
+  const finishColumn = columns.find((c) => c.isDone) ?? null;
   const hideUndatedIn = showFinished ? null : (finishColumn?.id ?? null);
 
   useEffect(() => {

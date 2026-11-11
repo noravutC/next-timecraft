@@ -15,18 +15,11 @@ export const isBlocked = (
     return !now.archived && now.columnId !== finishColumnId;
   });
 
-/** The column work ends in: the board's last one. */
+/** The column work ends in: the board's Done column, if it has one. */
 export const finishColumnOf = <
-  T extends { id: string; projectId: string; orderFraction: string | null },
+  T extends { id: string; projectId: string; isDone: boolean },
 >(
   columns: T[],
   projectId: string | null,
-): string | null => {
-  let last: T | null = null;
-  for (const column of columns) {
-    if (column.projectId !== projectId) continue;
-    const order = column.orderFraction ?? '';
-    if (!last || order > (last.orderFraction ?? '')) last = column;
-  }
-  return last?.id ?? null;
-};
+): string | null =>
+  columns.find((c) => c.projectId === projectId && c.isDone)?.id ?? null;

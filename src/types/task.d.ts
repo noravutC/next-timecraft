@@ -77,7 +77,7 @@ export type MyTask = {
   columnId: string;
   columnName: string;
   columnColor: string | null;
-  /** in its board's last column */
+  /** in its board's Done column */
   finished: boolean;
   blocked: boolean;
   assignees: { userId: string; fullName: string; avatar: string | null }[];

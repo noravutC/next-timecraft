@@ -57,7 +57,7 @@ export async function listMyTasks(userId: string): Promise<MyTask[]> {
       .select({
         id: columnsTable.id,
         projectId: columnsTable.projectId,
-        orderFraction: columnsTable.orderFraction,
+        isDone: columnsTable.isDone,
       })
       .from(columnsTable)
       .where(

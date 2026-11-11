@@ -74,6 +74,7 @@ log ทุก mutation: `who changed what, when`
 ### 10. Task Automation Rules — 07/05/2026
 "When X → do Y" แบบเบสิก:
 - `When task moved to "Done" → set completedAt + notify reporter`
+  - อัปเดต 11/11/2026: ส่วน `completedAt` ทำแล้วด้วย Done column + trigger ใน Postgres (migration `0023`) เหลือเฉพาะ notify
 - `When due date passes → move to "Overdue" column`
 - เก็บใน `automation_rules` (projectId, trigger, conditions, actions)
 - ใช้ `job_queue` ที่มีอยู่ run async

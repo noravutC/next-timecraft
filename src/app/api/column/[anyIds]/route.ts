@@ -13,7 +13,7 @@ import {
   updateColumnSchema,
   type UpdateColumnBody,
 } from "@/validations/column.validation";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 type RouteParams = { anyIds: string };
@@ -65,12 +65,34 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
     ];
     await authorizeOrThrow(userId, uniqProjectIds, "column:update");
 
+    const projectByColumn = new Map(
+      existingColumnsList.map((col) => [col.columnId, col.projectId]),
+    );
+
     const updatedColumns = await db.transaction(async (tx) => {
       const rowsUpdated = [];
 
       // only the fields sent change: a rename doesn't need the order, a
       // move doesn't need the name
       for (const item of body) {
+        const projectId = projectByColumn.get(item.id);
+        // a board has one Done column: the previous one hands the flag over
+        if (item.isDone && projectId) {
+          const cleared = await tx
+            .update(columnsTable)
+            .set({ isDone: false, updatedAt: new Date() })
+            .where(
+              and(
+                eq(columnsTable.projectId, projectId),
+                eq(columnsTable.isDone, true),
+                eq(columnsTable.isDeleted, false),
+                ne(columnsTable.id, item.id),
+              ),
+            )
+            .returning();
+          rowsUpdated.push(...cleared);
+        }
+
         const [updated] = await tx
           .update(columnsTable)
           .set({
@@ -78,6 +100,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateColumnBody>(
             color: item.color,
             wipLimit: item.wipLimit,
             orderFraction: item.orderFraction,
+            isDone: item.isDone,
             updatedAt: new Date(),
           })
           .where(

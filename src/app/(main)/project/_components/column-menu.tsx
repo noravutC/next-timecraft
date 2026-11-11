@@ -17,12 +17,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 import { wipLimitLabel } from '@/helper/utils/column-copy';
 import { ColumnColorSwatches } from './column-color-swatches';
 import type { ColumnActions } from './use-column-actions';
 import type { TColumn } from './data';
 
-/** ⋯ on a column: rename, color, WIP limit, move, delete. */
+/** ⋯ on a column: rename, color, WIP limit, Done column, move, delete. */
 export const ColumnMenu = ({
   column,
   actions,
@@ -92,6 +93,20 @@ export const ColumnMenu = ({
             <Plus className="size-3" />
           </Button>
         </span>
+      </div>
+      <DropdownMenuSeparator />
+      <div className="flex items-center gap-3 px-2 py-1.5">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm text-ink">Done column</span>
+          <span className="text-xs leading-4 text-ink-subtle">
+            Cards moved here count as done
+          </span>
+        </span>
+        <Switch
+          aria-label="Done column"
+          checked={column.isDone}
+          onCheckedChange={actions.setDone}
+        />
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem

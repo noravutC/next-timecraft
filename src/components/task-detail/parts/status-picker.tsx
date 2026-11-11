@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { ColumnCache } from '@/types';
 import { Button } from '@/components/ui/button';
+import { ColumnMark } from '@/components/task-meta/column-mark';
 import { propertyButtonClass } from './property-row';
 
 interface StatusPickerProps {
@@ -39,18 +40,21 @@ export const StatusPicker = ({
             size="xs"
             className="h-6.5 gap-1.5 rounded-full border-line px-2 text-xs text-ink disabled:cursor-default disabled:opacity-100"
           >
-            <span
-              className="size-1.75 rounded-full"
-              style={{ backgroundColor: color }}
+            <ColumnMark
+              color={color}
+              done={active?.isDone}
+              className="size-1.75"
+              doneClassName="size-3"
             />
             {active?.name ?? 'Status'}
             {!disabled && <ChevronDown className="size-3 text-ink-subtle" />}
           </Button>
         ) : (
           <Button variant="ghost" className={propertyButtonClass}>
-            <span
-              className="size-2 rounded-full"
-              style={{ backgroundColor: color }}
+            <ColumnMark
+              color={color}
+              done={active?.isDone}
+              doneClassName="-mx-0.75"
             />
             {active?.name ?? 'Status'}
           </Button>
@@ -59,10 +63,7 @@ export const StatusPicker = ({
       <DropdownMenuContent align="start" className="w-52">
         {columns.map((c) => (
           <DropdownMenuItem key={c.id} onClick={() => onChange(c.id)}>
-            <span
-              className="mx-0.75 size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: c.color }}
-            />
+            <ColumnMark color={c.color} done={c.isDone} className="mx-0.75" />
             <span className="flex-1 truncate">{c.name}</span>
             {active?.id === c.id && <Check className="text-ink" />}
           </DropdownMenuItem>
