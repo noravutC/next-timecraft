@@ -5,6 +5,32 @@
 
 ---
 
+## สถานะล่าสุด (ตรวจกับโค้ด 11/11/2026)
+
+รายละเอียดด้านล่างคือข้อเสนอเดิมเมื่อ 07/05/2026 ตารางนี้บอกว่าอะไรถูกสร้างแล้ว
+
+| # | ฟีเจอร์ | สถานะ | หมายเหตุ |
+|---|---|---|---|
+| 1 | Global Search (⌘K) | ทำแล้ว | ใช้ `ILIKE` บน `pg_trgm` GIN index แทน `tsvector` (รองรับภาษาไทย) |
+| 2 | My Tasks | ทำแล้ว | หน้า `/my-tasks` |
+| 3 | Recurring Tasks | ยังไม่ทำ | |
+| 4 | Bulk Actions | ยังไม่ทำ | อยู่ใน engineering roadmap ขั้น 10 |
+| 5 | Calendar View | ทำแล้ว | รวม iCal feed |
+| 6 | Time Tracking | ทำบางส่วน | estimate + บันทึกเวลาต่อ task ยังไม่มีรายงาน |
+| 7 | Activity Log | ทำแล้ว | `task_activities` + timeline ใน task sheet |
+| 8 | Email Digest + Reply | ทำบางส่วน | อีเมลแจ้งเตือนและ reminder มีแล้ว ยังไม่มี digest และตอบกลับทางอีเมล |
+| 9 | Task Templates | ยังไม่ทำ | มีเฉพาะ board template |
+| 10 | Automation Rules | ยังไม่ทำ | roadmap ขั้น 7 (Workflow engine) |
+| 11 | Public Share View | ยังไม่ทำ | |
+| 12 | Dashboard / Analytics | ยังไม่ทำ | roadmap ขั้น 6 (Insights) |
+| 13 | Task Linking | ทำบางส่วน | dependencies และป้าย Blocked มีแล้ว |
+| 14 | Saved Filters | ยังไม่ทำ | roadmap ขั้น 9 (Views) |
+| 15 | Keyboard Shortcuts Overlay | ทำแล้ว | |
+| 16 | Import / Export | ทำบางส่วน | export CSV มีแล้ว ยังไม่มี import |
+| 17 | AI Helpers | ทำบางส่วน | AI Task Breakdown (Claude / Gemini) มีแล้ว |
+
+---
+
 ## Tier 1 — High impact, ทำได้เร็ว (1-3 วัน) — 07/05/2026
 
 ### 1. Global Search (Cmd+K) — 07/05/2026
