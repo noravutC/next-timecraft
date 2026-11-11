@@ -21,10 +21,10 @@ export default defineConfig({
       // can't slip, and raised as tests are added. Pure logic is held to
       // more than the UI around it.
       thresholds: {
-        lines: 14,
-        statements: 14,
-        branches: 13,
-        functions: 11,
+        lines: 17,
+        statements: 17,
+        branches: 16,
+        functions: 14,
         "src/helper/utils/**": { lines: 80, branches: 75, functions: 80 },
       },
     },

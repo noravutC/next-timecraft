@@ -40,4 +40,14 @@ test.describe('accessibility', () => {
     await ensureBoard(page);
     expect(await blockingViolations(page)).toEqual([]);
   });
+
+  test('insights', async ({ page }) => {
+    await signInAsGuest(page);
+    await ensureBoard(page);
+    await page.getByRole('radio', { name: 'Insights' }).click();
+    await expect(page.getByText('Not finished yet')).toBeVisible({
+      timeout: 30_000,
+    });
+    expect(await blockingViolations(page)).toEqual([]);
+  });
 });

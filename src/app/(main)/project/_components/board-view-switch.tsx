@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, SquareKanban } from 'lucide-react';
+import { CalendarDays, ChartColumn, SquareKanban } from 'lucide-react';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { useNavStore, type BoardView } from '@/store/use-nav.store';
 
@@ -23,9 +23,18 @@ const OPTIONS = [
       </span>
     ),
   },
+  {
+    value: 'insights' as const,
+    label: (
+      <span className="flex items-center gap-1.5">
+        <ChartColumn className="size-3.5" />
+        Insights
+      </span>
+    ),
+  },
 ];
 
-/** Columns or a month of due dates; the choice is kept in the link. */
+/** Columns, a month of due dates or the numbers; kept in the link. */
 export const BoardViewSwitch = () => {
   const view = useNavStore((s) => s.boardView);
   const setView = useNavStore((s) => s.setBoardView);

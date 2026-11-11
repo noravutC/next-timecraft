@@ -22,4 +22,5 @@ export * from "./job-queue.table";
 export * from "./ai-setting.table";
 export * from "./ai-usage-log.table";
 export * from "./calendar-feed.table";
+export * from "./digest-subscription.table";
 export * from "./relations";

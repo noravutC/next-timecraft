@@ -16,6 +16,7 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 
 - **AI Task Breakdown**: type a goal and Claude or Gemini streams it into actionable cards on the board
 - **Kanban Board**: drag-and-drop columns and cards with fractional ordering, WIP limits, filters and a calendar view
+- **Insights**: a board's numbers over 4 or 12 weeks (tasks finished and added per week, time to finish, how many met their due date, time in each column) beside how it stands now (what is overdue, stuck or blocked, what is due next, who holds what), and an optional weekly digest email
 - **Task detail**: subtasks, assignees, tags, due dates and reminders, dependencies (blocked tasks), estimates and logged time, an activity trail
 - **Comments**: mentions, reactions and image/video attachments
 - **My tasks, search and notifications**: everything assigned to you across boards, ⌘K search over tasks and boards, in-app and email notifications
@@ -33,6 +34,9 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 
 **Kanban Board**
 ![TimeCraft Kanban Board](docs/screenshot-board.png)
+
+**Insights**
+![TimeCraft Insights](docs/screenshot-insights.png)
 
 
 ## Tech Stack
@@ -130,6 +134,35 @@ came from, with Undo either way.
 Postgres triggers (migration `0023`), not by application code, because six
 different code paths can move a task. Blocked badges, My tasks and the
 calendar all read the same definition.
+
+## Insights: design notes
+
+The Insights view is the third way to look at a board, beside the columns
+and the calendar. Everything in it is counted in SQL from what the board
+already records, so there is no reporting table to keep in step:
+
+- The numbers come in two groups, "In the last 12 weeks" and "Right now",
+  so it is clear which ones the period switch changes. One sentence above
+  them sums up the week so far.
+- **Finished** means `completed_at` in the Done column, archived or not:
+  archiving finished work does not undo it. **New** counts every task added
+  in a week, whatever became of it since. Weeks run Monday to Sunday in the
+  viewer's time zone.
+- **Time to finish** is the median from created to Done, not the mean, so
+  one task that sat for months does not move it.
+- **On time** is the share of finished tasks with a due date that were
+  finished on the due day or before it.
+- **Time in each column** replays each finished task's moves from its
+  activity history and averages the time spent in each column.
+- **Stuck** is an open task outside the first column that has not changed
+  column for 7 days. The first column is left out: a backlog is where tasks
+  are meant to wait.
+- **Coming up** lists open tasks due today or in the six days after.
+
+The weekly digest is opt-in per person per board (`digest_subscriptions`).
+The scheduled job sends it on Monday from 9:00 in the workspace's time zone
+and claims each week before sending, so two runs at once send it once. A
+week with nothing to report is not sent.
 
 ## Testing
 

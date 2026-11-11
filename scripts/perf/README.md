@@ -60,3 +60,13 @@ straight from `tasks_column_order_idx` and glues the columns with
 The whole request is from a browser against `pnpm dev`, so it includes the
 other queries of the route (totals, priority counts, assignees) and dev-mode
 overhead. With a text filter the two forms take the same time.
+
+## Insights, 2026-11-11
+
+The Insights view runs nine aggregate queries at once. On the big board
+(4,000 cards per column: 15,400 open, 1,450 finished in the last 12 weeks,
+5,000 stuck, 4,200 overdue, 1,500 due within a week; 196,000 history rows
+in the database) all nine together take about 75 ms from Node, 12 weeks or
+4, and the weekly digest's queries about 60 ms. They read through
+`columns_project_idx`, `tasks_column_order_idx` and
+`task_activities_task_created_idx`, so no new index was added.

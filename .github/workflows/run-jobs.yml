@@ -1,8 +1,9 @@
 name: Run scheduled jobs
 
-# Due-date reminders, notification emails and purging deleted columns all
-# run from /api/cron/run. This calls it every 5 minutes (GitHub may start a
-# scheduled run a few minutes late; reminders allow for that).
+# Due-date reminders, notification emails, the weekly digest and purging
+# deleted columns all run from /api/cron/run. This calls it every 5 minutes
+# (GitHub may start a scheduled run a few minutes late; reminders allow for
+# that).
 on:
   schedule:
     - cron: '*/5 * * * *'
