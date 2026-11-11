@@ -116,35 +116,38 @@ test.describe('kanban board', () => {
 
   test('filtering narrows the board to matching tasks', async ({ page }) => {
     const filterTitle = `e2e filter card ${uniq}`;
+    const otherTitle = `e2e unmatched ${uniq}`;
     const firstColumn = page.getByTestId('board-column').first();
-    const allCards = page.locator('[data-card-title]');
 
-    // seed a uniquely named card to filter by
+    // seed one card to filter by and one that must drop out. Other specs add
+    // cards to this shared board at the same time, so never count all cards.
+    // (the composer stays open after a card is added)
     await firstColumn
       .getByRole('button', { name: /add card to the bottom/i })
       .last()
       .click();
-    await firstColumn.getByLabel('Task title').fill(filterTitle);
-    await firstColumn
-      .getByRole('button', { name: 'Add card', exact: true })
-      .click();
+    for (const title of [filterTitle, otherTitle]) {
+      await firstColumn.getByLabel('Task title').fill(title);
+      await firstColumn
+        .getByRole('button', { name: 'Add card', exact: true })
+        .click();
+      await expect(page.locator(`[data-card-title="${title}"]`)).toBeVisible({
+        timeout: 15_000,
+      });
+    }
     const card = page.locator(`[data-card-title="${filterTitle}"]`);
-    await expect(card).toBeVisible({ timeout: 15_000 });
-    const countBefore = await allCards.count();
+    const other = page.locator(`[data-card-title="${otherTitle}"]`);
 
-    // search is debounced and refetches server-side → poll until it settles
+    // search is debounced and refetches server-side
     await page.getByTestId('board-filter-search').fill(filterTitle);
-    await expect
-      .poll(async () => allCards.count(), { timeout: 15_000 })
-      .toBe(1);
+    await expect(other).toHaveCount(0, { timeout: 15_000 });
     await expect(card).toBeVisible();
 
     await page.getByRole('button', { name: /clear all/i }).click();
-    await expect
-      .poll(async () => allCards.count(), { timeout: 15_000 })
-      .toBe(countBefore);
+    await expect(other).toBeVisible({ timeout: 15_000 });
 
     // cleanup so e2e cards don't pile up on the shared guest board
     await deleteCard(page, card);
+    await deleteCard(page, other);
   });
 });
