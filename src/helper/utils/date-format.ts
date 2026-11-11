@@ -24,8 +24,11 @@ export const formatRelativePast = (date: Date) => {
 };
 
 /** จำนวนวันจากวันนี้ถึง date (ติดลบ = เลยมาแล้ว), เทียบที่เที่ยงคืน */
-export const daysUntil = (date: string | Date): number => {
-  const today = new Date();
+export const daysUntil = (
+  date: string | Date,
+  now: Date = new Date(),
+): number => {
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const target = new Date(date);
   target.setHours(0, 0, 0, 0);
@@ -52,7 +55,7 @@ export const formatRelativeDay = (d: Date) => {
  * (with the year only when it isn't this year).
  */
 export const formatDueLabel = (date: Date, now: Date = new Date()): string => {
-  const diff = daysUntil(date);
+  const diff = daysUntil(date, now);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";
