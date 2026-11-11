@@ -92,6 +92,7 @@ Four stores in `src/store/`:
 - **`orderFraction`** — fractional-indexing string used for drag-and-drop ordering on both columns and tasks; never use integer indices. Helpers: `generateFractionBetween()` and `assignBulkIndexes()` in `src/helper/utils/fraction-string-indexing.ts`.
 - **Indexes** — declared next to each table (third `pgTable` argument). Search and the board text filter rely on `pg_trgm` GIN indexes, so keep them as `ILIKE '%…%'`; ordering by `orderFraction` in SQL must say `COLLATE "C"` to use `tasks_column_order_idx`. Measure changes with `scripts/perf/` (k6, scratch DB only).
 - **Soft delete on columns** — `isDeleted`, `deletedAt`, `purgeAt` fields; always filter these out in queries
+- **Done column** — one column per board has `isDone` (unique index; new boards get it on the template's last column). "Done" is a place, not a flag on the task: a task is finished when it sits in that column (`finishColumnOf()`, `toggleTaskDone()` in `src/components/project/task-completion.ts`). `tasks.completedAt` / `completedFromColumnId` are maintained by Postgres triggers (migration `0023`) on every path that moves a task or flips the flag, so app code never writes them.
 - **`tags`** — `text[]` array on both projects and tasks
 
 ### RBAC (Standard pattern — use this, not ad-hoc checks)

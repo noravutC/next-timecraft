@@ -14,6 +14,8 @@ export type TColumn = {
   title: string;
   color?: string;
   wipLimit: number;
+  /** the board's Done column: cards in it count as finished */
+  isDone: boolean;
   orderFraction: string;
   totalTasks: number;
   /** true when the column has unloaded tasks past the last loaded card */
@@ -117,6 +119,7 @@ export function deriveBoardView(
         title: col.name,
         color: col.color ?? undefined,
         wipLimit: col.wipLimit ?? 0,
+        isDone: col.isDone ?? false,
         orderFraction: col.orderFraction,
         // fully loaded → live count; partially loaded → server total (approx.)
         totalTasks: page?.hasMore

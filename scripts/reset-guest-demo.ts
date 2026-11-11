@@ -88,6 +88,7 @@ async function main() {
           name: c.name,
           color: c.color,
           orderFraction: columnKeys[i],
+          isDone: i === demo.DEMO_COLUMNS.length - 1,
         })),
       )
       .returning({

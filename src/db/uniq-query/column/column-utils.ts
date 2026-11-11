@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { columnsTable } from '@/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 /**
  * columnId → projectId for columns that are not soft-deleted.
@@ -41,6 +41,14 @@ export async function restoreColumns(columnIds: string[]) {
     .update(columnsTable)
     .set({
       isDeleted: false,
+      // a restored Done column stays Done unless the board got another
+      // one while it was in the archive
+      isDone: sql`${columnsTable.isDone} AND NOT EXISTS (
+        SELECT 1 FROM columns other
+        WHERE other.project_id = ${columnsTable.projectId}
+          AND other.is_done AND NOT other.is_deleted
+          AND other.id <> ${columnsTable.id}
+      )`,
       deletedAt: null,
       deletedBy: null,
       purgeAt: null,

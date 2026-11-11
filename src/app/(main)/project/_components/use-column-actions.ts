@@ -9,9 +9,10 @@ import type { UpdateColumnPayload } from '@/types';
 import { shiftedColumnFraction } from './board-operations';
 import type { TColumn } from './data';
 
-/** Rename, recolor, WIP limit, move and delete one column. */
+/** Rename, recolor, WIP limit, Done flag, move and delete one column. */
 export function useColumnActions(column: TColumn, allColumns: TColumn[]) {
   const patchColumn = useColumnStore((s) => s.patchColumn);
+  const setDoneColumn = useColumnStore((s) => s.setDoneColumn);
   const deleteColumns = useColumnStore((s) => s.deleteColumns);
   const restoreColumns = useColumnStore((s) => s.restoreColumns);
   const fetchTasksByColumns = useTaskStore((s) => s.fetchTasksByColumns);
@@ -70,6 +71,10 @@ export function useColumnActions(column: TColumn, allColumns: TColumn[]) {
       void patch({ color }, 'Couldn’t change the color'),
     setWipLimit: (wipLimit: number) =>
       void patch({ wipLimit }, 'Couldn’t change the WIP limit'),
+    setDone: (isDone: boolean) =>
+      void setDoneColumn(column.id, isDone).catch(() =>
+        toast.error('Couldn’t change the Done column'),
+      ),
     canMoveLeft: index > 0,
     canMoveRight: index !== -1 && index < allColumns.length - 1,
     move,

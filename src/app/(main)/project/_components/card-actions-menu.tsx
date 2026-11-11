@@ -1,6 +1,8 @@
 'use client';
 
-import { Archive, Copy, Ellipsis } from 'lucide-react';
+import { Archive, CircleCheck, Copy, Ellipsis } from 'lucide-react';
+import { toggleTaskDone } from '@/components/project/task-completion';
+import { ColumnMark } from '@/components/task-meta/column-mark';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import {
   DropdownMenu,
@@ -28,6 +30,7 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
 
   const otherColumns = allColumns.filter((c) => c.id !== card.columnId);
   const isFlagged = card.priority === 'high';
+  const doneColumn = allColumns.find((c) => c.isDone);
 
   const handleArchive = () => {
     const base = { id: card.id, columnId: card.columnId, title: card.title };
@@ -108,6 +111,17 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
         className="w-55"
         onClick={(e) => e.stopPropagation()}
       >
+        {doneColumn && (
+          <>
+            <DropdownMenuItem onClick={() => toggleTaskDone(card)}>
+              <CircleCheck />
+              {doneColumn.id === card.columnId
+                ? 'Mark as not done'
+                : 'Mark as done'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={handleDuplicate}>
           <Copy />
           Duplicate
@@ -129,9 +143,10 @@ export function CardActionsMenu({ card, allColumns }: CardActionsMenuProps) {
                 key={column.id}
                 onClick={() => handleMoveTo(column)}
               >
-                <span
-                  className="mx-0.75 size-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: column.color ?? '#94a3b8' }}
+                <ColumnMark
+                  color={column.color}
+                  done={column.isDone}
+                  className="mx-0.75"
                 />
                 {column.title}
               </DropdownMenuItem>

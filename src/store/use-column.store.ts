@@ -32,6 +32,9 @@ type ColumnStore = {
     patch: Omit<UpdateColumnPayload, "id">,
   ) => Promise<void>;
   /** brings deleted columns back into the board */
+  /** makes it the board's Done column (the old one loses the flag), or
+   *  leaves the board without one */
+  setDoneColumn: (columnId: string, isDone: boolean) => Promise<void>;
   restoreColumns: (colIds: string[]) => Promise<ColumnCache[]>;
   fetchColumns: (
     projectId: string,
@@ -161,6 +164,29 @@ export const useColumnStore = create<ColumnStore>((set, get) => ({
       await columnServices.updateColumns([columnId], [{ id: columnId, ...patch }]);
     } catch (error) {
       set((state) => ({ columns: { ...state.columns, [columnId]: snapshot } }));
+      throw error;
+    }
+  },
+  setDoneColumn: async (columnId, isDone) => {
+    const before = get().columns;
+    const target = before[columnId];
+    if (!target) return;
+    set({
+      columns: Object.fromEntries(
+        Object.entries(before).map(([id, column]) => [
+          id,
+          id === columnId
+            ? { ...column, isDone }
+            : isDone && column.projectId === target.projectId
+              ? { ...column, isDone: false }
+              : column,
+        ]),
+      ),
+    });
+    try {
+      await columnServices.updateColumns([columnId], [{ id: columnId, isDone }]);
+    } catch (error) {
+      set({ columns: before });
       throw error;
     }
   },

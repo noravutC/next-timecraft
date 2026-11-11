@@ -1,9 +1,34 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { expect, type Locator, type Page } from '@playwright/test';
 
-export const signInAsGuest = async (page: Page) => {
+/** The guest session saved by the setup project (test-results is gitignored). */
+export const GUEST_STATE = 'test-results/.auth/guest.json';
+
+const signInThroughLogin = async (page: Page) => {
   await page.goto('/login');
   await page.getByRole('button', { name: /continue as guest/i }).click();
   await page.waitForURL(/\/project/, { timeout: 30_000 });
+};
+
+/**
+ * Guest sign-in is throttled to 10 a minute per IP, fewer than the suite has
+ * tests. So only the setup project goes through /login; the specs reuse the
+ * session it saved, and fall back to /login if that session is not accepted.
+ */
+export const signInAsGuest = async (page: Page) => {
+  if (existsSync(GUEST_STATE)) {
+    const { cookies } = JSON.parse(readFileSync(GUEST_STATE, 'utf8'));
+    await page.context().addCookies(cookies);
+    await page.goto('/project');
+    if (/\/project/.test(page.url())) return;
+  }
+  await signInThroughLogin(page);
+};
+
+/** Sign in through /login and save the session for the specs. */
+export const saveGuestSession = async (page: Page) => {
+  await signInThroughLogin(page);
+  await page.context().storageState({ path: GUEST_STATE });
 };
 
 /** Guest workspace may or may not already have a board (a fresh DB has none). */

@@ -27,6 +27,9 @@ export const updateColumnSchema = z
       color: columnColor.optional(),
       wipLimit: wipLimit.optional(),
       orderFraction: z.string().max(255).optional(),
+      // true makes it the board's Done column (taking the flag from the
+      // column that had it), false leaves the board without one
+      isDone: z.boolean().optional(),
     }),
   )
   .min(1, 'Payload must be a non-empty array')

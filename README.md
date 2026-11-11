@@ -117,6 +117,20 @@ malformed task.
   429/5xx twice with backoff). If the stream dies mid-way, the user keeps the cards
   that were already created — nothing is rolled back.
 
+## Done column: design notes
+
+One column per board is the **Done column** (a check mark in its header;
+new boards get it on the last column of the template). A task is finished
+when it sits in that column: Done is a place, not a second flag that can
+disagree with where the card is. Tick a card, use its menu or the button in
+the task sheet and it moves there; untick it and it returns to the column it
+came from, with Undo either way.
+
+`tasks.completed_at` and the column a task was completed from are kept by
+Postgres triggers (migration `0023`), not by application code, because six
+different code paths can move a task. Blocked badges, My tasks and the
+calendar all read the same definition.
+
 ## Testing
 
 - **Unit and component tests** (Vitest): pure logic runs in node; components

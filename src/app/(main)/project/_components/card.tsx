@@ -21,6 +21,7 @@ import {
 } from '@/helper/utils/date-format';
 import { cn } from '@/lib/utils';
 import { CardActionsMenu } from './card-actions-menu';
+import { CardDoneTick, type CardDoneState } from './card-done-tick';
 import { CardTagRow } from './card-tag-row';
 import { useTaskBlocked } from '@/components/project/use-task-blocked';
 import { useBoardAccess } from '@/components/project/use-board-access';
@@ -59,12 +60,14 @@ export function CardDisplay({
   card,
   state,
   allColumns,
+  doneState,
   outerRef,
   innerRef,
 }: {
   card: TCard;
   state: TCardState;
   allColumns?: TColumn[];
+  doneState?: CardDoneState;
   outerRef?: React.RefObject<HTMLDivElement | null>;
   innerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -123,7 +126,10 @@ export function CardDisplay({
       >
         <div className="flex items-start gap-2">
           <div
-            className="line-clamp-3 flex-1 text-base font-medium"
+            className={cn(
+              'line-clamp-3 flex-1 text-base font-medium',
+              doneState?.done && 'text-ink-muted',
+            )}
             onClick={(e) => {
               if (state.type !== 'idle') return;
               if ((e.target as HTMLElement).closest('[data-card-action]'))
@@ -197,7 +203,10 @@ export function CardDisplay({
               )}
             </span>
           )}
-          {isLoading && <Loader size="xs" className="ml-auto" />}
+          <span className="ml-auto flex items-center gap-2">
+            {isLoading && <Loader size="xs" />}
+            {doneState && <CardDoneTick card={card} state={doneState} />}
+          </span>
         </div>
       </div>
       {state.type === 'is-over' && state.closestEdge === 'bottom' && (
@@ -232,6 +241,12 @@ export function Card({
   });
   // read-only boards get no card menu (it only holds changes)
   const menuColumns = access.can('task:update') ? allColumns : undefined;
+  const column = allColumns.find((c) => c.id === columnId);
+  const doneState: CardDoneState = {
+    done: column?.isDone ?? false,
+    color: column?.color,
+    canToggle: access.can('task:move') && allColumns.some((c) => c.isDone),
+  };
 
   return (
     <>
@@ -241,10 +256,16 @@ export function Card({
         state={state}
         card={card}
         allColumns={menuColumns}
+        doneState={doneState}
       />
       {state.type === 'preview' &&
         createPortal(
-          <CardDisplay state={state} card={card} allColumns={menuColumns} />,
+          <CardDisplay
+            state={state}
+            card={card}
+            allColumns={menuColumns}
+            doneState={doneState}
+          />,
           state.container,
         )}
     </>

@@ -27,14 +27,20 @@ describe('isBlocked', () => {
 });
 
 describe('finishColumnOf', () => {
-  it('is the last column of that board, by order', () => {
+  it('is the Done column of that board, wherever it sits', () => {
     const columns = [
-      { id: 'a', projectId: 'p', orderFraction: 'a0' },
-      { id: 'c', projectId: 'p', orderFraction: 'a2' },
-      { id: 'b', projectId: 'p', orderFraction: 'a1' },
-      { id: 'x', projectId: 'other', orderFraction: 'z' },
+      { id: 'a', projectId: 'p', isDone: false },
+      { id: 'b', projectId: 'p', isDone: true },
+      { id: 'c', projectId: 'p', isDone: false },
+      { id: 'x', projectId: 'other', isDone: true },
     ];
-    expect(finishColumnOf(columns, 'p')).toBe('c');
+    expect(finishColumnOf(columns, 'p')).toBe('b');
     expect(finishColumnOf(columns, 'none')).toBeNull();
+  });
+
+  it('is null on a board without a Done column', () => {
+    expect(
+      finishColumnOf([{ id: 'a', projectId: 'p', isDone: false }], 'p'),
+    ).toBeNull();
   });
 });

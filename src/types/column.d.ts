@@ -13,7 +13,12 @@ export type CreateColumnPayload = Pick<
 
 /** id plus only the fields that change (the API leaves the rest alone) */
 export type UpdateColumnPayload = Pick<NewColumnRow, "id"> &
-  Partial<Pick<NewColumnRow, "name" | "color" | "wipLimit" | "orderFraction">>;
+  Partial<
+    Pick<
+      NewColumnRow,
+      "name" | "color" | "wipLimit" | "orderFraction" | "isDone"
+    >
+  >;
 
 export interface ColumnCache extends Column {
   timestamp: number;

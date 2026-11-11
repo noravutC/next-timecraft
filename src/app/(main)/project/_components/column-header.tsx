@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ColumnMark } from '@/components/task-meta/column-mark';
 import { ColumnMenu } from './column-menu';
 import type { TColumn } from './data';
 import type { ColumnActions } from './use-column-actions';
@@ -20,7 +21,7 @@ interface ColumnHeaderProps {
   onAddTop: () => void;
 }
 
-/** Dot, name (or the rename field), count, + and ⋯. */
+/** Dot (a check on the Done column), name or the rename field, count, + and ⋯. */
 export const ColumnHeader = ({
   column,
   headerRef,
@@ -37,9 +38,10 @@ export const ColumnHeader = ({
       className="flex h-11 flex-row items-center gap-2 pr-1.5 pl-3.5"
       ref={headerRef}
     >
-      <span
-        className="size-2 shrink-0 rounded-full"
-        style={{ backgroundColor: column.color ?? '#94A3B8' }}
+      <ColumnMark
+        color={column.color}
+        done={column.isDone}
+        doneClassName="-mx-0.75"
       />
       {actions.renaming ? (
         <Input

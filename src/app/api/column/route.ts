@@ -56,7 +56,9 @@ export const POST = createHandle<CreateColumnBody>(
       );
 
     const lastOrderByProject = new Map<string, string>();
+    const projectsWithColumns = new Set<string>();
     existingColumns.forEach((column) => {
+      projectsWithColumns.add(column.projectId);
       if (!isValidFractionKey(column.orderFraction)) return;
       const current = lastOrderByProject.get(column.projectId);
       if (!current || current.localeCompare(column.orderFraction) < 0) {
@@ -75,13 +77,19 @@ export const POST = createHandle<CreateColumnBody>(
         null,
       );
 
-      rowsWithIndexes.forEach((item) => {
+      // a new board's first set of columns (its template): work ends in
+      // the last one. Columns added later never take the Done flag.
+      const fromTemplate =
+        !projectsWithColumns.has(projectId) && rowsWithIndexes.length > 1;
+
+      rowsWithIndexes.forEach((item, index) => {
         rowsToInsert.push({
           projectId: item.projectId,
           name: item.name,
           color: item.color,
           wipLimit: item.wipLimit,
           orderFraction: item.orderFraction ?? "",
+          isDone: fromTemplate && index === rowsWithIndexes.length - 1,
         });
       });
     });

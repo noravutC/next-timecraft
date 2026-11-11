@@ -53,7 +53,7 @@ export async function listCalendarTasks(args: {
   from: Date;
   to: Date;
   filter?: TaskFilter;
-  /** usually the last column: finished work stays out of "No due date" */
+  /** the Done column: finished work stays out of "No due date" */
   hideUndatedIn?: string;
 }): Promise<{ dated: TaskRow[]; undated: TaskRow[]; undatedTotal: number }> {
   const filters = taskFilterConditions(args.filter, args.userId);

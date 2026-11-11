@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -43,6 +44,14 @@ export const tasksTable = pgTable(
     // time spent, summed from every "Log time" (logged_hours is unused)
     loggedMinutes: integer("logged_minutes").notNull().default(0),
     commentCount: integer("comment_count").notNull().default(0),
+    // set while the task sits in its board's Done column, by the triggers
+    // in migration 0023 (never written by the app). completedFromColumnId
+    // is where it came from, so "Mark as not done" can put it back.
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    completedFromColumnId: uuid("completed_from_column_id").references(
+      (): AnyPgColumn => columnsTable.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

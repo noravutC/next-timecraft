@@ -1,6 +1,13 @@
 'use client';
 
-import { Calendar, CircleDot, Tag, Timer, User } from 'lucide-react';
+import {
+  Calendar,
+  CircleCheck,
+  CircleDot,
+  Tag,
+  Timer,
+  User,
+} from 'lucide-react';
 import type {
   ColumnCache,
   TaskCache,
@@ -10,6 +17,7 @@ import type {
 import type { ProjectSettings } from '@/types/project-settings';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { UserAvatar } from '@/components/people/user-avatar';
+import { formatDateShort } from '@/helper/utils/date-format';
 import { shortName } from '@/helper/utils/person-name';
 import { PropertyRow } from './property-row';
 import { StatusPicker } from './status-picker';
@@ -72,6 +80,15 @@ export const TaskProperties = ({
         disabled={readOnly}
       />
     </PropertyRow>
+
+    {task.completedAt &&
+      columns.find((c) => c.id === task.columnId)?.isDone && (
+        <PropertyRow icon={<CircleCheck />} label="Completed">
+          <span className="px-2 text-sm text-ink">
+            {formatDateShort(task.completedAt)}
+          </span>
+        </PropertyRow>
+      )}
 
     <PropertyRow
       icon={
