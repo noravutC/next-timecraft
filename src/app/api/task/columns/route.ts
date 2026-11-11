@@ -13,17 +13,8 @@ import { taskFilterConditions } from '@/db/uniq-query/task/task-filter';
 import { fetchBlockerRefs } from '@/db/uniq-query/task/dependency-utils';
 import { countUnreadByTask } from '@/db/uniq-query/comment/comment-utils';
 import type { PriorityCounts, TaskPageInfo, TaskRow } from '@/types';
-import {
-  and,
-  asc,
-  count,
-  eq,
-  getTableColumns,
-  inArray,
-  lte,
-  or,
-  sql,
-} from 'drizzle-orm';
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
+import { unionAll } from 'drizzle-orm/pg-core';
 import { NextResponse } from 'next/server';
 import {
   getTasksByColumnsSchema,
@@ -63,30 +54,37 @@ export const POST = createHandle<GetTasksByColumnsBody>(
         : inColumn;
     });
 
-    // Window-rank tasks inside each column so one query serves any number of
-    // columns with a per-column limit. limit+1 rows reveal whether more remain.
-    const ranked = db
-      .select({
-        ...getTableColumns(tasksTable),
-        rn: sql<number>`row_number() over (partition by ${tasksTable.columnId} order by ${tasksTable.orderFraction} COLLATE "C" asc, ${tasksTable.id} asc)`.as(
-          'rn',
-        ),
-      })
-      .from(tasksTable)
-      .where(
-        and(
-          or(...perColumn),
-          eq(tasksTable.archived, false),
-          ...filterConditions,
-        ),
-      )
-      .as('ranked');
-
-    const rows = await db
-      .select()
-      .from(ranked)
-      .where(lte(ranked.rn, limit + 1))
-      .orderBy(asc(ranked.columnId), asc(ranked.rn));
+    // Each column's page is its own index-ordered LIMIT (tasks_column_order_idx
+    // stops after limit + 1 rows), glued with UNION ALL into one round trip.
+    // Ranking with a window function instead sorts every card in every column
+    // before it can drop any. limit + 1 rows reveal whether more remain.
+    const pages = perColumn.map((inColumn) =>
+      db
+        .select()
+        .from(tasksTable)
+        .where(
+          and(inColumn, eq(tasksTable.archived, false), ...filterConditions),
+        )
+        .orderBy(
+          sql`${tasksTable.orderFraction} COLLATE "C" asc`,
+          asc(tasksTable.id),
+        )
+        .limit(limit + 1),
+    );
+    const [first, second, ...rest] = pages;
+    const merged =
+      pages.length > 1 ? unionAll(first, second, ...rest).as('merged') : null;
+    // the outer ORDER BY restores board order: UNION ALL promises none
+    const rows = merged
+      ? await db
+          .select()
+          .from(merged)
+          .orderBy(
+            asc(merged.columnId),
+            sql`${merged.orderFraction} COLLATE "C" asc`,
+            asc(merged.id),
+          )
+      : await first;
 
     const totalRows = await db
       .select({ columnId: tasksTable.columnId, total: count() })
@@ -143,7 +141,7 @@ export const POST = createHandle<GetTasksByColumnsBody>(
             : null,
         total: totals[colId] ?? 0,
       };
-      tasks.push(...page.map(({ rn: _rn, ...task }) => task));
+      tasks.push(...page);
     }
 
     const taskIds = tasks.map((t) => t.id);
