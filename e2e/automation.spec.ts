@@ -112,10 +112,14 @@ test.describe('automation', () => {
     await section(page, /^History/).click();
     await expect(page.getByText('Kept for 30 days')).toBeVisible();
     // nothing yet on a new board, or the days that something ran on
+    const days = page.getByRole('region', {
+      name: /^(Today|Yesterday|\w+day, \w+ \d+)$/,
+    });
     await expect(
       page
         .getByText(/Nothing has run yet/)
-        .or(page.getByRole('region').first()),
+        .or(days)
+        .first(),
     ).toBeVisible({ timeout: 30_000 });
   });
 });
