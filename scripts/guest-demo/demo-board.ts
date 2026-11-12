@@ -1,6 +1,7 @@
 // The demo board every "Continue as guest" visitor lands on. Mirrors the
 // redesign prototype so the board shows every card state (labels, due dates,
-// subtasks, comments). Dates are offsets from the reset day.
+// subtasks, comments), and has rules and templates for the Automation view.
+// Dates are offsets from the reset day.
 
 export const DEMO_BOARD_NAME = 'Website Relaunch';
 export const DEMO_BOARD_DESCRIPTION =
@@ -246,6 +247,96 @@ export const DEMO_CARDS: DemoCard[] = [
       'Previews render in the comment list.',
     ],
   },
+];
+
+/**
+ * Task templates on the demo board: what "New task" offers, and what the
+ * rule on a schedule makes. `assigned` puts the guest on tasks made from it.
+ */
+export const DEMO_TEMPLATES: {
+  title: string;
+  description: string | null;
+  labels: string[];
+  priority: 'low' | 'medium' | 'high';
+  subtasks: string[];
+  assigned: boolean;
+  /** due this many days after a task is made from it; null = no due date */
+  dueInDays: number | null;
+}[] = [
+  {
+    title: 'Bug report',
+    description:
+      'What went wrong, how to see it happen, and what should have happened instead.',
+    labels: ['Bug'],
+    priority: 'high',
+    subtasks: [
+      'Steps to reproduce',
+      'What you expected',
+      'What happened instead',
+      'Browser and device',
+    ],
+    assigned: false,
+    dueInDays: null,
+  },
+  {
+    title: 'Weekly review',
+    description:
+      'What moved last week, what is stuck, and what we pick up next.',
+    labels: ['Product'],
+    priority: 'medium',
+    subtasks: [
+      'Check Insights for stuck and overdue tasks',
+      'Pick the top three for this week',
+      'Post the summary in the team channel',
+    ],
+    assigned: true,
+    // a week to do it: the one the schedule made is never late on the demo
+    dueInDays: 7,
+  },
+  {
+    title: 'Release checklist',
+    description: null,
+    labels: ['Infra'],
+    priority: 'high',
+    subtasks: [
+      'Run the end-to-end tests',
+      'Apply migrations',
+      'Deploy and watch the health check',
+      'Write the release note',
+    ],
+    assigned: true,
+    dueInDays: 1,
+  },
+];
+
+/** The template the demo's schedule rule makes a task from every Monday. */
+export const DEMO_REPEATING_TEMPLATE = 'Weekly review';
+
+/**
+ * The demo board's rules, in the words of the Automation view. Columns and
+ * templates are named here and resolved to ids when the board is rebuilt.
+ */
+export type DemoRule =
+  | { kind: 'review'; on: boolean }
+  | { kind: 'subtasks'; on: boolean }
+  | { kind: 'finished'; on: boolean }
+  | { kind: 'overdue'; on: boolean }
+  | { kind: 'idle'; on: boolean }
+  | { kind: 'weekly'; on: boolean };
+
+export const DEMO_RULES: DemoRule[] = [
+  // a task that moves to Review with nobody on it goes to the guest
+  { kind: 'review', on: true },
+  // the last subtask ticked moves the task to Review
+  { kind: 'subtasks', on: true },
+  // a finished task tells whoever created it
+  { kind: 'finished', on: true },
+  // a due date that has passed raises the priority
+  { kind: 'overdue', on: true },
+  // a week without moving gets a comment: off, to show a rule switched off
+  { kind: 'idle', on: false },
+  // every Monday at 9:00, a Weekly review in To do
+  { kind: 'weekly', on: true },
 ];
 
 /** The columns a card passes through before Done, in order. */

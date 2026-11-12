@@ -4,14 +4,14 @@ import {
   decodeCursor,
   encodeCursor,
 } from '@/db/uniq-query/comment/comment-utils';
-import { logger } from '@/lib/logger';
+import { announceTaskChanges } from '@/lib/automation/engine';
 import type {
   ActivityColumnRef,
-  TaskActivityEntry,
   TaskActivityPage,
   TaskActivityWithActor,
 } from '@/types';
 import { and, desc, eq, inArray, lt, or } from 'drizzle-orm';
+import { insertTaskActivities, type TaskChange } from './activity-insert';
 
 export const ACTIVITY_PAGE_SIZE = 50;
 
@@ -32,29 +32,17 @@ export async function getColumnRefs(
 }
 
 /**
- * Appends history entries. History is a side record: a failure here is
- * logged and never fails the change that produced it.
+ * Records changes someone made to tasks: their history first, then the
+ * board's rules and webhooks hear about them (every change passes through
+ * here, so this is the one place they listen). Returns the ids of tasks a
+ * rule went on to change, for a caller that hands tasks back.
  */
 export async function recordTaskActivities(
   actorId: string,
-  items: { taskId: string; entry: TaskActivityEntry }[],
-): Promise<void> {
-  if (items.length === 0) return;
-  try {
-    await db.insert(taskActivitiesTable).values(
-      items.map(({ taskId, entry }) => ({
-        taskId,
-        actorId,
-        type: entry.type,
-        data: entry.data,
-      })),
-    );
-  } catch (err) {
-    logger.error(
-      { err, count: items.length },
-      'Failed to record task activity',
-    );
-  }
+  items: TaskChange[],
+): Promise<string[]> {
+  await insertTaskActivities(actorId, items);
+  return announceTaskChanges(items, { actorId });
 }
 
 /** A task's history, newest first, a page at a time. */
@@ -71,6 +59,7 @@ export async function listTaskActivities(
       type: taskActivitiesTable.type,
       data: taskActivitiesTable.data,
       createdAt: taskActivitiesTable.createdAt,
+      automation: taskActivitiesTable.automation,
       actorId: usersTable.id,
       actorName: usersTable.fullName,
       actorAvatar: usersTable.avatar,

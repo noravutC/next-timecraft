@@ -26,6 +26,7 @@ import {
 } from "@/lib/supabase-storage";
 import { AppError, BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
+import { announceComment } from "@/lib/automation/engine";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { filterByInAppPrefs } from "@/db/uniq-query/notification/notification-utils";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
@@ -325,6 +326,7 @@ export const POST = createParamHandle<RouteParams, CreateCommentBody>(
         // the author's other tabs must not count their own comment as unread
         { taskId, delta: 1, authorId: userId },
       ).catch((e) => console.error("Pusher count failed:", e));
+      await announceComment(link.projectId, taskId, sessionUserName);
 
       for (const n of result.notifications) {
         const [notif] = await db

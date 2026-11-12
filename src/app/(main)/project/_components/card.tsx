@@ -9,7 +9,7 @@ import { useTaskStore } from '@/store/use-task.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
-import { Calendar, MessageSquare, SquareCheck } from 'lucide-react';
+import { Calendar, MessageSquare, Repeat, SquareCheck } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { Loader } from '@/components/ui/loader';
@@ -204,6 +204,13 @@ export function CardDisplay({
             </span>
           )}
           <span className="ml-auto flex items-center gap-2">
+            {card.repeatRuleId && (
+              <Repeat
+                role="img"
+                aria-label="Repeats on a schedule"
+                className="size-3.5"
+              />
+            )}
             {isLoading && <Loader size="xs" />}
             {doneState && <CardDoneTick card={card} state={doneState} />}
           </span>

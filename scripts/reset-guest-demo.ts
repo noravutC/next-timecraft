@@ -3,7 +3,8 @@
  *
  * Every "Continue as guest" visitor shares one account and can change
  * anything in it, so this removes every board the guest account owns and
- * rebuilds the demo board (./guest-demo/demo-board.ts). Real users' boards
+ * rebuilds the demo board (./guest-demo/demo-board.ts) with its rules and
+ * templates (./guest-demo/seed-automation.ts). Real users' boards
  * are never touched: the guest can't be invited and can't invite.
  *
  * Runs nightly from .github/workflows/reset-guest-demo.yml. Locally:
@@ -26,8 +27,10 @@ async function main() {
   const { eq } = await import('drizzle-orm');
   const demo = await import('./guest-demo/demo-board');
 
+  const { seedDemoAutomation } = await import('./guest-demo/seed-automation');
+
   const [guest] = await db
-    .select({ id: schema.usersTable.id })
+    .select({ id: schema.usersTable.id, fullName: schema.usersTable.fullName })
     .from(schema.usersTable)
     .where(eq(schema.usersTable.provider, 'guest'))
     .limit(1);
@@ -38,7 +41,10 @@ async function main() {
     return;
   }
   const [org] = await db
-    .select({ id: schema.organizationsTable.id })
+    .select({
+      id: schema.organizationsTable.id,
+      timeZone: schema.organizationsTable.timeZone,
+    })
     .from(schema.organizationsTable)
     .where(eq(schema.organizationsTable.createdBy, guest.id))
     .limit(1);
@@ -273,8 +279,21 @@ async function main() {
       ]);
     }
 
+    // rules, templates and what the rules did: the Automation view
+    const automation = await seedDemoAutomation(tx, {
+      projectId: board.id,
+      guestId: guest.id,
+      guestName: guest.fullName,
+      timeZone: org?.timeZone ?? 'UTC',
+      columnRef,
+      taskIdByTitle,
+      lastTodoKey: cardKeys['To do'].at(-1) ?? null,
+      now: new Date(now),
+      at,
+    });
+
     console.log(
-      `Removed ${removed.length} guest board(s); rebuilt "${demo.DEMO_BOARD_NAME}" with ${demo.DEMO_CARDS.length} cards and ${demo.DEMO_HISTORY.length} finished earlier.`,
+      `Removed ${removed.length} guest board(s); rebuilt "${demo.DEMO_BOARD_NAME}" with ${demo.DEMO_CARDS.length} cards, ${demo.DEMO_HISTORY.length} finished earlier, ${automation.rules} rules and ${automation.templates} templates.`,
     );
   });
 }

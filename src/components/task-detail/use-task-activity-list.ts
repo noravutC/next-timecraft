@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTaskActivityStore } from '@/store/use-task-activity.store';
 import { useTaskStore } from '@/store/use-task.store';
 import {
+  automationNote,
   describeActivity,
   groupActivityByDay,
 } from '@/helper/utils/task-activity-view';
@@ -31,7 +32,11 @@ export function useTaskActivityList(taskId: string) {
       ...day,
       rows: day.items.map((item) => ({
         id: item.id,
-        actorName: item.actor?.fullName ?? null,
+        actorName: item.automation
+          ? 'Automation'
+          : (item.actor?.fullName ?? null),
+        // set when a rule made the change
+        rule: item.automation ? automationNote(item.automation.rule) : null,
         time: item.time,
         line: describeActivity(item),
       })),

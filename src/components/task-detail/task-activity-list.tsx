@@ -100,6 +100,7 @@ export const TaskActivityList = ({ taskId }: { taskId: string }) => {
                 key={row.id}
                 actorName={row.actorName}
                 line={row.line}
+                rule={row.rule}
                 time={row.time}
                 last={i === day.rows.length - 1}
               />

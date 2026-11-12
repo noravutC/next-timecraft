@@ -1,4 +1,4 @@
-import { metrics, type Histogram } from '@opentelemetry/api';
+import { metrics, type Counter, type Histogram } from '@opentelemetry/api';
 
 // Instruments are made on first use: a meter taken before
 // src/instrumentation.ts has registered the provider would record nothing.
@@ -64,4 +64,20 @@ export function recordWebVital(
   rating: string,
 ) {
   vitalHistogram(name).record(value, { page, rating });
+}
+
+let ruleRuns: Counter | undefined;
+
+/** A rule that ran: how it ended, and what started it. */
+export function recordRuleRun(status: string, trigger: string) {
+  ruleRuns ??= meter().createCounter('automation.rule.runs');
+  ruleRuns.add(1, { status, trigger });
+}
+
+let webhookTries: Counter | undefined;
+
+/** One try at sending a webhook message: accepted, retrying or given up. */
+export function recordWebhookTry(outcome: 'sent' | 'retry' | 'failed') {
+  webhookTries ??= meter().createCounter('automation.webhook.tries');
+  webhookTries.add(1, { outcome });
 }

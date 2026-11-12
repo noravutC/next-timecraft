@@ -4,7 +4,9 @@ import {
   Archive,
   ArrowRight,
   Copy,
+  LayoutTemplate,
   MoreHorizontal,
+  Repeat,
   Trash2,
 } from 'lucide-react';
 import { ProjectAvatar } from '@/components/project/project-avatar';
@@ -23,10 +25,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { TaskActions } from '../use-task-actions';
 
-/** ⋯ in the task sheet: duplicate, move to another board, archive, delete. */
+/**
+ * ⋯ in the task sheet: duplicate, save as a template, repeat, move to
+ * another board, archive, delete.
+ */
 export const TaskSheetMenu = ({ actions }: { actions: TaskActions }) => {
   const { can } = actions;
-  if (!can.duplicate && !can.move && !can.archive && !can.delete) return null;
+  if (
+    !can.duplicate &&
+    !can.template &&
+    !can.move &&
+    !can.archive &&
+    !can.delete
+  ) {
+    return null;
+  }
 
   return (
     <>
@@ -41,6 +54,18 @@ export const TaskSheetMenu = ({ actions }: { actions: TaskActions }) => {
             <DropdownMenuItem onSelect={() => void actions.duplicate()}>
               <Copy />
               Duplicate
+            </DropdownMenuItem>
+          )}
+          {can.template && (
+            <DropdownMenuItem onSelect={() => void actions.saveAsTemplate()}>
+              <LayoutTemplate />
+              Save as template
+            </DropdownMenuItem>
+          )}
+          {can.repeat && (
+            <DropdownMenuItem onSelect={() => void actions.repeat()}>
+              <Repeat />
+              Repeat
             </DropdownMenuItem>
           )}
           {can.move && (

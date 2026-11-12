@@ -9,7 +9,7 @@ export type BoardUrlState = { board: string | null; task: string | null };
  * The board as columns (the default, left out of links), as a calendar or
  * as its numbers.
  */
-export type BoardUrlView = 'board' | 'calendar' | 'insights';
+export type BoardUrlView = 'board' | 'calendar' | 'insights' | 'automation';
 
 export const BOARD_PATH = '/project';
 
@@ -29,7 +29,9 @@ export const readBoardUrl = (params: URLSearchParams): BoardUrlState => ({
 
 export const readBoardView = (params: URLSearchParams): BoardUrlView => {
   const view = params.get('view');
-  return view === 'calendar' || view === 'insights' ? view : 'board';
+  return view === 'calendar' || view === 'insights' || view === 'automation'
+    ? view
+    : 'board';
 };
 
 /**

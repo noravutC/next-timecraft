@@ -23,6 +23,7 @@ import {
   withPrefDefaults,
   type StoredNotificationPrefs,
 } from '@/helper/utils/notification-prefs';
+import { runAutomationJobs } from '@/lib/automation/jobs';
 import { appUrl, sendEmail } from '@/lib/email/send-email';
 import { NotificationEmail } from '@/lib/email/templates/notification-email';
 import { buildWeeklyDigest } from '@/lib/email/weekly-digest';
@@ -182,5 +183,6 @@ export async function runJobs(now: Date = new Date()) {
   const digests = await sendWeeklyDigests(now);
   const { purged, storagePaths } = await purgeExpiredColumns(now);
   await removeStorageObjects(storagePaths);
-  return { reminders, emails, digests, purgedColumns: purged };
+  const automation = await runAutomationJobs(now);
+  return { reminders, emails, digests, purgedColumns: purged, ...automation };
 }

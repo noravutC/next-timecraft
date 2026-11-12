@@ -20,6 +20,9 @@ export type ActivityColumnRef = {
 /** A person as named at the time of the change. */
 export type ActivityPersonRef = { id: string; name: string };
 
+/** The rule that made a change, in words: it may be edited or deleted later. */
+export type ActivityAutomationRef = { ruleId: string; rule: string };
+
 type Empty = Record<string, never>;
 
 /** One change in a task's history: what changed, from what, to what. */
@@ -62,6 +65,8 @@ export const taskActivitiesTable = pgTable(
     actorId: uuid('actor_id').references(() => usersTable.id, {
       onDelete: 'set null',
     }),
+    // set when a rule made the change: then there is no actor
+    automation: jsonb('automation').$type<ActivityAutomationRef>(),
     type: text('type').$type<TaskActivityType>().notNull(),
     data: jsonb('data')
       .$type<TaskActivityEntry['data']>()

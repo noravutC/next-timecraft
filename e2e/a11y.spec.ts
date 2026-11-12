@@ -50,4 +50,25 @@ test.describe('accessibility', () => {
     });
     expect(await blockingViolations(page)).toEqual([]);
   });
+
+  test('automation, and the rule editor over it', async ({ page }) => {
+    await signInAsGuest(page);
+    await ensureBoard(page);
+    await page.getByRole('radio', { name: 'Automation' }).click();
+    await expect(
+      page
+        .getByRole('heading', { name: 'Let the board do the routine work' })
+        .or(page.getByText('This week so far:')),
+    ).toBeVisible({ timeout: 30_000 });
+    expect(await blockingViolations(page)).toEqual([]);
+
+    await page.getByRole('button', { name: 'New rule' }).click();
+    const sheet = page.getByRole('dialog', { name: 'New rule' });
+    await sheet
+      .getByRole('button', { name: /^A task moves to a column/ })
+      .click();
+    await sheet.getByRole('button', { name: 'Archive it' }).click();
+    await expect(sheet.getByText('In plain words')).toBeVisible();
+    expect(await blockingViolations(page)).toEqual([]);
+  });
 });

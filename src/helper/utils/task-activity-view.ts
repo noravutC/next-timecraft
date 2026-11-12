@@ -191,6 +191,10 @@ export function describeActivity(
   }
 }
 
+/** "Rule: when a task moves to Review", under a change a rule made. */
+export const automationNote = (rule: string): string =>
+  `Rule: ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`;
+
 export type ActivityDay = {
   key: string;
   label: string;

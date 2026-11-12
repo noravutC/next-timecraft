@@ -66,11 +66,11 @@ export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
       validUserIds = members.map((m) => m.userId);
     }
 
-    const {
-      assignees: updated,
-      added,
-      removed,
-    } = await setAssignees(taskId, validUserIds);
+    const { assignees, added, removed } = await setAssignees(
+      taskId,
+      validUserIds,
+    );
+    let updated = assignees;
     if (added.length > 0 || removed.length > 0) {
       const names = new Map(
         (await getPublicUsersByIds([...added, ...removed])).map((u) => [
@@ -79,7 +79,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
         ]),
       );
       const person = (id: string) => ({ id, name: names.get(id) ?? "" });
-      await recordTaskActivities(userId, [
+      const changedByRules = await recordTaskActivities(userId, [
         {
           taskId,
           entry: {
@@ -88,6 +88,10 @@ export const PATCH = createParamHandle<RouteParams, UpdateAssigneesBody>(
           },
         },
       ]);
+      // a rule may have put someone else on it as well
+      if (changedByRules.includes(taskId)) {
+        updated = await fetchAssignees(taskId);
+      }
     }
     triggerExclusive(
       request,

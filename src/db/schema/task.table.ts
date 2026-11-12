@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { taskPriorityLevelEnum } from "./enums";
+import { automationRulesTable } from "./automation-rule.table";
 import { columnsTable } from "./column.table";
 import { usersTable } from "./user.table";
 
@@ -50,6 +51,12 @@ export const tasksTable = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     completedFromColumnId: uuid("completed_from_column_id").references(
       (): AnyPgColumn => columnsTable.id,
+      { onDelete: "set null" },
+    ),
+    // the schedule rule that made this task, so the card can show it
+    // repeats; null for every other task, and once that rule is deleted
+    repeatRuleId: uuid("repeat_rule_id").references(
+      () => automationRulesTable.id,
       { onDelete: "set null" },
     ),
     createdAt: timestamp("created_at", { withTimezone: true })

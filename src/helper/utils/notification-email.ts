@@ -1,4 +1,5 @@
 import type {
+  AutomationNotificationPayload,
   CommentNotificationPayload,
   DueReminderNotificationPayload,
   InviteAcceptedNotificationPayload,
@@ -118,6 +119,17 @@ export const notificationEmailContent = (
           ? { label: 'Open board', href: url(boardUrl({ board: p.projectId })) }
           : { label: 'Open TimeCraft', href: url('/project') },
         why: 'You got this because you invited them. Change these emails in',
+      };
+    }
+    case 'automation': {
+      const p = payload as AutomationNotificationPayload;
+      return {
+        subject: `${p.rule}: ${p.taskTitle}`,
+        heading: `A rule on ${p.projectName} has something for you`,
+        body: `${p.rule}.`,
+        task: { title: p.taskTitle, meta: p.projectName },
+        cta: { label: 'Open task', href: taskLink(p) },
+        why: 'You got this because a rule on this board notifies you. Change rule emails in',
       };
     }
     case 'board_invite':

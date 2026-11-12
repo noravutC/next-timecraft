@@ -17,6 +17,7 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 - **AI Task Breakdown**: type a goal and Claude or Gemini streams it into actionable cards on the board
 - **Kanban Board**: drag-and-drop columns and cards with fractional ordering, WIP limits, filters and a calendar view
 - **Insights**: a board's numbers over 4 or 12 weeks (tasks finished and added per week, time to finish, how many met their due date, time in each column) beside how it stands now (what is overdue, stuck or blocked, what is due next, who holds what), and an optional weekly digest email
+- **Automation**: rules that act on a board for you (when a task moves, is finished or is assigned, when a due date comes up or passes, when a task sits still, or at a set time), task templates and repeating tasks, signed webhooks to other apps with retries, and a history of everything that ran
 - **Task detail**: subtasks, assignees, tags, due dates and reminders, dependencies (blocked tasks), estimates and logged time, an activity trail
 - **Comments**: mentions, reactions and image/video attachments
 - **My tasks, search and notifications**: everything assigned to you across boards, ⌘K search over tasks and boards, in-app and email notifications
@@ -37,6 +38,9 @@ Self-hosted on AWS EC2 (Docker + Caddy HTTPS) — see [Deployment](#deployment).
 
 **Insights**
 ![TimeCraft Insights](docs/screenshot-insights.png)
+
+**Automation**
+![TimeCraft Automation](docs/screenshot-automation.png)
 
 
 ## Tech Stack
@@ -164,6 +168,56 @@ The scheduled job sends it on Monday from 9:00 in the workspace's time zone
 and claims each week before sending, so two runs at once send it once. A
 week with nothing to report is not sent.
 
+## Automation: design notes
+
+Automation is the fourth view of a board. It holds four things: rules,
+task templates, webhooks, and the history of what ran.
+
+**Rules.** A rule reads "When this happens, only if that holds, then do
+these things". There are ten triggers and ten actions, and the page shows
+every rule as that sentence.
+
+- Every change to a task already passes through one function, the one that
+  writes its history (`recordTaskActivities`). That is the single place
+  rules and webhooks listen, so no route has to remember to tell them.
+- A rule that waits for a change runs in the request that made the change.
+  The response and the realtime events already carry what the rule did, so
+  the card never shows a state the rule is about to change.
+- What a rule does is a change like any other, so it can start other
+  rules. A chain stops after three rules, and a rule never runs twice for
+  the same task in one chain. The stop is written to History.
+- A step that would leave the task as it already is, is skipped. Running a
+  rule twice changes nothing the second time.
+- A rule that points at a column, label, person or template that is gone
+  is paused with the reason ("Needs a fix") until it is saved again.
+- Rules that wait for a date or a time run from the scheduled job, every
+  five minutes. A schedule is claimed by moving its next time forward in
+  one statement, so two job runs never both take the same occurrence, and
+  a schedule missed while the job was down runs once, not once per miss.
+  Date rules claim a row per rule, task and date, so each fires once.
+- A repeating task is a rule "at a set time" that creates a task from a
+  template. Times are in the workspace's zone.
+
+**Webhooks.** A webhook tells another app what happens on a board.
+
+- The message is written to `webhook_deliveries` when the event happens
+  (the outbox), and sent after the response has gone out. If the receiver
+  does not answer with a 2xx it is tried again: five tries in all, about
+  half a day apart at the longest. Every try is in History, and one that
+  failed can be sent again by hand.
+- Each request is signed (`X-TimeCraft-Signature`, the HMAC-SHA256 of the
+  body with the webhook's secret) and carries an id
+  (`X-TimeCraft-Delivery`) the receiver can use to drop a repeat.
+- The secret is shown once and stored encrypted. Only owners and admins of
+  a board see its webhooks: an address can carry a token.
+- A webhook can only reach the public internet. The address must be
+  https, private and link-local ranges are refused when the connection is
+  made (so a name cannot resolve to something safe for a check and
+  something else for the request), redirects are not followed, and the
+  receiver has ten seconds to answer.
+- The shared guest workspace has no webhooks: nothing leaves the server on
+  the say of an account anyone can use.
+
 ## Testing
 
 - **Unit and component tests** (Vitest): pure logic runs in node; components
@@ -175,8 +229,8 @@ week with nothing to report is not sent.
 - **End to end** (Playwright): the real app on a throwaway Postgres in CI:
   sign-in, drag and drop, the task sheet, filters.
 - **Accessibility**: `e2e/a11y.spec.ts` runs axe against the landing page,
-  login and the board and fails on any serious or critical WCAG 2.1 A/AA
-  violation.
+  login, the board, Insights, Automation and the rule editor, and fails on
+  any serious or critical WCAG 2.1 A/AA violation.
 
 ## Deployment
 

@@ -10,6 +10,7 @@ import {
   Tag,
   Timer,
   User,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { PriorityBars } from '@/components/task-meta/priority-bars';
@@ -59,11 +60,14 @@ const ColumnChip = ({
 export const ActivityEntry = ({
   actorName,
   line,
+  rule = null,
   time,
   last,
 }: {
   actorName: string | null;
   line: ActivityLine;
+  /** "Rule: when …" when a rule made the change, not a person */
+  rule?: string | null;
   time: string;
   /** the last row of a day draws no rail below its icon */
   last: boolean;
@@ -79,9 +83,16 @@ export const ActivityEntry = ({
       )}
       <span
         aria-hidden
-        className="grid size-6 shrink-0 place-items-center rounded-full border border-line bg-background text-ink-subtle"
+        className={cn(
+          'grid size-6 shrink-0 place-items-center rounded-full border',
+          rule
+            ? 'border-ink bg-ink text-background'
+            : 'border-line bg-background text-ink-subtle',
+        )}
       >
-        {Icon ? (
+        {rule ? (
+          <Zap className="size-3" />
+        ) : Icon ? (
           <Icon className="size-3" />
         ) : (
           <PriorityBars
@@ -107,6 +118,11 @@ export const ActivityEntry = ({
           <span className="font-medium text-ink">{line.object}</span>
         )}
         {line.note && <span className="text-ink-subtle">{line.note}</span>}
+        {rule && (
+          <span className="basis-full text-xs leading-4 text-ink-subtle">
+            {rule}
+          </span>
+        )}
       </p>
       <time className="shrink-0 pt-0.5 text-xs leading-5 text-ink-subtle tabular-nums">
         {time}

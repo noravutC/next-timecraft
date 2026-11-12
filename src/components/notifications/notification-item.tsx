@@ -1,8 +1,8 @@
 'use client';
 
-import { CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/people/user-avatar';
+import { SystemMark } from './system-mark';
 import {
   formatNotificationTime,
   notificationParts,
@@ -31,9 +31,7 @@ export const NotificationItem = ({
       className="h-auto w-full items-start justify-start gap-3 rounded-lg px-3 py-2.5 text-left font-normal whitespace-normal hover:bg-surface focus-visible:bg-surface"
     >
       {parts.system ? (
-        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-warning-line bg-warning-soft text-warning">
-          <CalendarClock className="size-4" />
-        </span>
+        <SystemMark kind={parts.system} />
       ) : (
         <UserAvatar
           name={n.payload.actorName}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Search, Settings2 } from 'lucide-react';
+import { Search, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
@@ -15,6 +15,7 @@ import {
 } from './board-filter-menus';
 import { BoardViewSwitch } from './board-view-switch';
 import { BoardFilterChips } from './board-filter-chips';
+import { NewTaskButton } from './new-task-button';
 import { useBoardFilterBar } from './use-board-filter-bar';
 import { AiBreakdown } from './ai-breakdown';
 import type { TColumn } from './data';
@@ -25,7 +26,6 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   const filter = useBoardFilterBar(columns);
   const { draft, setDraft, activeCount } = filter;
   const setBoardDialog = useNavStore((s) => s.setBoardDialog);
-  const requestNewTask = useNavStore((s) => s.requestNewTask);
   const access = useBoardAccess();
   const canAddTasks = access.can('task:create');
   const addTasksBlockedReason = access.archived
@@ -35,7 +35,8 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
   return (
     <>
       {/* wraps on narrow screens: search gets its own row on phones;
-          at desktop width it is the same single 52px row */}
+          at desktop width it is the same single 52px row (the search
+          field only widens once four views and the filters all fit) */}
       <div className="flex min-h-13 shrink-0 flex-wrap items-center gap-2 border-b border-line bg-background px-5 py-2.25">
         <BoardViewSwitch />
         <span aria-hidden className="mx-1 hidden h-5 w-px bg-line sm:block" />
@@ -49,7 +50,7 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
             placeholder="Search tasks"
             aria-label="Search tasks"
             aria-keyshortcuts="/"
-            className="w-full border-line pr-8 pl-8 sm:w-40 lg:w-65"
+            className="w-full border-line pr-8 pl-8 sm:w-40 2xl:w-65"
             data-testid="board-filter-search"
           />
           {!draft && (
@@ -79,15 +80,11 @@ export function BoardFilterBar({ columns }: { columns: TColumn[] }) {
         >
           <Settings2 className="size-3.75" />
         </Button>
-        <Button
-          size="sm"
-          onClick={requestNewTask}
+        <NewTaskButton
+          columns={columns}
           disabled={!columns.length || !canAddTasks}
           title={canAddTasks ? undefined : addTasksBlockedReason}
-        >
-          <Plus className="size-3.75 stroke-2" />
-          <span className="sr-only sm:not-sr-only">New task</span>
-        </Button>
+        />
       </div>
 
       {activeCount > 0 && <BoardFilterChips filter={filter} />}

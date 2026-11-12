@@ -28,6 +28,29 @@ describe('notificationEmailContent', () => {
     );
   });
 
+  it('a rule’s notice says which rule and links to the task', () => {
+    const content = notificationEmailContent(
+      'automation',
+      {
+        taskId: t,
+        taskTitle: 'Build images',
+        projectId: p,
+        projectName: 'Website Relaunch',
+        rule: 'When a task is finished',
+        actorUserId: 'rule',
+        actorName: 'A rule',
+      },
+      options,
+    );
+    expect(content?.subject).toBe('When a task is finished: Build images');
+    expect(content?.heading).toBe(
+      'A rule on Website Relaunch has something for you',
+    );
+    expect(content?.cta.href).toBe(
+      `https://tc.example/project?board=${p}&task=${t}`,
+    );
+  });
+
   it('reminds with the due day in the workspace zone', () => {
     const content = notificationEmailContent(
       'due_reminder',

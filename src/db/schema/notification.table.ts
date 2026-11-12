@@ -19,6 +19,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "role_changed",
   "invite_accepted",
   "due_reminder",
+  "automation",
 ]);
 
 export type CommentNotificationPayload = {
@@ -98,6 +99,17 @@ export type DueReminderNotificationPayload = {
   actorName: string;
 };
 
+// sent by a rule's "Notify" step: the rule in words says why
+export type AutomationNotificationPayload = {
+  taskId: string;
+  taskTitle: string;
+  projectId: string;
+  projectName: string;
+  rule: string;
+  actorUserId: string;
+  actorName: string;
+};
+
 export type NotificationPayload =
   | CommentNotificationPayload
   | BoardInviteNotificationPayload
@@ -106,7 +118,8 @@ export type NotificationPayload =
   | TaskAssignedNotificationPayload
   | RoleChangedNotificationPayload
   | InviteAcceptedNotificationPayload
-  | DueReminderNotificationPayload;
+  | DueReminderNotificationPayload
+  | AutomationNotificationPayload;
 
 export const notificationsTable = pgTable(
   "notifications",

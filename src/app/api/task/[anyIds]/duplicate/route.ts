@@ -10,6 +10,7 @@ import {
 } from '@/db/uniq-query/task/activity-utils';
 import { fetchSubtaskProgress } from '@/db/uniq-query/task/subtask-progress';
 import { duplicateTask } from '@/db/uniq-query/task/task-copy-utils';
+import { refreshTasks } from '@/db/uniq-query/task/task-utils';
 import { NotFoundError } from '@/lib/api/errors';
 import { createParamHandle } from '@/lib/api/handle';
 import { parseId } from '@/lib/api/params';
@@ -29,18 +30,20 @@ export const POST = createParamHandle<RouteParams>(
 
     const result = await duplicateTask(taskId);
     if (!result) throw new NotFoundError('Task not found');
-    const { task, projectId } = result;
+    const { projectId } = result;
 
-    const columnRefs = await getColumnRefs([task.columnId]);
-    await recordTaskActivities(userId, [
+    const columnRefs = await getColumnRefs([result.task.columnId]);
+    const changedByRules = await recordTaskActivities(userId, [
       {
-        taskId: task.id,
+        taskId: result.task.id,
         entry: {
           type: 'created',
-          data: { column: columnRefs.get(task.columnId) ?? null },
+          data: { column: columnRefs.get(result.task.columnId) ?? null },
         },
       },
     ]);
+    // a rule may have changed the copy already
+    const [task] = await refreshTasks([result.task], changedByRules);
     triggerExclusive(request, `project-${projectId}`, 'tasks-created', [
       task,
     ]).catch((e) => console.error('Pusher tasks-created failed:', e));

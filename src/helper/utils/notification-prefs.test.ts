@@ -7,6 +7,18 @@ import {
 } from './notification-prefs';
 
 describe('notification preferences', () => {
+  it('a rule’s notices arrive in the app, and by email only when asked', () => {
+    const prefs = withPrefDefaults({});
+    expect(wantsInApp(prefs, 'automation')).toBe(true);
+    expect(wantsEmail(prefs, 'automation')).toBe(false);
+    expect(
+      wantsEmail(
+        withPrefDefaults({ kinds: { automation: { email: true } } }),
+        'automation',
+      ),
+    ).toBe(true);
+  });
+
   it('starts from sensible defaults', () => {
     const prefs = withPrefDefaults({});
     expect(wantsInApp(prefs, 'comment_reply')).toBe(true);

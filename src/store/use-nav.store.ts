@@ -4,7 +4,7 @@ import { create } from 'zustand';
 // จากหลายที่ (ชื่อบอร์ดบน header, แถบเครื่องมือ, ⌘K)
 export type BoardDialog = 'switch' | 'create' | 'settings' | 'shortcuts' | null;
 
-export type BoardView = 'board' | 'calendar' | 'insights';
+export type BoardView = 'board' | 'calendar' | 'insights' | 'automation';
 
 export type BoardSettingsTab =
   | 'general'
@@ -25,7 +25,7 @@ interface NavState {
   /** เพิ่มขึ้นทุกครั้งที่กด "New task" — column แรกเห็นค่าเปลี่ยนแล้วเปิด composer บนสุด */
   newTaskSignal: number;
   requestNewTask: () => void;
-  /** the board as columns, as a month of due dates, or as its numbers */
+  /** the board as columns, a month of due dates, its numbers, or its rules */
   boardView: BoardView;
   setBoardView: (view: BoardView) => void;
 }

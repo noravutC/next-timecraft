@@ -9,6 +9,7 @@ export const PREF_KINDS = [
   'invites',
   'roles',
   'accepted',
+  'automation',
 ] as const;
 
 export type PrefKind = (typeof PREF_KINDS)[number];
@@ -36,6 +37,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
     invites: { app: true, email: true },
     roles: { app: true, email: false },
     accepted: { app: true, email: false },
+    automation: { app: true, email: false },
   },
 };
 
@@ -66,6 +68,7 @@ const KIND_OF: Record<NotificationRow['type'], PrefKind> = {
   role_changed: 'roles',
   invite_accepted: 'accepted',
   due_reminder: 'due',
+  automation: 'automation',
 };
 
 /** The settings row a notification type belongs to. */
@@ -128,5 +131,9 @@ export const PREF_KIND_COPY: Record<PrefKind, { label: string; hint: string }> =
     accepted: {
       label: 'Invitation accepted',
       hint: 'Someone joins through an invitation you sent.',
+    },
+    automation: {
+      label: 'Rules',
+      hint: 'A rule on a board is set to notify you.',
     },
   };

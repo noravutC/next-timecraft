@@ -26,6 +26,15 @@ export const triggerExclusive = (
   });
 
 /**
+ * To everyone on the channel, the person who made the change included:
+ * for what a rule or a scheduled job did, which no browser already shows.
+ */
+export const triggerAll = (channel: string, event: string, data: unknown) =>
+  pusherServer
+    .trigger(privateChannel(channel), event, data)
+    .catch((e) => console.error(`Pusher ${event} failed:`, e));
+
+/**
  * Shows a new notification in its recipient's bell; nothing if there's none.
  * Without a request (a scheduled job), nobody's socket is left out.
  */
