@@ -93,6 +93,8 @@ Four stores in `src/store/`:
 - **Indexes** — declared next to each table (third `pgTable` argument). Search and the board text filter rely on `pg_trgm` GIN indexes, so keep them as `ILIKE '%…%'`; ordering by `orderFraction` in SQL must say `COLLATE "C"` to use `tasks_column_order_idx`. Measure changes with `scripts/perf/` (k6, scratch DB only).
 - **Soft delete on columns** — `isDeleted`, `deletedAt`, `purgeAt` fields; always filter these out in queries
 - **Done column** — one column per board has `isDone` (unique index; new boards get it on the template's last column). "Done" is a place, not a flag on the task: a task is finished when it sits in that column (`finishColumnOf()`, `toggleTaskDone()` in `src/components/project/task-completion.ts`). `tasks.completedAt` / `completedFromColumnId` are maintained by Postgres triggers (migration `0023`) on every path that moves a task or flips the flag, so app code never writes them.
+- **Insights** — the third board view (`?view=insights`, `src/app/(main)/project/_components/insights/`). `getBoardInsights()` in `src/db/uniq-query/project/insights-utils.ts` counts everything in SQL from `tasks.completedAt`, `createdAt` and `dueDate`, the Done column and `task_activities` (no reporting table). The page shows two groups: the chosen period (finished, new, time to finish, on time, time in each column) and right now (open, overdue, needs attention, coming up, workload). Week and period math, and the copy shared with the email, are in `src/helper/utils/insights.ts`; what the page draws is derived in `insights-operations.ts` beside the components. "Stuck" = out of the first column and no column change for `STUCK_AFTER_DAYS`; "Coming up" = due within `UPCOMING_DAYS`.
+- **Weekly digest** — a row in `digest_subscriptions` means it is on for that person on that board. `sendWeeklyDigests()` in `src/lib/jobs/run-jobs.ts` sends on Monday from 9:00 in the workspace's zone and claims `lastSentWeek` before sending. The email is built by `buildWeeklyDigest()` (`src/lib/email/weekly-digest.ts`), which the preview route reuses.
 - **`tags`** — `text[]` array on both projects and tasks
 
 ### RBAC (Standard pattern — use this, not ad-hoc checks)
@@ -165,6 +167,8 @@ Relevant routes for the board:
 - `PATCH/DELETE /api/project/[id]` — update / delete project
 - `POST /api/column` — create column; `PATCH/DELETE /api/column/[ids]`
 - `POST /api/task/columns` — bulk-fetch tasks by column ids
+- `POST /api/project/[id]/insights` — the Insights view's numbers for 4 or 12 weeks
+- `GET/PUT /api/project/[id]/digest` — your weekly digest setting; `GET …/digest/preview` renders this week's email
 - `PATCH/DELETE /api/task/[ids]` — update / delete tasks (comma-separated ids)
 
 ### Real-time
@@ -211,7 +215,7 @@ ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns
 RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
 EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
 APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
-CRON_SECRET=                     # optional: guards /api/cron/run (reminders, notification emails, column purge); without it the route refuses every call
+CRON_SECRET=                     # optional: guards /api/cron/run (reminders, notification emails, weekly digests, column purge); without it the route refuses every call
 NEXTAUTH_URL=                    # public site URL (OAuth callbacks)
 NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
 SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only

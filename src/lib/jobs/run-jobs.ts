@@ -1,6 +1,11 @@
 import { createNotifications } from '@/db/uniq-query/notification/notification-utils';
 import { purgeExpiredColumns } from '@/db/uniq-query/jobs/column-purge';
 import {
+  claimDigest,
+  listDigestSubscriptions,
+  releaseDigest,
+} from '@/db/uniq-query/project/digest-utils';
+import {
   assigneesByTask,
   findReminderCandidates,
   markReminded,
@@ -11,6 +16,7 @@ import {
   finishJob,
 } from '@/db/uniq-query/jobs/notification-jobs';
 import { reminderIsDue } from '@/helper/utils/due-reminder';
+import { digestDueWeek } from '@/helper/utils/insights';
 import { notificationEmailContent } from '@/helper/utils/notification-email';
 import {
   wantsEmail,
@@ -19,6 +25,8 @@ import {
 } from '@/helper/utils/notification-prefs';
 import { appUrl, sendEmail } from '@/lib/email/send-email';
 import { NotificationEmail } from '@/lib/email/templates/notification-email';
+import { buildWeeklyDigest } from '@/lib/email/weekly-digest';
+import { logger } from '@/lib/logger';
 import { pushNotification } from '@/lib/pusher-server';
 import { removeStorageObjects } from '@/lib/supabase-storage';
 import type { NotificationPayload, NotificationRow } from '@/types';
@@ -126,11 +134,53 @@ async function deliverNotificationEmails(now: Date): Promise<number> {
   return sent;
 }
 
+/**
+ * Monday's digest, from 9:00 in each board's zone, to everyone who turned
+ * it on. Each week is claimed before it is sent, so it goes out once.
+ */
+async function sendWeeklyDigests(now: Date): Promise<number> {
+  const due = (await listDigestSubscriptions())
+    .map((sub) => ({ ...sub, weekKey: digestDueWeek(now, sub.timeZone) }))
+    .filter((sub) => sub.weekKey && sub.weekKey !== sub.lastSentWeek);
+  // one email per board and week, built on first use
+  const digests = new Map<string, ReturnType<typeof buildWeeklyDigest>>();
+  let sent = 0;
+
+  for (const sub of due) {
+    const weekKey = sub.weekKey as string;
+    if (!(await claimDigest(sub.id, weekKey))) continue;
+    // "Email notifications" off silences this too
+    if (!withPrefDefaults(sub.prefs).email) continue;
+    const key = `${sub.projectId}:${weekKey}`;
+    if (!digests.has(key)) {
+      digests.set(key, buildWeeklyDigest(sub.projectId, weekKey));
+    }
+    try {
+      const digest = await digests.get(key);
+      if (!digest || digest.empty) continue;
+      const result = await sendEmail({
+        to: sub.email,
+        subject: digest.subject,
+        email: digest.email,
+        kind: 'weekly_digest',
+      });
+      if (result === 'failed') throw new Error('email failed');
+      if (result === 'sent') sent += 1;
+    } catch (err) {
+      // the claim goes back, so the next run tries this one again
+      logger.error({ err, projectId: sub.projectId }, 'weekly digest failed');
+      await releaseDigest(sub.id, sub.lastSentWeek);
+    }
+  }
+  return sent;
+}
+
 /** Everything that runs on a schedule: see /api/cron/run. */
 export async function runJobs(now: Date = new Date()) {
   const reminders = await sendDueReminders(now);
   const emails = await deliverNotificationEmails(now);
+  const digests = await sendWeeklyDigests(now);
   const { purged, storagePaths } = await purgeExpiredColumns(now);
   await removeStorageObjects(storagePaths);
-  return { reminders, emails, purgedColumns: purged };
+  return { reminders, emails, digests, purgedColumns: purged };
 }

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { INSIGHT_WEEKS } from '@/helper/utils/insights';
+import { isTimeZone } from '@/helper/utils/time-zone';
 
 const DATA_URL_IMAGE_PATTERN =
   /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/;
@@ -70,3 +72,16 @@ export type ChangeMemberRoleBody = z.infer<typeof changeMemberRoleSchema>;
 export const transferOwnershipSchema = z.object({ userId: z.guid() });
 
 export type TransferOwnershipBody = z.infer<typeof transferOwnershipSchema>;
+
+export const insightsRequestSchema = z.object({
+  // 4 or 12: the periods the view offers
+  weeks: z.union(INSIGHT_WEEKS.map((n) => z.literal(n))),
+  // the zone the person is in: weeks and "overdue" follow their calendar
+  timeZone: z.string().max(64).refine(isTimeZone, 'Unknown time zone'),
+});
+
+export type InsightsRequestBody = z.infer<typeof insightsRequestSchema>;
+
+export const setDigestSchema = z.object({ on: z.boolean() });
+
+export type SetDigestBody = z.infer<typeof setDigestSchema>;

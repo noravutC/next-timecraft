@@ -18,11 +18,11 @@
 | 5 | Calendar View | ทำแล้ว | รวม iCal feed |
 | 6 | Time Tracking | ทำบางส่วน | estimate + บันทึกเวลาต่อ task ยังไม่มีรายงาน |
 | 7 | Activity Log | ทำแล้ว | `task_activities` + timeline ใน task sheet |
-| 8 | Email Digest + Reply | ทำบางส่วน | อีเมลแจ้งเตือนและ reminder มีแล้ว ยังไม่มี digest และตอบกลับทางอีเมล |
+| 8 | Email Digest + Reply | ทำบางส่วน | อีเมลแจ้งเตือน, reminder และ weekly digest รายบอร์ดมีแล้ว ยังไม่มีตอบกลับทางอีเมล |
 | 9 | Task Templates | ยังไม่ทำ | มีเฉพาะ board template |
 | 10 | Automation Rules | ยังไม่ทำ | roadmap ขั้น 7 (Workflow engine) |
 | 11 | Public Share View | ยังไม่ทำ | |
-| 12 | Dashboard / Analytics | ยังไม่ทำ | roadmap ขั้น 6 (Insights) |
+| 12 | Dashboard / Analytics | ทำแล้ว | มุมมอง Insights ของบอร์ด (งานเสร็จและงานใหม่รายสัปดาห์, time to finish, on time, เวลาในแต่ละคอลัมน์, งานที่ต้องดู, งานใกล้ครบกำหนด, workload) |
 | 13 | Task Linking | ทำบางส่วน | dependencies และป้าย Blocked มีแล้ว |
 | 14 | Saved Filters | ยังไม่ทำ | roadmap ขั้น 9 (Views) |
 | 15 | Keyboard Shortcuts Overlay | ทำแล้ว | |

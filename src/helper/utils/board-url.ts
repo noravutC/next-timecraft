@@ -5,8 +5,11 @@ import { writeFilterUrl } from './filter-url';
 /** Where a board link points: the open board and, optionally, an open task. */
 export type BoardUrlState = { board: string | null; task: string | null };
 
-/** The board as columns (the default, left out of links) or as a calendar. */
-export type BoardUrlView = 'board' | 'calendar';
+/**
+ * The board as columns (the default, left out of links), as a calendar or
+ * as its numbers.
+ */
+export type BoardUrlView = 'board' | 'calendar' | 'insights';
 
 export const BOARD_PATH = '/project';
 
@@ -24,8 +27,10 @@ export const readBoardUrl = (params: URLSearchParams): BoardUrlState => ({
   task: idParam(params, 'task') ?? idParam(params, 'taskId'),
 });
 
-export const readBoardView = (params: URLSearchParams): BoardUrlView =>
-  params.get('view') === 'calendar' ? 'calendar' : 'board';
+export const readBoardView = (params: URLSearchParams): BoardUrlView => {
+  const view = params.get('view');
+  return view === 'calendar' || view === 'insights' ? view : 'board';
+};
 
 /**
  * `/project?board=…&task=…`, leaving out whatever is null, then the view
@@ -43,7 +48,7 @@ export const boardUrl = ({
   const params = new URLSearchParams();
   if (board) params.set('board', board);
   if (task) params.set('task', task);
-  if (view === 'calendar') params.set('view', view);
+  if (view && view !== 'board') params.set('view', view);
   if (filter) writeFilterUrl(params, filter);
   const query = params.toString();
   return query ? `${BOARD_PATH}?${query}` : BOARD_PATH;

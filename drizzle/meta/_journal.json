@@ -162,6 +162,13 @@
       "when": 1794362805280,
       "tag": "0023_done_column",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794384849828,
+      "tag": "0024_digest_subscriptions",
+      "breakpoints": true
     }
   ]
 }

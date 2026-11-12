@@ -1,5 +1,5 @@
 // app/api/cron/run/route.ts: POST = run the scheduled jobs (reminders,
-// notification emails, purging deleted columns). Called every few minutes
+// notification emails, weekly digests, purging deleted columns). Called every few minutes
 // by .github/workflows/run-jobs.yml with the CRON_SECRET.
 
 import { timingSafeEqual } from 'crypto';

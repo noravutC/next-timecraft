@@ -16,7 +16,10 @@ import {
   TaskCache,
   TaskFilter,
   BlockerRef,
+  BoardInsights,
+  DigestState,
 } from "@/types";
+import type { InsightWeeks } from "@/helper/utils/insights";
 import type { ProjectSettings } from "@/types/project-settings";
 import type { TagRenames } from "@/helper/utils/tag-rename";
 
@@ -105,6 +108,38 @@ class ProjectService {
       .then((response) => response.data.data as Record<string, number>)
       .catch((error) => {
         throw error?.response?.data || new Error("Failed to count tags");
+      });
+  }
+
+  /** A board's numbers for the Insights view, counted in `timeZone`. */
+  async getInsights(
+    projectId: string,
+    body: { weeks: InsightWeeks; timeZone: string },
+  ): Promise<BoardInsights> {
+    return this.client
+      .post(`/project/${projectId}/insights`, body)
+      .then((response) => response.data.data as BoardInsights)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to load insights");
+      });
+  }
+
+  /** Whether you get the board's weekly digest email. */
+  async getDigest(projectId: string): Promise<DigestState> {
+    return this.client
+      .get(`/project/${projectId}/digest`)
+      .then((response) => response.data.data as DigestState)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to load the digest");
+      });
+  }
+
+  async setDigest(projectId: string, on: boolean): Promise<DigestState> {
+    return this.client
+      .put(`/project/${projectId}/digest`, { on })
+      .then((response) => response.data.updated as DigestState)
+      .catch((error) => {
+        throw error?.response?.data || new Error("Failed to save the digest");
       });
   }
 

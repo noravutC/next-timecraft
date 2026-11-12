@@ -97,6 +97,8 @@ interface EmailLayoutProps {
   afterCta?: ReactNode;
   /** why this email was sent */
   footer: ReactNode;
+  /** the card's width in px, for emails that carry more than a paragraph */
+  width?: number;
 }
 
 /** The frame every TimeCraft email shares: brand, heading, one button, footer. */
@@ -107,12 +109,13 @@ export const EmailLayout = ({
   cta,
   afterCta,
   footer,
+  width,
 }: EmailLayoutProps) => (
   <Html>
     <Head />
     <Preview>{preview}</Preview>
     <Body style={main}>
-      <Container style={card}>
+      <Container style={width ? { ...card, maxWidth: `${width}px` } : card}>
         {/* a PNG: email clients don't show SVG */}
         <Section style={brandRow}>
           <Row>

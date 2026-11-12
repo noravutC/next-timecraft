@@ -57,4 +57,13 @@ describe('board view in the URL', () => {
     );
     expect(readBoardView(new URLSearchParams('view=gantt'))).toBe('board');
   });
+
+  it('names the Insights view too', () => {
+    expect(boardUrl({ board: BOARD, view: 'insights' })).toBe(
+      `/project?board=${BOARD}&view=insights`,
+    );
+    expect(readBoardView(new URLSearchParams('view=insights'))).toBe(
+      'insights',
+    );
+  });
 });

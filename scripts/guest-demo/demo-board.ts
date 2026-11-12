@@ -42,12 +42,19 @@ export type DemoCard = {
   comments?: string[];
   assigned: boolean;
   description?: string;
+  /** days before the reset day it was created (default: that day) */
+  createdDaysAgo?: number;
+  /** days before the reset day it moved into its column (default: never) */
+  movedDaysAgo?: number;
+  /** the title of a card this one waits on */
+  blockedBy?: string;
 };
 
 export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Backlog',
     title: 'Draft pricing page copy',
+    createdDaysAgo: 9,
     labels: ['Content'],
     priority: 'low',
     dueInDays: null,
@@ -56,6 +63,7 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Backlog',
     title: 'Audit color contrast across the app',
+    createdDaysAgo: 3,
     labels: ['Design', 'A11y'],
     priority: 'medium',
     dueInDays: 14,
@@ -64,6 +72,7 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Backlog',
     title: 'Explore a calendar view for due dates',
+    createdDaysAgo: 16,
     labels: ['Research'],
     priority: 'low',
     dueInDays: null,
@@ -72,6 +81,7 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'To do',
     title: 'Set up Resend domain for invite emails',
+    createdDaysAgo: 6,
     labels: ['Infra'],
     priority: 'medium',
     dueInDays: 1,
@@ -84,6 +94,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'To do',
     title: 'Onboarding checklist for new boards',
+    createdDaysAgo: 5,
+    blockedBy: 'Set up Resend domain for invite emails',
     labels: ['Product'],
     priority: 'medium',
     dueInDays: null,
@@ -98,6 +110,7 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'To do',
     title: 'Brief for empty-state illustrations',
+    createdDaysAgo: 1,
     labels: ['Design'],
     priority: 'low',
     dueInDays: 12,
@@ -106,6 +119,9 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'In progress',
     title: 'Migrate sign-in to Auth.js v5',
+    // moved within the week: older than that it would count as stuck
+    createdDaysAgo: 13,
+    movedDaysAgo: 4,
     labels: ['Auth', 'Infra'],
     priority: 'high',
     dueInDays: 6,
@@ -127,6 +143,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'In progress',
     title: 'Fix drag preview offset in Safari',
+    createdDaysAgo: 6,
+    movedDaysAgo: 2,
     labels: ['Bug'],
     priority: 'high',
     dueInDays: -1,
@@ -141,9 +159,11 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'In progress',
     title: 'Command menu for switching boards',
+    createdDaysAgo: 8,
+    movedDaysAgo: 1,
     labels: ['Product'],
     priority: 'medium',
-    dueInDays: null,
+    dueInDays: 3,
     assigned: true,
     subtasks: [
       ['Open with Cmd or Ctrl + K', true],
@@ -155,6 +175,9 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Review',
     title: 'Realtime presence on cards',
+    // in Review for over a week: Insights lists it as stuck
+    createdDaysAgo: 14,
+    movedDaysAgo: 9,
     labels: ['Realtime'],
     priority: 'medium',
     dueInDays: null,
@@ -176,6 +199,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Review',
     title: 'Rate limit the AI breakdown endpoint',
+    createdDaysAgo: 11,
+    movedDaysAgo: 8,
     labels: ['Backend'],
     priority: 'medium',
     dueInDays: null,
@@ -184,6 +209,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Done',
     title: 'Lazy-load columns, 20 cards per page',
+    createdDaysAgo: 5,
+    movedDaysAgo: 0,
     labels: ['Performance'],
     priority: 'medium',
     dueInDays: null,
@@ -198,6 +225,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Done',
     title: 'Build images on GitHub Actions',
+    createdDaysAgo: 2,
+    movedDaysAgo: 0,
     labels: ['Infra'],
     priority: 'low',
     dueInDays: null,
@@ -206,6 +235,8 @@ export const DEMO_CARDS: DemoCard[] = [
   {
     column: 'Done',
     title: 'Comment attachments with previews',
+    createdDaysAgo: 4,
+    movedDaysAgo: 0,
     labels: ['Product'],
     priority: 'medium',
     dueInDays: null,
@@ -215,4 +246,66 @@ export const DEMO_CARDS: DemoCard[] = [
       'Previews render in the comment list.',
     ],
   },
+];
+
+/** The columns a card passes through before Done, in order. */
+export const DEMO_LANES = [
+  'Backlog',
+  'To do',
+  'In progress',
+  'Review',
+] as const;
+
+/**
+ * Work finished in earlier weeks, archived so the board stays short. The
+ * Insights view draws its chart, its medians and "Time in each column" from
+ * it. Each row: title, days before the reset day it was finished, the days
+ * it spent in Backlog, To do, In progress and Review (0 = skipped), then
+ * its due date as days after the day it was finished (negative = finished
+ * late; left out = no due date).
+ */
+export const DEMO_HISTORY: [
+  title: string,
+  doneDaysAgo: number,
+  backlog: number,
+  todo: number,
+  inProgress: number,
+  review: number,
+  dueAfterDone?: number,
+][] = [
+  ['Set up the Next.js app and CI', 80, 0.5, 0.5, 2, 1, 2],
+  ['Sign in with Google', 79, 1, 0.5, 2.5, 1.5, 1],
+  ['Board and column schema', 78, 0.5, 1, 1.5, 2],
+  ['Create and rename columns', 73, 1, 0.5, 1, 1, 3],
+  ['Drag cards between columns', 72, 1.5, 0.5, 3, 2.5, -2],
+  ['Card ordering that survives a reload', 71, 1, 1, 2, 1.5, 1],
+  ['Task sheet with description', 70, 0.5, 0.5, 2, 2, 2],
+  ['Due dates on cards', 66, 2, 0.5, 1, 1, 0],
+  ['Labels and label colors', 64, 1, 0.5, 1.5, 2],
+  ['Invite people by email', 59, 1.5, 1, 2.5, 3, -1],
+  ['Roles for board members', 58, 1, 0.5, 2, 2.5, 2],
+  ['Realtime updates between browsers', 57, 2, 1, 3, 2, 1],
+  ['Comments on tasks', 56, 0.5, 0.5, 1.5, 1.5, 3],
+  ['Mentions in comments', 55, 1, 0.5, 1, 2],
+  ['Notification bell', 50, 1, 1, 1.5, 1, 1],
+  ['Subtasks with progress', 45, 0.5, 0.5, 1.5, 2, 2],
+  ['Filter the board by label and person', 44, 1.5, 0.5, 2, 2.5, -3],
+  ['Search across boards', 43, 1, 1, 2, 1.5, 1],
+  ['Archive and restore tasks', 42, 0.5, 0.5, 1, 1],
+  ['Board settings dialog', 38, 1, 0.5, 1.5, 2, 2],
+  ['Task history', 37, 2, 0.5, 1.5, 1.5, 0],
+  ['Due date reminders', 36, 1, 1, 2, 3, -1],
+  ['Calendar view', 31, 1.5, 0.5, 2.5, 2, 1],
+  ['Calendar feed for other apps', 30, 0.5, 0.5, 1, 1.5],
+  ['Time tracking on tasks', 29, 1, 0.5, 2, 2, 2],
+  ['Export a board as CSV', 28, 0.5, 0.5, 0.5, 1, 3],
+  ['Undo for moves and archives', 24, 1, 1, 1.5, 2.5, -2],
+  ['Keyboard shortcuts', 22, 0.5, 0.5, 1, 1],
+  ['Task dependencies', 17, 1.5, 0.5, 2, 2, 1],
+  ['Done column and the finished tick', 16, 1, 0.5, 2, 1.5, 2],
+  ['Faster first page of the board', 15, 0.5, 0.5, 1, 1],
+  ['Board search with an index', 14, 1, 0.5, 1.5, 2, 1],
+  ['Sentry and traces for the API', 10, 1, 0.5, 2, 1.5, 2],
+  ['Accessibility checks in CI', 9, 0.5, 0.5, 1.5, 2, 0],
+  ['Rollback in the deploy script', 8, 1, 0.5, 1, 1.5, 1],
 ];
