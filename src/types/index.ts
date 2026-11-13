@@ -10,3 +10,4 @@ export * from "./organization";
 export * from "./template-column";
 export * from "./task-activity";
 export * from "./insights";
+export * from "./automation";

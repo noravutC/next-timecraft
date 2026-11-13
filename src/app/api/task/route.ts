@@ -5,6 +5,7 @@ import {
   getColumnRefs,
   recordTaskActivities,
 } from "@/db/uniq-query/task/activity-utils";
+import { refreshTasks } from "@/db/uniq-query/task/task-utils";
 import { createHandle } from "@/lib/api/handle";
 import { NotFoundError } from "@/lib/api/errors";
 import { triggerExclusive } from "@/lib/pusher-server";
@@ -41,15 +42,15 @@ export const POST = createHandle<CreateTaskBody>(
       updatedAt: new Date(),
     }));
 
-    const createdTasks = await db
+    const inserted = await db
       .insert(tasksTable)
       .values(rowsToInsert)
       .returning();
 
     const columnRefs = await getColumnRefs(columnIds);
-    await recordTaskActivities(
+    const changedByRules = await recordTaskActivities(
       userId,
-      createdTasks.map((task) => ({
+      inserted.map((task) => ({
         taskId: task.id,
         entry: {
           type: "created",
@@ -57,6 +58,8 @@ export const POST = createHandle<CreateTaskBody>(
         },
       })),
     );
+    // a rule may have changed a new task already
+    const createdTasks = await refreshTasks(inserted, changedByRules);
 
     const projectByColumn = new Map(
       columnLinks.map((c) => [c.columnId, c.projectId]),

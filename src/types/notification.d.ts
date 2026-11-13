@@ -9,6 +9,7 @@ export type {
   WorkspaceInviteNotificationPayload,
   RoleChangedNotificationPayload,
   InviteAcceptedNotificationPayload,
+  AutomationNotificationPayload,
   DueReminderNotificationPayload,
 } from "@/db/schema/notification.table";
 

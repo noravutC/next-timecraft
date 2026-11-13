@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  automationNote,
   describeActivity,
   formatEstimate,
   groupActivityByDay,
@@ -125,6 +126,7 @@ describe('groupActivityByDay', () => {
     data: {},
     createdAt: new Date(iso),
     actor: null,
+    automation: null,
   });
 
   it('groups by local day and keeps the given order', () => {
@@ -152,6 +154,7 @@ describe('groupActivityByDay labels', () => {
       data: {},
       createdAt: new Date(iso),
       actor: null,
+      automation: null,
     });
     const days = groupActivityByDay(
       [at('2030-02-01T10:00:00'), at('2030-01-31T10:00:00')],
@@ -178,5 +181,16 @@ describe('time logs in the history', () => {
       object: '45m',
       note: 'on Nov 6 · callback fix',
     });
+  });
+});
+
+describe('a change a rule made', () => {
+  it('names the rule under it, as part of a sentence', () => {
+    expect(automationNote('When a task moves to Review')).toBe(
+      'Rule: when a task moves to Review',
+    );
+    expect(automationNote('Every Monday at 9:00')).toBe(
+      'Rule: every Monday at 9:00',
+    );
   });
 });

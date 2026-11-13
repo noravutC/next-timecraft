@@ -3,7 +3,10 @@ import { columnsTable, tasksTable } from "@/db/schema";
 import { getActiveColumnLinks } from "@/db/uniq-query/column/column-utils";
 import { getAttachmentStoragePathsByTaskIds } from "@/db/uniq-query/comment/comment-utils";
 import { removeNonMemberAssignees } from "@/db/uniq-query/task/assignee-utils";
-import { getTasksByIds } from "@/db/uniq-query/task/task-utils";
+import {
+  getTasksByIds,
+  refreshTasks,
+} from "@/db/uniq-query/task/task-utils";
 import {
   getColumnRefs,
   recordTaskActivities,
@@ -11,6 +14,7 @@ import {
 import { diffTaskActivity } from "@/helper/utils/task-activity";
 import { BadRequestError, NotFoundError } from "@/lib/api/errors";
 import { createParamHandle } from "@/lib/api/handle";
+import { announceTaskEvent } from "@/lib/automation/engine";
 import { parseIdList } from "@/lib/api/params";
 import { triggerExclusive } from "@/lib/pusher-server";
 import { authorizeOrThrow } from "@/lib/rbac/authorize";
@@ -79,7 +83,7 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
       (await getTasksByIds(targetIds)).map((t) => [t.id, t]),
     );
 
-    const updatedTasks = await db.transaction(async (tx) => {
+    const savedTasks = await db.transaction(async (tx) => {
       const rows = [];
 
       for (const taskId of targetIds) {
@@ -131,12 +135,12 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
     });
 
     const columnRefs = await getColumnRefs([
-      ...updatedTasks.map((t) => t.columnId),
+      ...savedTasks.map((t) => t.columnId),
       ...[...beforeById.values()].map((t) => t.columnId),
     ]);
-    await recordTaskActivities(
+    const changedByRules = await recordTaskActivities(
       userId,
-      updatedTasks.flatMap((after) => {
+      savedTasks.flatMap((after) => {
         const before = beforeById.get(after.id);
         if (!before) return [];
         return diffTaskActivity(before, after, columnRefs).map((entry) => ({
@@ -145,6 +149,8 @@ export const PATCH = createParamHandle<RouteParams, UpdateTaskBody>(
         }));
       }),
     );
+    // what a rule went on to change is part of the answer
+    const updatedTasks = await refreshTasks(savedTasks, changedByRules);
 
     const projectByTask = new Map(
       existingTaskLinks.map((l) => [l.taskId, l.projectId]),
@@ -217,7 +223,7 @@ export const GET = createParamHandle<RouteParams>(
 
 export const DELETE = createParamHandle<RouteParams>(
   {},
-  async ({ request, params, userId }) => {
+  async ({ request, params, userId, session }) => {
     const taskIds = parseIdList(params.anyIds);
 
     const existingTaskLinks = await getTaskProjectLinks(taskIds);
@@ -229,6 +235,10 @@ export const DELETE = createParamHandle<RouteParams>(
       ...new Set(existingTaskLinks.map((task) => task.projectId)),
     ];
     await authorizeOrThrow(userId, uniqProjectIds, "task:delete");
+    // as they were, for the webhooks that hear about it afterwards
+    const doomed = new Map(
+      (await getTasksByIds(taskIds)).map((t) => [t.id, t]),
+    );
 
     // เก็บ path ไฟล์แนบก่อนลบ — cascade จะพาแถว attachment (และ path) หายไป
     // ถ้าไม่เก็บตอนนี้ ไฟล์ใน storage จะกลายเป็นขยะที่ตามลบย้อนหลังไม่ได้
@@ -255,6 +265,13 @@ export const DELETE = createParamHandle<RouteParams>(
       triggerExclusive(request, `project-${pid}`, "tasks-deleted", ids).catch(
         (e) => console.error("Pusher tasks-deleted failed:", e),
       );
+      await announceTaskEvent({
+        projectId: pid,
+        event: "task.removed",
+        tasks: ids.flatMap((id) => doomed.get(id) ?? []),
+        change: "deleted this task",
+        actorName: session.user?.name ?? null,
+      });
     }
 
     return NextResponse.json(

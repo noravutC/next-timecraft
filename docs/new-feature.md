@@ -13,14 +13,14 @@
 |---|---|---|---|
 | 1 | Global Search (⌘K) | ทำแล้ว | ใช้ `ILIKE` บน `pg_trgm` GIN index แทน `tsvector` (รองรับภาษาไทย) |
 | 2 | My Tasks | ทำแล้ว | หน้า `/my-tasks` |
-| 3 | Recurring Tasks | ยังไม่ทำ | |
+| 3 | Recurring Tasks | ทำแล้ว | เป็น rule แบบ "At a set time" ที่สร้าง task จาก template (มุมมอง Automation) ไม่ได้ใช้ `recurrence_rule` บน task |
 | 4 | Bulk Actions | ยังไม่ทำ | อยู่ใน engineering roadmap ขั้น 10 |
 | 5 | Calendar View | ทำแล้ว | รวม iCal feed |
 | 6 | Time Tracking | ทำบางส่วน | estimate + บันทึกเวลาต่อ task ยังไม่มีรายงาน |
 | 7 | Activity Log | ทำแล้ว | `task_activities` + timeline ใน task sheet |
 | 8 | Email Digest + Reply | ทำบางส่วน | อีเมลแจ้งเตือน, reminder และ weekly digest รายบอร์ดมีแล้ว ยังไม่มีตอบกลับทางอีเมล |
-| 9 | Task Templates | ยังไม่ทำ | มีเฉพาะ board template |
-| 10 | Automation Rules | ยังไม่ทำ | roadmap ขั้น 7 (Workflow engine) |
+| 9 | Task Templates | ทำแล้ว | `task_templates` รายบอร์ด สร้างจากหน้า Automation หรือ "Save as template" ในเมนูของ task |
+| 10 | Automation Rules | ทำแล้ว | มุมมอง Automation: rule แบบ When / Only if / Then (10 trigger, 10 action), webhook ขาออกพร้อมลายเซ็นและ retry, ประวัติการรัน |
 | 11 | Public Share View | ยังไม่ทำ | |
 | 12 | Dashboard / Analytics | ทำแล้ว | มุมมอง Insights ของบอร์ด (งานเสร็จและงานใหม่รายสัปดาห์, time to finish, on time, เวลาในแต่ละคอลัมน์, งานที่ต้องดู, งานใกล้ครบกำหนด, workload) |
 | 13 | Task Linking | ทำบางส่วน | dependencies และป้าย Blocked มีแล้ว |

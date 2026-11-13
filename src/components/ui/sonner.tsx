@@ -11,7 +11,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group"
+      // an open sheet or dialog makes the rest of the page inert: a toast
+      // and its button must still take a click
+      className="toaster group pointer-events-auto"
       toastOptions={{
         unstyled: true,
         classNames: {

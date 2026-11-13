@@ -5,8 +5,12 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useBoardAccess } from '@/components/project/use-board-access';
 import { offerUndo } from '@/components/undo/offer-undo';
+import { repeatRule, templateFromTask } from '@/helper/utils/automation';
 import { boardsToMoveTo } from '@/helper/utils/board-switcher';
-import { useProjectStore } from '@/store';
+import { useNavStore, useProjectStore } from '@/store';
+import { useAssigneeStore } from '@/store/use-assignee.store';
+import { useAutomationStore } from '@/store/use-automation.store';
+import { useSubtaskStore } from '@/store/use-subtask.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import { useTaskStore } from '@/store/use-task.store';
 import type { ProjectCache, Task } from '@/types';
@@ -14,7 +18,10 @@ import type { ProjectCache, Task } from '@/types';
 const failed = (error: unknown, fallback: string) =>
   toast.error((error as { message?: string })?.message ?? fallback);
 
-/** Duplicate, move to another board, archive, delete: the task sheet's ⋯. */
+/**
+ * Duplicate, save as a template, repeat, move to another board, archive,
+ * delete: the task sheet's ⋯.
+ */
 export function useTaskActions(task: Task | undefined) {
   const { data: session } = useSession();
   const access = useBoardAccess();
@@ -33,6 +40,25 @@ export function useTaskActions(task: Task | undefined) {
     session?.user?.id ?? null,
   );
 
+  // the task as a template: what it has now, with its subtasks and people
+  const saveTemplate = async () => {
+    if (!task || !projectIsUsing) return null;
+    const automation = useAutomationStore.getState();
+    automation.useBoard(projectIsUsing);
+    return automation.saveTemplate(
+      null,
+      templateFromTask(
+        task,
+        (useSubtaskStore.getState().byTask[task.id]?.items ?? []).map(
+          (s) => s.title,
+        ),
+        (useAssigneeStore.getState().byTask[task.id]?.items ?? []).map(
+          (a) => a.userId,
+        ),
+      ),
+    );
+  };
+
   const setArchived = (archived: boolean) =>
     task &&
     updateTasks(
@@ -43,6 +69,9 @@ export function useTaskActions(task: Task | undefined) {
   return {
     can: {
       duplicate: access.can('task:create'),
+      template: access.can('template:manage'),
+      // a repeating task is a rule on a schedule: for those who manage rules
+      repeat: access.can('automation:manage'),
       move: access.can('task:update') && targets.length > 0,
       archive: access.can('task:update'),
       delete: access.can('task:delete'),
@@ -55,6 +84,28 @@ export function useTaskActions(task: Task | undefined) {
         toast.success('Task duplicated');
       } catch (error) {
         failed(error, 'Couldn’t duplicate the task');
+      }
+    },
+    saveAsTemplate: async () => {
+      try {
+        if (await saveTemplate()) toast.success('Saved as a template');
+      } catch (error) {
+        failed(error, 'Couldn’t save it as a template');
+      }
+    },
+    /** Opens a schedule rule that makes this task again, filled in. */
+    repeat: async () => {
+      if (!task) return;
+      try {
+        const template = await saveTemplate();
+        if (!template) return;
+        useAutomationStore.getState().setIntent({
+          draft: repeatRule(template.id, task.columnId, new Date().getDay()),
+        });
+        close();
+        useNavStore.getState().setBoardView('automation');
+      } catch (error) {
+        failed(error, 'Couldn’t set it to repeat');
       }
     },
     moveTo: async (board: ProjectCache) => {

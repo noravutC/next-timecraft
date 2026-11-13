@@ -1,6 +1,7 @@
 'use client';
 
-import { CalendarClock, Check, Circle, X } from 'lucide-react';
+import { Check, Circle, X } from 'lucide-react';
+import { SystemMark } from '@/components/notifications/system-mark';
 import { UserAvatar } from '@/components/people/user-avatar';
 import { ProjectAvatar } from '@/components/project/project-avatar';
 import { Button } from '@/components/ui/button';
@@ -36,9 +37,7 @@ export const NotificationRow = ({
   return (
     <li className="group flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-surface">
       {parts.system ? (
-        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-warning-line bg-warning-soft text-warning">
-          <CalendarClock className="size-4" />
-        </span>
+        <SystemMark kind={parts.system} />
       ) : (
         <UserAvatar
           name={n.payload.actorName}

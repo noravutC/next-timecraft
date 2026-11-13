@@ -4,6 +4,7 @@ import {
   filterNotifications,
   formatNotificationTime,
   groupNotificationsByDay,
+  isTaskNotification,
   notificationParts,
   notificationTabCounts,
   notificationTarget,
@@ -122,6 +123,30 @@ describe('notificationParts', () => {
       strong: 'an Admin',
       after: 'on Mobile App v2',
     });
+  });
+
+  it('reads a rule’s notice as coming from the rule, not a person', () => {
+    const notice = {
+      type: 'automation' as const,
+      payload: {
+        taskId: 't',
+        taskTitle: 'Build images',
+        projectId: 'p',
+        projectName: 'Website Relaunch',
+        rule: 'When a task is finished',
+        actorUserId: 'rule',
+        actorName: 'A rule',
+      },
+    };
+    expect(notificationParts(notice)).toEqual({
+      before: '',
+      strong: 'When a task is finished:',
+      after: 'Build images',
+      system: 'rule',
+    });
+    // it opens the task it is about
+    expect(isTaskNotification(notice)).toBe(true);
+    expect(notificationTarget(notice)).toBe('Build images');
   });
 
   it('names what an accepted invitation was for', () => {

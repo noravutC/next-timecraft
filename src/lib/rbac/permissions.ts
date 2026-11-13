@@ -21,7 +21,11 @@ export type Permission =
   | "comment:update"
   | "comment:delete"
   | "comment:react"
-  | "comment:upload";
+  | "comment:upload"
+  // rules and webhooks: what the board does on its own
+  | "automation:manage"
+  // task templates
+  | "template:manage";
 
 const definePermissions = (
   map: Record<ProjectRole, Permission[]>,
@@ -54,6 +58,8 @@ export const ROLE_PERMISSIONS = definePermissions({
     "comment:delete",
     "comment:react",
     "comment:upload",
+    "automation:manage",
+    "template:manage",
   ],
   admin: [
     "project:view",
@@ -73,6 +79,8 @@ export const ROLE_PERMISSIONS = definePermissions({
     "comment:delete",
     "comment:react",
     "comment:upload",
+    "automation:manage",
+    "template:manage",
   ],
   editor: [
     "project:view",
@@ -83,6 +91,7 @@ export const ROLE_PERMISSIONS = definePermissions({
     "task:comment",
     "comment:react",
     "comment:upload",
+    "template:manage",
   ],
   viewer: ["project:view", "comment:react"],
 });
@@ -106,4 +115,6 @@ export const BLOCKED_ON_ARCHIVED_BOARD: ReadonlySet<Permission> = new Set<Permis
   "comment:react",
   "comment:upload",
   "member:invite",
+  "automation:manage",
+  "template:manage",
 ]);

@@ -1,4 +1,5 @@
 import type {
+  AutomationNotificationPayload,
   BoardInviteNotificationPayload,
   CommentNotificationPayload,
   DueReminderNotificationPayload,
@@ -23,7 +24,8 @@ export const isTaskNotification = (n: Pick<Notification, 'type'>) =>
   n.type === 'comment_mention' ||
   n.type === 'comment_reply' ||
   n.type === 'task_assigned' ||
-  n.type === 'due_reminder';
+  n.type === 'due_reminder' ||
+  n.type === 'automation';
 
 /** "Due today", "Due tomorrow", "Due in 2 days", "Due in a week" */
 export const dueReminderLabel = (daysBefore: number): string =>
@@ -119,7 +121,13 @@ export const kindCounts = (
  */
 export const notificationParts = (
   n: Pick<Notification, 'type' | 'payload'>,
-): { before: string; strong: string; after: string; system?: boolean } => {
+): {
+  before: string;
+  strong: string;
+  after: string;
+  /** from TimeCraft, not a person: a reminder, or a rule on a board */
+  system?: 'due' | 'rule';
+} => {
   switch (n.type) {
     // from TimeCraft, not a person: "**Due tomorrow:** Set up Resend domain"
     case 'due_reminder': {
@@ -128,7 +136,17 @@ export const notificationParts = (
         before: '',
         strong: `${dueReminderLabel(p.daysBefore)}:`,
         after: p.taskTitle,
-        system: true,
+        system: 'due',
+      };
+    }
+    // from a rule: "**When a task is finished:** Build images"
+    case 'automation': {
+      const p = n.payload as AutomationNotificationPayload;
+      return {
+        before: '',
+        strong: `${p.rule}:`,
+        after: p.taskTitle,
+        system: 'rule',
       };
     }
     case 'comment_mention':

@@ -11,6 +11,8 @@ import { useDependencyStore } from '@/store/use-dependency.store';
 import { useProjectStore } from '@/store/use-project.store';
 import { useSubtaskStore } from '@/store/use-subtask.store';
 import { useAssigneeStore } from '@/store/use-assignee.store';
+import { useAutomationStore } from '@/store/use-automation.store';
+import { useNavStore } from '@/store/use-nav.store';
 import { useUnreadStore } from '@/store/use-unread.store';
 import { useTaskDetailStore } from '@/store/use-task-detail.store';
 import type { TaskAssigneeUser } from '@/services/assignee.service';
@@ -87,6 +89,23 @@ export const useRealtimeBoard = (projectId?: string | null) => {
       'task-assignees-updated',
       (data: { taskId: string; assignees: TaskAssigneeUser[] }) => {
         useAssigneeStore.getState().ingestRealtime(data.taskId, data.assignees);
+      },
+    );
+
+    // a rule acted on what this person just did: say so, once, to them
+    channel.bind(
+      'automation-ran',
+      (ran: { actorId: string; ruleId: string; text: string }) => {
+        if (ran.actorId !== userId) return;
+        toast(ran.text, {
+          action: {
+            label: 'View rule',
+            onClick: () => {
+              useAutomationStore.getState().setIntent({ ruleId: ran.ruleId });
+              useNavStore.getState().setBoardView('automation');
+            },
+          },
+        });
       },
     );
 

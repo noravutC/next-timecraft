@@ -68,11 +68,12 @@ Session type is augmented in `src/types/global/next-auth.d.ts`.
 
 ### State Management (Zustand)
 
-Four stores in `src/store/`:
+The main stores in `src/store/`:
 - `useProjectStore` — project list, active project (`projectIsUsing`), `needCreateProject` flag
 - `useColumnStore` — Kanban columns keyed by id
 - `useTaskStore` — tasks keyed by id, with optimistic updates + `updateTaskFromRealtime()`
 - `useOrganizationStore` — org context
+- `useAutomationStore` — one board's rules, templates and webhooks (`fetchBoard`), and `intent`: what the board asks the Automation view to open (a rule from the note about it, the templates from "New task")
 
 **Pattern**: every mutating action (1) captures a snapshot, (2) applies optimistic update, (3) calls API, (4) reverts on error. Status field is one of `"none" | "fetching" | "creating" | "updating" | "deleting" | "error"` (defined as `LoaderStatus` in `src/types/global/types.d.ts`).
 
@@ -95,13 +96,15 @@ Four stores in `src/store/`:
 - **Done column** — one column per board has `isDone` (unique index; new boards get it on the template's last column). "Done" is a place, not a flag on the task: a task is finished when it sits in that column (`finishColumnOf()`, `toggleTaskDone()` in `src/components/project/task-completion.ts`). `tasks.completedAt` / `completedFromColumnId` are maintained by Postgres triggers (migration `0023`) on every path that moves a task or flips the flag, so app code never writes them.
 - **Insights** — the third board view (`?view=insights`, `src/app/(main)/project/_components/insights/`). `getBoardInsights()` in `src/db/uniq-query/project/insights-utils.ts` counts everything in SQL from `tasks.completedAt`, `createdAt` and `dueDate`, the Done column and `task_activities` (no reporting table). The page shows two groups: the chosen period (finished, new, time to finish, on time, time in each column) and right now (open, overdue, needs attention, coming up, workload). Week and period math, and the copy shared with the email, are in `src/helper/utils/insights.ts`; what the page draws is derived in `insights-operations.ts` beside the components. "Stuck" = out of the first column and no column change for `STUCK_AFTER_DAYS`; "Coming up" = due within `UPCOMING_DAYS`.
 - **Weekly digest** — a row in `digest_subscriptions` means it is on for that person on that board. `sendWeeklyDigests()` in `src/lib/jobs/run-jobs.ts` sends on Monday from 9:00 in the workspace's zone and claims `lastSentWeek` before sending. The email is built by `buildWeeklyDigest()` (`src/lib/email/weekly-digest.ts`), which the preview route reuses.
+- **Automation** — the fourth board view (`?view=automation`, `src/app/(main)/project/_components/automation/`): rules, task templates, webhooks and their history. A rule is `trigger` + `conditions` + `actions` (JSON on `automation_rules`, typed in `src/db/schema/automation-rule.table.ts`). Every change to a task goes through `recordTaskActivities()`, which calls `announceTaskChanges()` (`src/lib/automation/engine.ts`): that is the one place rules and webhooks listen, so a new way to change a task only has to record its activity. Rules for a change run in that request and the routes hand back the rows as rules left them (`refreshTasks()`); rules for a date or a time run from `runAutomationJobs()` (`src/lib/automation/jobs.ts`, called by the cron). A rule's own changes are announced again, up to `MAX_RULE_DEPTH`. What a rule points at is checked on save (`missingRef()`) and again when it runs: a rule that lost something is paused with `brokenReason`. The matching, schedule math and the sentences are pure, in `src/helper/utils/automation*.ts`; what the page draws is derived in the `*-operations.ts` files beside the components.
+- **Webhooks** — `webhook_deliveries` is the outbox: a row per message, written when the event happens, sent after the response (`deliverWebhooks()`), retried by the cron (`nextAttemptAt` is also the claim). Sending goes through `postWebhook()` (`src/lib/automation/webhook-send.ts`), which refuses private addresses at connect time: never call `fetch` on an address a user typed. Secrets are encrypted with `encryptSecret()` and never sent to the browser again.
 - **`tags`** — `text[]` array on both projects and tasks
 
 ### RBAC (Standard pattern — use this, not ad-hoc checks)
 
 **Location:** `src/lib/rbac/`
 
-- `permissions.ts` — `Permission` union (`resource:action`) + `ROLE_PERMISSIONS: Record<ProjectRole, ReadonlySet<Permission>>`
+- `permissions.ts` — `Permission` union (`resource:action`) + `ROLE_PERMISSIONS: Record<ProjectRole, ReadonlySet<Permission>>`. Rules and webhooks need `automation:manage` (owner, admin); task templates need `template:manage` (also editors)
 - `can.ts` — `can(role, permission): boolean` — pure, no DB
 - `authorize.ts` — `authorize(userId, projectIds, permission): Promise<boolean>` and `authorizeOrThrow(...)` (throws `ForbiddenError`)
 
@@ -168,12 +171,17 @@ Relevant routes for the board:
 - `POST /api/column` — create column; `PATCH/DELETE /api/column/[ids]`
 - `POST /api/task/columns` — bulk-fetch tasks by column ids
 - `POST /api/project/[id]/insights` — the Insights view's numbers for 4 or 12 weeks
+- `GET /api/project/[id]/automation` — rules, templates and webhooks; `POST …/automation/rules`, `PATCH/DELETE …/automation/rules/[ruleId]`; `GET …/automation/history`; `POST …/automation/deliveries/[deliveryId]` sends a webhook message again
+- `GET/POST /api/project/[id]/templates`, `PATCH/DELETE …/templates/[templateId]`, `POST …/templates/[templateId]/use` — a new task from a template
+- `POST /api/project/[id]/webhooks`, `PATCH/DELETE …/webhooks/[webhookId]`, `POST …/webhooks/test`
 - `GET/PUT /api/project/[id]/digest` — your weekly digest setting; `GET …/digest/preview` renders this week's email
 - `PATCH/DELETE /api/task/[ids]` — update / delete tasks (comma-separated ids)
 
 ### Real-time
 
 Pusher WebSocket (`src/lib/pusher-client.ts` / `pusher-server.ts`). Every channel is private: subscribe with `privateChannel('project-' + id)` (→ `private-project-{id}`) and the server authorizes it in `/api/pusher/auth`. Hook `useRealtimeBoard(projectId)` subscribes to the project channel and calls `useTaskStore.updateTaskFromRealtime()` on `task-updated` events.
+
+A route sends its own change with `triggerExclusive()` (everyone but the browser that made it). What a rule or a scheduled job changes is sent with `triggerAll()`: no browser shows it yet, the one that started it included.
 
 ### Context Providers
 
@@ -215,7 +223,8 @@ ANTHROPIC_API_KEY=               # optional — AI Task Breakdown (route returns
 RESEND_API_KEY=                  # optional — invite emails (skipped with a log if unset; copy link still works)
 EMAIL_FROM=                      # optional — sender, defaults to Resend test sender
 APP_URL=                         # optional — base URL for links in emails, falls back to NEXTAUTH_URL
-CRON_SECRET=                     # optional: guards /api/cron/run (reminders, notification emails, weekly digests, column purge); without it the route refuses every call
+CRON_SECRET=                     # optional: guards /api/cron/run (reminders, notification emails, weekly digests, column purge, rules on a date or a schedule, webhook retries); without it the route refuses every call
+WEBHOOK_ALLOW_INSECURE=          # local testing only: "true" lets webhooks go to http:// and to this machine. Ignored in production
 NEXTAUTH_URL=                    # public site URL (OAuth callbacks)
 NEXT_PUBLIC_SUPABASE_URL=        # comment attachments (storage)
 SUPABASE_SERVICE_ROLE_KEY=       # comment attachments (signed upload URLs); server only

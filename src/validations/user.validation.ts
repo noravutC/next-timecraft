@@ -38,6 +38,7 @@ export const updateNotificationPrefsSchema = z
         due: channels.optional(),
         roles: channels.optional(),
         accepted: channels.optional(),
+        automation: channels.optional(),
       })
       .strict()
       .optional(),
