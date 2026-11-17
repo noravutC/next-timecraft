@@ -21,7 +21,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
-    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^3.2.1",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
     "@google/genai": "^2.10.0",
     "@opentelemetry/api": "1.9.1",
